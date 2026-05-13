@@ -49,17 +49,46 @@ class ReplayBuffer:
         k: int = 4,
         threshold: float = 0.01,
     ):
-        """Push ctx into the buffers of the top-k slots by attention mass,
-        gated on u_prefix_bar > 0."""
+        """Push ctx into buffers of the top-k slots that ACTUALLY attended.
+
+        Previously: top-k by mass with only a global `max(mass) >= threshold`
+        gate. If only 1 of 256 slots had real attention, we still pushed
+        the context into 4 slot buffers -- 3 of them recording a context
+        they never attended. When consolidation later sampled those 3
+        slots, the teacher/student distillation tried to remove a slot
+        the model never used for that input. Either:
+          - the student trivially matches the teacher because removing
+            an unused slot does nothing -> wasted compute, no learning
+            signal,
+          - or the gradient updates LoRA in the wrong direction for
+            contexts that should not have been associated with that slot.
+
+        Now: each of the top-k slots is gated INDIVIDUALLY against
+        `threshold`. Only slots whose own attention mass clears the
+        threshold are recorded. The early "max < threshold" check is
+        still useful as a fast path (no slot attended -> skip topk).
+
+        Defensive clone: each pushed ReplayContext has its own tensor
+        storage so independent slot buffers cannot be cross-corrupted
+        by an in-place op on the original chunk tensors.
+        """
         if u_prefix_bar <= 0:
             return
-        # Sum attention mass per slot across all prefix queries
         mass = alpha_p.sum(dim=0)                             # (N_m,)
         if mass.max().item() < threshold:
             return
         topk = torch.topk(mass, min(k, self.n_slots))
-        for slot_id in topk.indices.tolist():
-            self.buffers[slot_id].append(ctx)
+        for slot_id, mass_val in zip(
+            topk.indices.tolist(), topk.values.tolist()
+        ):
+            if mass_val < threshold:
+                continue
+            self.buffers[slot_id].append(ReplayContext(
+                input_ids=ctx.input_ids.clone(),
+                targets=ctx.targets.clone(),
+                tau_t=ctx.tau_t,
+                delta_tau=ctx.delta_tau,
+            ))
 
     def sample(self, slot_id: int, n: int) -> list[ReplayContext]:
         buf = self.buffers[slot_id]
