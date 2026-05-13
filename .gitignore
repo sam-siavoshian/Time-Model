@@ -8,3 +8,4 @@ data/tokenized/
 *.bin
 logs/
 checkpoints/
+reports/preflight.md

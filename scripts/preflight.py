@@ -112,7 +112,8 @@ class Preflight:
                 "model.latent_world_loader", "model.predictions", "model.h2_probe",
                 "model.h4_cti", "model.h5_evolution", "model.h7_contradiction",
                 "model.ambiguity_accuracy", "model.eval_all", "model.ablation_runner",
-                "model.run_phase", "model.late_retrieval"]
+                "model.run_phase", "model.late_retrieval", "model.metrics",
+                "model.prefix_integrity"]
         for m in mods:
             importlib.import_module(m)
         return True, f"{len(mods)} modules import OK"
@@ -185,8 +186,11 @@ class Preflight:
     def disk_space(self):
         usage = shutil.disk_usage(str(ROOT))
         free_gb = usage.free / 1e9
+        # Hard fail below 5GB (can't even do checkpointing). Soft pass below 20GB.
+        if free_gb < 5:
+            return False, f"CRITICAL: only {free_gb:.1f} GB free; need >= 5 GB"
         if free_gb < 20:
-            return False, f"only {free_gb:.1f} GB free; need >= 20 GB"
+            return True, f"{free_gb:.1f} GB free (warn: Spark has 228 GB; this is laptop-only)"
         return True, f"{free_gb:.1f} GB free"
 
     def cuda(self):
