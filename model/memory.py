@@ -83,9 +83,20 @@ class MemoryBank(nn.Module):
     # ---------- State management ----------
 
     def reset(self):
-        """Wipe all slots (for new stream / per-user load)."""
+        """Wipe all slots back to init state (for new stream / per-user load).
+
+        IMPORTANT: slot KEYS k are re-randomized to unit-norm, NOT zeroed.
+        Zeroing k breaks slot_assign (top-1 argmax becomes degenerate when
+        all keys are 0; writes concentrate to one slot).
+        Other fields zero / fill to init values per MemoryBank.__init__.
+        """
+        cfg = self.cfg
         with torch.no_grad():
-            self.k.zero_()
+            # Random unit-norm keys (must match __init__ scheme)
+            new_k = torch.randn(cfg.n_slots, cfg.d_memory, device=self.k.device, dtype=self.k.dtype)
+            new_k = new_k / new_k.norm(dim=-1, keepdim=True).clamp_min(1e-8)
+            self.k.copy_(new_k)
+            # Other fields match __init__ defaults
             self.v.zero_()
             self.q.zero_()
             self.age.zero_()
