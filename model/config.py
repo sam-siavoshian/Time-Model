@@ -46,8 +46,13 @@ class IPCNConfig:
     consolidated_layers: Tuple[int, ...] = (0, 1, 2)         # core layers with LoRA
     consolidate_pfc: bool = True
 
+    # ----- Ablation flags (H3 matrix) -----
+    enable_episodic_memory: bool = True                      # if False: bank exists but read returns zero prefix
+    enable_evolution: bool = True                            # if False: memory.evolve() is a no-op
+    enable_late_retrieval_only: bool = False                 # A1 baseline: zero pre-forward prefix, retrieve after core
+
     # ----- Injection routes -----
-    use_route1_prepend: bool = True                          # mandatory
+    use_route1_prepend: bool = True                          # mandatory in default config
     use_route2_broadcast: bool = True                        # strongly recommended
     use_route3_lnmod: bool = True                            # optional, layers 1-2
     lambda_pre_init: float = 0.5                             # broadcast strength at step 0

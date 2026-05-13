@@ -41,6 +41,8 @@ class ChunkOutput:
     alpha_prefix: torch.Tensor                               # (K_p, N_m)
     b_broadcast: torch.Tensor                                # (L, d_model)
     gate: torch.Tensor                                       # (L, d_model)
+    H0: Optional[torch.Tensor] = None                        # (S, d_model) — input to layer 0 if requested
+    hidden_layers: Optional[list[torch.Tensor]] = None       # list of (S, d_model) per core layer
 
 
 class IPCN(nn.Module):
@@ -91,6 +93,7 @@ class IPCN(nn.Module):
         gap_flag: float = 0.0,
         event_density: float = 0.0,
         zero_prefix_for_ablation: bool = False,
+        return_hidden_layers: bool = False,
     ) -> ChunkOutput:
         cfg = self.cfg
         device = input_ids.device
@@ -109,7 +112,7 @@ class IPCN(nn.Module):
 
         # 3-4. PFC builds prefix
         prefix, alpha_prefix = self.pfc(e, self.z, chi_t, self.memory, tau_t)  # prefix: (K_p, d_model)
-        if zero_prefix_for_ablation:
+        if zero_prefix_for_ablation or not cfg.enable_episodic_memory or cfg.enable_late_retrieval_only:
             prefix = torch.zeros_like(prefix)
 
         # 5-6. Route 2: broadcast preconditioning
@@ -134,7 +137,9 @@ class IPCN(nn.Module):
         else:
             b_full = None
 
-        logits, _, hidden_last = self.core(H0, b_full=b_full, return_hidden=False)
+        logits, hidden_layers, hidden_last = self.core(
+            H0, b_full=b_full, return_hidden=return_hidden_layers
+        )
 
         # Mark slots as used (for tau_use bookkeeping)
         with torch.no_grad():
@@ -147,6 +152,8 @@ class IPCN(nn.Module):
             alpha_prefix=alpha_prefix,
             b_broadcast=b,
             gate=gate,
+            H0=H0 if return_hidden_layers else None,
+            hidden_layers=hidden_layers,
         )
 
     # ---------- Per-chunk write + evolve + z update ----------
@@ -221,7 +228,7 @@ class IPCN(nn.Module):
         with torch.no_grad():
             self.z.copy_(new_z.detach())
 
-        if do_evolve:
+        if do_evolve and cfg.enable_evolution:
             self.memory.evolve(self.z, chi_t_vec, delta_tau)
 
         return prev_mem_snap
