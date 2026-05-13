@@ -53,6 +53,40 @@ def kill_training(pid: int, reason: str, alert_path: str):
         print(f"   already gone: {e}")
 
 
+def _has_completion_sentinel(log_path: Path) -> tuple[bool, dict | None]:
+    """Scan the log for a `training_complete` event written by train_loop.
+
+    Returns (found, record). When training exits cleanly, train_loop writes:
+      {"event": "training_complete", "step": N, "max_steps": M,
+       "reason": "max_steps" | "iterator_exhausted", "time": ...}
+    Absence of this sentinel means the training process died without
+    finishing the loop -- i.e. it crashed.
+
+    Bare `except Exception` is intentional here: we want to detect
+    `training_complete` no matter what other junk surrounds it in the
+    log. Failures to parse one line should never abort the scan.
+    """
+    if not log_path.exists():
+        return False, None
+    try:
+        with open(log_path, "r") as f:
+            lines = f.readlines()
+    except OSError:
+        return False, None
+    # Walk backward; completion sentinel is the last meaningful record.
+    for line in reversed(lines):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            rec = json.loads(line)
+        except Exception:                                     # noqa: BLE001
+            continue
+        if rec.get("event") == "training_complete":
+            return True, rec
+    return False, None
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--pid", type=int, required=True, help="training process PID")
@@ -72,19 +106,71 @@ def main():
     lm_window: deque[float] = deque(maxlen=50)
     last_pos = 0
 
+    parse_errors = 0
+    last_parse_error_log = 0.0
     while True:
         if not is_alive(args.pid):
-            print("Training process ended normally.")
-            sys.exit(0)
+            # The process is gone. Decide: clean completion or crash?
+            completed, comp_rec = _has_completion_sentinel(log_path)
+            if completed:
+                print(f"Training process ended normally: {comp_rec}")
+                Path(args.alert_path).parent.mkdir(parents=True, exist_ok=True)
+                with open(args.alert_path, "a") as alert_f:
+                    alert_f.write(json.dumps({
+                        "time": time.time(),
+                        "kind": "training_complete",
+                        "pid": args.pid,
+                        "completion_record": comp_rec,
+                    }) + "\n")
+                sys.exit(0)
+            # No completion sentinel: training crashed or was killed
+            # outside of this watchdog. Fire an alert so the operator sees
+            # it instead of a silent success.
+            Path(args.alert_path).parent.mkdir(parents=True, exist_ok=True)
+            with open(args.alert_path, "a") as alert_f:
+                alert_f.write(json.dumps({
+                    "time": time.time(),
+                    "kind": "training_crashed",
+                    "pid": args.pid,
+                    "log_path": str(log_path),
+                    "hint": "process exited without writing a "
+                            "training_complete sentinel. Check stderr "
+                            "and the last log lines for the cause.",
+                }) + "\n")
+            print(f"!! Training pid={args.pid} ended WITHOUT completion sentinel "
+                  f"-- treating as crash. See {args.alert_path}.")
+            sys.exit(2)
 
         # Read new log lines
         if log_path.exists():
+            try:
+                size = log_path.stat().st_size
+            except OSError:
+                size = 0
+            # Handle log rotation/truncation: if file shrunk below
+            # last_pos, restart from start.
+            if size < last_pos:
+                print(f"  [safety] log shrunk ({size} < {last_pos}); restarting from 0")
+                last_pos = 0
             with open(log_path, "r") as f:
                 f.seek(last_pos)
                 for line in f:
                     try:
                         rec = json.loads(line)
-                    except Exception:                          # noqa: BLE001
+                    except json.JSONDecodeError as e:
+                        parse_errors += 1
+                        # Rate-limit parse-error chatter: log at most once every 60s.
+                        if time.time() - last_parse_error_log > 60.0:
+                            print(f"  [safety] parse error #{parse_errors}: "
+                                  f"{e.msg} at col {e.colno} | line={line[:120]!r}")
+                            last_parse_error_log = time.time()
+                        continue
+                    except Exception as e:                     # noqa: BLE001
+                        parse_errors += 1
+                        if time.time() - last_parse_error_log > 60.0:
+                            print(f"  [safety] non-JSON error #{parse_errors}: "
+                                  f"{type(e).__name__}: {e}")
+                            last_parse_error_log = time.time()
                         continue
                     if "lm_loss" not in rec:
                         continue

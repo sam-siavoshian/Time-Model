@@ -627,6 +627,21 @@ def train_loop(
             step += 1
             if step >= max_steps:
                 break
+        # Normal completion: hit max_steps OR iterator exhausted.
+        # Write a completion sentinel so external watchdogs (scripts/safety.py)
+        # can distinguish "training finished" from "training process crashed".
+        # Without this, a crashed run looks identical to a finished run to
+        # any consumer reading the log tail.
+        completion_reason = "max_steps" if step >= max_steps else "iterator_exhausted"
+        if f:
+            f.write(json.dumps({
+                "event": "training_complete",
+                "step": step,
+                "max_steps": max_steps,
+                "reason": completion_reason,
+                "time": time.time(),
+            }) + "\n")
+            f.flush()
     finally:
         if f:
             f.close()
