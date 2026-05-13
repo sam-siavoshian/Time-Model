@@ -1,0 +1,61 @@
+{
+  "checkpoint": "untrained baseline",
+  "train_step": 0,
+  "results": {
+    "H1": {
+      "n_trials": 5,
+      "D0_mean": 0.5127702355384827,
+      "D0_std": 0.01217734906822443,
+      "D0_min": 0.4975370466709137,
+      "D0_max": 0.526883602142334,
+      "pass_threshold": 0.1,
+      "passes": true
+    },
+    "H2": {
+      "n_pairs": 5,
+      "n_train_examples": 8,
+      "n_test_examples": 2,
+      "probe_acc_H0": 0.5,
+      "probe_acc_H1": 0.5,
+      "threshold": 0.8,
+      "passes_H0": false,
+      "passes_H1": false,
+      "passes_either": false
+    },
+    "H3": {
+      "status": "deferred",
+      "note": "H3 requires training A0-A6 variants. Run separately via run_phase --ablation."
+    },
+    "H4": {
+      "status": "skipped",
+      "note": "H4 requires --pre-checkpoint (model BEFORE consolidation) plus current checkpoint."
+    },
+    "H5": {
+      "n_streams": 5,
+      "Acc_evolve": 0.0,
+      "Acc_static": 0.0,
+      "gap": 0.0,
+      "threshold": 0.15,
+      "passes": false
+    },
+    "H6": {
+      "n_pairs": 5,
+      "KL_real_vs_ablated_mean": 0.0,
+      "threshold_min": 0.1,
+      "passes_distinct": false,
+      "note": "Approximate: full spec measures answer-accuracy delta; we use KL on output distribution."
+    },
+    "H7": {
+      "n_pairs": 5,
+      "KL_amb_mean": 0.0006408444372937083,
+      "KL_amb_std": 0.00013995784673930274,
+      "KL_exp_mean": 0.0006395308068022132,
+      "KL_exp_std": 0.0001408523271052854,
+      "threshold_amb": 0.5,
+      "threshold_exp": 0.1,
+      "passes_amb": false,
+      "passes_exp": true,
+      "passes_overall": false
+    }
+  }
+}
