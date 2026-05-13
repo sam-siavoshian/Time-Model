@@ -49,6 +49,12 @@ def main():
                    help="use LatentWorldChunkDataset (real tau from event metadata, slower)")
     p.add_argument("--enable-consolidation", action="store_true",
                    help="enable consolidation passes during training (Phase 1+)")
+    p.add_argument("--cons-freq", type=int, default=None,
+                   help="override consolidation_frequency (chunks between passes)")
+    p.add_argument("--t-stable-override", type=int, default=None,
+                   help="override cfg.t_stable for smoke testing (default 512)")
+    p.add_argument("--tau-cons-override", type=float, default=None,
+                   help="override cfg.tau_cons eligibility threshold for smoke testing (default 3.0)")
     args = p.parse_args()
 
     torch.manual_seed(args.seed)
@@ -64,6 +70,14 @@ def main():
         model = IPCN(cfg).to(args.device)
         opt_state = None
         start_step = 0
+
+    # Override thresholds for smoke testing if requested
+    if args.cons_freq is not None:
+        cfg.consolidation_frequency = args.cons_freq
+    if args.t_stable_override is not None:
+        cfg.t_stable = args.t_stable_override
+    if args.tau_cons_override is not None:
+        cfg.tau_cons = args.tau_cons_override
 
     # Apply phase config
     pc = get_phase_config(phase, cfg)

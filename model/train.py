@@ -338,12 +338,22 @@ def maybe_run_consolidation(
     if step == 0 or step % cfg.consolidation_frequency != 0:
         return None
 
-    eligible = model.eligible_slots_for_consolidation()
+    raw_eligible = model.eligible_slots_for_consolidation()
+    if not raw_eligible:
+        return {
+            "step": step,
+            "skipped_reason": "no slots eligible (kappa <= tau_cons or unstable)",
+            "n_raw_eligible": 0,
+            "replay_stats": replay_buffer.stats(),
+        }
+    eligible = [s for s in raw_eligible if replay_buffer.size(s) >= min_buffer_size]
     if not eligible:
-        return None
-    eligible = [s for s in eligible if replay_buffer.size(s) >= min_buffer_size]
-    if not eligible:
-        return None
+        return {
+            "step": step,
+            "skipped_reason": f"replay buffer too small for all {len(raw_eligible)} eligible slots",
+            "n_raw_eligible": len(raw_eligible),
+            "replay_stats": replay_buffer.stats(),
+        }
     eligible = eligible[:max_slots_per_pass]
 
     # Sample a small "probe batch" for LM drift measurement BEFORE we touch adapters
@@ -435,13 +445,22 @@ def train_loop(
                 if cons_log is not None and f:
                     f.write(json.dumps({"event": "consolidation", **cons_log}) + "\n")
                 if cons_log is not None:
-                    print(
-                        f"  [consolidation @ step {step}] "
-                        f"slots={cons_log['slots_consolidated']} "
-                        f"updates={cons_log['n_updates']} "
-                        f"mean_kl={cons_log['mean_kl']:.4f} "
-                        f"replay_total={cons_log['replay_stats']['total_contexts']}"
-                    )
+                    if "skipped_reason" in cons_log:
+                        print(
+                            f"  [consolidation @ step {step}] SKIPPED "
+                            f"({cons_log['skipped_reason']}, "
+                            f"replay_total={cons_log['replay_stats']['total_contexts']})"
+                        )
+                    else:
+                        commit = "COMMIT" if cons_log.get("committed", False) else "ROLLBACK"
+                        print(
+                            f"  [consolidation @ step {step}] {commit} "
+                            f"slots={cons_log['slots_consolidated']} "
+                            f"updates={cons_log['n_updates']} "
+                            f"mean_kl={cons_log['mean_kl']:.4f} "
+                            f"drift={cons_log['lm_drift_kl']:.4f} "
+                            f"replay_total={cons_log['replay_stats']['total_contexts']}"
+                        )
 
             if f:
                 f.write(json.dumps(asdict(log)) + "\n")

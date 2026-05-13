@@ -236,6 +236,14 @@ class IPCN(nn.Module):
     # ---------- Eligibility for consolidation ----------
 
     def eligible_slots_for_consolidation(self) -> list[int]:
+        """v1: replace age >= t_stable check with simpler 'slot has been written'.
+
+        SPEC.tex calls for stability >= 512 chunks, but the mem.age buffer
+        is not updated per-chunk currently. We use tau_write > 0 as a
+        proxy: a slot is eligible if kappa > tau_cons AND it has been
+        decisively written at least once. Tighter stability tracking is
+        added in Phase 2+ when long-horizon consolidation matters.
+        """
         cfg = self.cfg
         mem = self.memory
         kappa = (
@@ -244,5 +252,6 @@ class IPCN(nn.Module):
             * (1.0 - mem.conflict.clamp(0, 1))
             * (1.0 - mem.plast)
         )
-        eligible = (kappa > cfg.tau_cons) & (mem.age >= cfg.t_stable)
+        written = (mem.tau_write > 0)
+        eligible = (kappa > cfg.tau_cons) & written
         return [i for i, ok in enumerate(eligible.tolist()) if ok]
