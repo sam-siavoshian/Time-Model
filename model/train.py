@@ -508,6 +508,8 @@ def train_loop(
     log_path: Optional[str] = None,
     enable_consolidation: bool = False,
     replay_buffer: Optional[ReplayBuffer] = None,
+    ckpt_every: Optional[int] = None,
+    ckpt_path_template: Optional[str] = None,
 ) -> list[StepLog]:
     opt = build_optimizer(model, cfg)
     if enable_consolidation and replay_buffer is None:
@@ -518,6 +520,18 @@ def train_loop(
     f = open(log_path, "w") if log_path else None
     try:
         for batch in iterator:
+            # Periodic intermediate checkpoint
+            if (
+                ckpt_every is not None
+                and ckpt_path_template is not None
+                and step > 0
+                and step % ckpt_every == 0
+            ):
+                from model.checkpoint import save_checkpoint as _save_ckpt
+                path = ckpt_path_template.format(step=step)
+                _save_ckpt(path, model, opt, cfg, train_step=int(model.train_step.item()),
+                           extra={"intermediate": True})
+                print(f"  [checkpoint @ step {step}] saved to {path}")
             log = train_step(model, opt, batch, cfg, step, replay_buffer=replay_buffer)
             logs.append(log)
 

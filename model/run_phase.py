@@ -55,6 +55,10 @@ def main():
                    help="override cfg.t_stable for smoke testing (default 512)")
     p.add_argument("--tau-cons-override", type=float, default=None,
                    help="override cfg.tau_cons eligibility threshold for smoke testing (default 3.0)")
+    p.add_argument("--ckpt-every", type=int, default=None,
+                   help="save intermediate checkpoint every N steps")
+    p.add_argument("--ckpt-template", type=str, default=None,
+                   help="path template for intermediate checkpoints (use {step})")
     args = p.parse_args()
 
     torch.manual_seed(args.seed)
@@ -136,6 +140,10 @@ def main():
     if args.enable_consolidation:
         replay_buffer = ReplayBuffer(n_slots=cfg.n_slots, capacity_per_slot=256, seed=args.seed)
 
+    ckpt_template = args.ckpt_template
+    if ckpt_template is None and args.ckpt_every is not None:
+        ckpt_template = f"checkpoints/{pc.name}_step{{step}}.pt"
+
     train_loop(
         model, iterator, cfg,
         max_steps=max_steps,
@@ -143,6 +151,8 @@ def main():
         log_path=log_path,
         enable_consolidation=args.enable_consolidation,
         replay_buffer=replay_buffer,
+        ckpt_every=args.ckpt_every,
+        ckpt_path_template=ckpt_template,
     )
 
     # Checkpoint
