@@ -39,7 +39,9 @@ from model.losses import (
     chronometric_loss,
     consolidation_kl,
     diversity_loss,
+    evolution_self_predict_loss,
     lm_loss,
+    mem_predict_loss,
     pre_influence_loss,
     precision_loss,
     slot_util_loss,
@@ -174,11 +176,26 @@ def train_step(
     dtau_true = torch.tensor([batch.delta_tau], device=device, dtype=dtau_hat.dtype)
     L_chr = chronometric_loss(dtau_hat, dtau_true)
 
-    # Compose (omit mem_predict, evolution_self_predict, consolidation in v1 train step)
+    # 4) Memory-usefulness predictor (P_U): predict U_t from pooled prefix + z
+    pooled_prefix = out.prefix.mean(dim=0)
+    p_u_input = torch.cat([pooled_prefix, model.z], dim=-1)
+    u_hat = model.P_U(p_u_input).squeeze(-1)
+    L_mem = mem_predict_loss(u_hat, u_t.detach())
+
+    # 7) Evolution self-prediction (P_z + P_M from pre-update state).
+    # Take a snapshot BEFORE memory write+evolve, predict next z and ΔM.
+    with torch.no_grad():
+        pooled_mem_pre = model.memory.v.mean(dim=0).detach()
+    pz_input = torch.cat([pooled_mem_pre, model.z.detach()], dim=-1)
+    z_hat = model.P_z(pz_input)
+    dmem_hat = model.P_M(pz_input)
+
+    # Compose
     total = (
         cfg.w_lm * L_lm
         + cfg.w_pre_influence * L_pre
         + cfg.w_precision * L_prec
+        + cfg.w_mem_predict * L_mem
         + cfg.w_diversity * L_div
         + cfg.w_slot_util * L_util
         + cfg.w_chrono * L_chr
@@ -191,6 +208,10 @@ def train_step(
     )
     opt.step()
     model.train_step += 1
+
+    # After the memory write+evolve, compute evolution self-prediction loss
+    # and backprop separately (its targets depend on post-update state).
+    # We do this as a small extra step so the predictor heads learn.
 
     # Update memory + state AFTER backward (no_grad in memory.write).
     # Synthesize cheap surprise / novelty proxies.
@@ -207,6 +228,8 @@ def train_step(
         u_prefix = torch.zeros_like(surprise)
 
         u_prefix_bar_for_memory = float(u_t.item()) if do_attribution else 0.0
+        z_pre = model.z.detach().clone()
+        mem_pre = model.memory.v.mean(dim=0).detach().clone()
         model.update_memory_and_state(
             out=out,
             surprise=surprise,
@@ -218,6 +241,24 @@ def train_step(
             delta_tau=batch.delta_tau,
             do_evolve=True,
         )
+        z_post = model.z.detach().clone()
+        mem_post = model.memory.v.mean(dim=0).detach().clone()
+        d_mem_true = (mem_post - mem_pre)
+
+    # Evolution self-prediction loss (separate small backward — heads only)
+    if model.P_z.weight.requires_grad:
+        opt.zero_grad(set_to_none=True)
+        # Re-derive predictions WITH grad (the earlier z_hat/dmem_hat may have
+        # been detached when memory state changed).
+        pz_input2 = torch.cat([mem_pre, z_pre], dim=-1)
+        z_hat2 = model.P_z(pz_input2)
+        dmem_hat2 = model.P_M(pz_input2)
+        L_evo = evolution_self_predict_loss(z_hat2, z_post, dmem_hat2, d_mem_true)
+        (cfg.w_evolution * L_evo).backward()
+        opt.step()
+        L_evo_val = float(L_evo.item())
+    else:
+        L_evo_val = 0.0
 
         # Replay buffer push: only when we measured real u_prefix and it
         # was positive (memory genuinely helped). Push chunk context into
