@@ -285,6 +285,44 @@ def _slot_attenuated_logits(model: IPCN, ctx: ReplayContext, slot_id: int) -> to
     return logits
 
 
+@torch.no_grad()
+def _measure_lm_drift(
+    model: IPCN,
+    contexts: list[ReplayContext],
+    pre_logits: list[torch.Tensor],
+) -> float:
+    """Compute mean KL(pre || post) on a probe batch after adapter update."""
+    if not contexts:
+        return 0.0
+    drifts = []
+    for ctx, pre in zip(contexts, pre_logits):
+        ctx_dev = ReplayContext(
+            input_ids=ctx.input_ids.to(next(model.parameters()).device),
+            targets=ctx.targets.to(next(model.parameters()).device),
+            tau_t=ctx.tau_t, delta_tau=ctx.delta_tau,
+        )
+        post_logits = _slot_active_logits(model, ctx_dev)
+        log_p_pre = F.log_softmax(pre, dim=-1)
+        log_p_post = F.log_softmax(post_logits, dim=-1)
+        kl = (log_p_pre.exp() * (log_p_pre - log_p_post)).sum(dim=-1).mean()
+        drifts.append(float(kl.item()))
+    return sum(drifts) / len(drifts)
+
+
+def _snapshot_adapters(model: IPCN) -> list:
+    from model.adapters import LoRALinear
+    out = []
+    for module in model.modules():
+        if isinstance(module, LoRALinear) and module.rank > 0:
+            out.append((module, module.snapshot_adapter()))
+    return out
+
+
+def _restore_adapters(snaps: list):
+    for module, snap in snaps:
+        module.restore_adapter(snap)
+
+
 def maybe_run_consolidation(
     model: IPCN,
     opt: torch.optim.Optimizer,
@@ -294,24 +332,36 @@ def maybe_run_consolidation(
     min_buffer_size: int = 8,
     max_slots_per_pass: int = 4,
     samples_per_slot: int = 4,
+    enable_validation: bool = True,
 ) -> Optional[dict]:
-    """Run a consolidation pass if conditions are met. Returns log dict or None.
-
-    For v1: no validation gate (always commit). Wire validation in Phase 2+.
-    """
+    """Run a consolidation pass with LM-drift validation gate."""
     if step == 0 or step % cfg.consolidation_frequency != 0:
         return None
 
     eligible = model.eligible_slots_for_consolidation()
     if not eligible:
         return None
-
-    # Filter to slots with enough replay data
     eligible = [s for s in eligible if replay_buffer.size(s) >= min_buffer_size]
     if not eligible:
         return None
-
     eligible = eligible[:max_slots_per_pass]
+
+    # Sample a small "probe batch" for LM drift measurement BEFORE we touch adapters
+    probe_contexts = []
+    probe_logits = []
+    if enable_validation:
+        for slot_id in eligible:
+            for ctx in replay_buffer.sample(slot_id, n=2):
+                ctx_dev = ReplayContext(
+                    input_ids=ctx.input_ids.to(next(model.parameters()).device),
+                    targets=ctx.targets.to(next(model.parameters()).device),
+                    tau_t=ctx.tau_t, delta_tau=ctx.delta_tau,
+                )
+                probe_contexts.append(ctx)
+                probe_logits.append(_slot_active_logits(model, ctx_dev))
+
+    # Snapshot adapters for potential rollback
+    snap = _snapshot_adapters(model) if enable_validation else None
 
     total_kl = 0.0
     n_updates = 0
@@ -323,8 +373,7 @@ def maybe_run_consolidation(
             ctx_dev = ReplayContext(
                 input_ids=ctx.input_ids.to(next(model.parameters()).device),
                 targets=ctx.targets.to(next(model.parameters()).device),
-                tau_t=ctx.tau_t,
-                delta_tau=ctx.delta_tau,
+                tau_t=ctx.tau_t, delta_tau=ctx.delta_tau,
             )
             teacher_logits = _slot_active_logits(model, ctx_dev)
             student_logits = _slot_attenuated_logits(model, ctx_dev, slot_id)
@@ -338,11 +387,22 @@ def maybe_run_consolidation(
             total_kl += float(loss.item())
             n_updates += 1
 
+    # Validation gate: LM drift must stay under threshold
+    committed = True
+    drift = 0.0
+    if enable_validation and snap is not None:
+        drift = _measure_lm_drift(model, probe_contexts, probe_logits)
+        if drift > cfg.kl_drift_threshold:
+            _restore_adapters(snap)
+            committed = False
+
     return {
         "step": step,
         "slots_consolidated": len(eligible),
         "n_updates": n_updates,
         "mean_kl": total_kl / max(1, n_updates),
+        "lm_drift_kl": drift,
+        "committed": committed,
         "replay_stats": replay_buffer.stats(),
     }
 
