@@ -54,9 +54,22 @@ def _accuracy_on_queries(
     query_chunks: list[str],
     answers: list[str],
     chunk_length: int,
-    slot_to_zero: int | None = None,
+    zero_primary_slot: bool = False,
+    reset_seed: int | None = None,
 ) -> float:
-    """Reset, feed intro, run queries, compare answer tokens."""
+    """Reset, feed intro, run queries, compare answer tokens.
+
+    If zero_primary_slot=True: AFTER the intro write, identify the slot with
+    max tau_write (primary slot for this rule) and zero its key/value. This
+    runs per-call so it correctly identifies the rule slot under THIS call's
+    random reset state (the slot index would otherwise be wrong because
+    reset_memory() re-randomizes slot keys, changing slot_assign argmax).
+
+    reset_seed: optional seed for reproducible random key init across paired
+    'with' / 'without' calls.
+    """
+    if reset_seed is not None:
+        torch.manual_seed(reset_seed)
     model.reset_memory()
     intro_toks = torch.tensor(enc.encode(intro_chunk), dtype=torch.long)
     if intro_toks.numel() < chunk_length:
@@ -75,11 +88,13 @@ def _accuracy_on_queries(
         tau_t=0.0, chi_t=chi_t,
     )
 
-    # Optionally zero a slot to test the "without slot" arm
-    if slot_to_zero is not None:
+    # Identify and zero the primary rule slot WITHIN this call (under this
+    # call's random reset state, NOT under a separately identified slot id).
+    if zero_primary_slot:
         with torch.no_grad():
-            model.memory.k[slot_to_zero].zero_()
-            model.memory.v[slot_to_zero].zero_()
+            primary = int(model.memory.tau_write.argmax().item())
+            model.memory.k[primary].zero_()
+            model.memory.v[primary].zero_()
 
     correct = 0
     total = 0
@@ -134,39 +149,35 @@ def compute_CTI(
     pre_with_all, pre_without_all = [], []
     post_with_all, post_without_all = [], []
 
-    for rule in rules_subset:
+    for rule_idx, rule in enumerate(rules_subset):
         prompts_answers = [_extract_query_answers(q) for q in rule["query_chunks"][:5]]
         prompts = [p for p, _ in prompts_answers]
         answers = [a for _, a in prompts_answers]
         if not any(answers):
             continue
 
-        # PRE: identify primary slot by writing intro then reading usage
-        pre_model.reset_memory()
-        intro_toks = torch.tensor(enc.encode(rule["intro_chunk"]), dtype=torch.long)
-        if intro_toks.numel() < chunk_length:
-            intro_toks = F.pad(intro_toks, (0, chunk_length - intro_toks.numel()), value=0)
-        else:
-            intro_toks = intro_toks[:chunk_length]
-        intro_out = pre_model.forward_chunk(intro_toks, tau_t=0.0, delta_tau=0.0)
-        L = intro_toks.shape[0]
-        h_content = intro_out.hidden_last[pre_model.cfg.prefix_length:]
-        novelty = 1.0 - F.normalize(pre_model.memory.W_k_m(h_content), dim=-1) @ F.normalize(pre_model.memory.k, dim=-1).t()
-        novelty = novelty.max(dim=-1).values * -1 + 1.0
-        chi_t = pre_model.chrono(tau=torch.tensor([0.0]), delta_tau=torch.tensor([0.0])).squeeze(0)
-        pre_model.memory.write(
-            h_L=h_content, b=intro_out.b_broadcast, z=pre_model.z,
-            surprise=torch.zeros(L), novelty=novelty, u_prefix=torch.zeros(L),
-            tau_t=0.0, chi_t=chi_t,
-        )
-        # Primary slot: highest tau_write (most recently written this turn) OR
-        # we can pick the slot with max key norm. Use max conflict (most recently touched).
-        primary_slot = pre_model.memory.tau_write.argmax().item()
+        # Use a fixed seed per rule so the 4 paired evaluations see the SAME
+        # initial random slot-key state. Otherwise the "with"/"without" pair
+        # would be measured against different memory banks and CTI would be
+        # noisy.
+        rule_seed = 1_000_000 + rule_idx
 
-        acc_pre_with = _accuracy_on_queries(pre_model, enc, rule["intro_chunk"], prompts, answers, chunk_length, slot_to_zero=None)
-        acc_pre_without = _accuracy_on_queries(pre_model, enc, rule["intro_chunk"], prompts, answers, chunk_length, slot_to_zero=primary_slot)
-        acc_post_with = _accuracy_on_queries(post_model, enc, rule["intro_chunk"], prompts, answers, chunk_length, slot_to_zero=None)
-        acc_post_without = _accuracy_on_queries(post_model, enc, rule["intro_chunk"], prompts, answers, chunk_length, slot_to_zero=primary_slot)
+        acc_pre_with = _accuracy_on_queries(
+            pre_model, enc, rule["intro_chunk"], prompts, answers,
+            chunk_length, zero_primary_slot=False, reset_seed=rule_seed,
+        )
+        acc_pre_without = _accuracy_on_queries(
+            pre_model, enc, rule["intro_chunk"], prompts, answers,
+            chunk_length, zero_primary_slot=True, reset_seed=rule_seed,
+        )
+        acc_post_with = _accuracy_on_queries(
+            post_model, enc, rule["intro_chunk"], prompts, answers,
+            chunk_length, zero_primary_slot=False, reset_seed=rule_seed,
+        )
+        acc_post_without = _accuracy_on_queries(
+            post_model, enc, rule["intro_chunk"], prompts, answers,
+            chunk_length, zero_primary_slot=True, reset_seed=rule_seed,
+        )
 
         cti = (acc_post_without - acc_pre_without) / (acc_pre_with - acc_pre_without + eps)
         cti_values.append(cti)
