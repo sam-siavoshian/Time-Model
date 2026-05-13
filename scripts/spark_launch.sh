@@ -47,10 +47,12 @@ done
 
 mkdir -p logs checkpoints reports
 
-# Auto-resume from most recent checkpoint if not explicitly set
+# Auto-resume from most recent checkpoint if not explicitly set.
+# `set -e + pipefail` makes `ls X 2>/dev/null | head` abort on empty glob;
+# wrap in a subshell that always succeeds.
 if [ -z "$RESUME" ]; then
-    LATEST=$(ls -t checkpoints/phase${PHASE}_*.pt 2>/dev/null | head -1)
-    if [ -n "$LATEST" ]; then
+    LATEST=$( ( ls -t checkpoints/phase${PHASE}_*.pt 2>/dev/null || true ) | head -1 )
+    if [ -n "${LATEST:-}" ]; then
         echo "Auto-resuming from $LATEST"
         RESUME="--resume $LATEST"
     fi
@@ -75,13 +77,22 @@ echo "RESUME:      ${RESUME:-NONE}"
 echo "SESSION:     $SESSION_NAME"
 echo "============================================================"
 
-# Preflight gate. Refuse to launch if preflight reports failures unrelated
-# to git state.
-if ! PYTHONPATH=. uv run python3 scripts/preflight.py ${DEVICE:+--cuda} 2>&1 | tee /tmp/preflight_check.txt | tail -5; then
-    echo "preflight reported failures; aborting"
-    cat /tmp/preflight_check.txt | grep FAIL || true
+# Preflight gate. Run it for visibility. Git-state FAIL is expected on
+# Spark (no .git). Hard-fail only on REAL prereq misses. All pipeline
+# stages here are wrapped to never propagate non-zero under pipefail.
+set +e
+PYTHONPATH=. uv run python3 scripts/preflight.py ${DEVICE:+--cuda} > /tmp/preflight_check.txt 2>&1
+PREFLIGHT_RC=$?
+tail -20 /tmp/preflight_check.txt
+HARD_FAILS=$( { grep '\[FAIL\]' /tmp/preflight_check.txt 2>/dev/null || true; } | { grep -v 'git state' 2>/dev/null || true; } | wc -l | tr -d ' ')
+set -e
+if [ "${HARD_FAILS:-0}" -gt 0 ]; then
+    echo ""
+    echo "preflight reported $HARD_FAILS non-git failure(s); aborting"
+    grep '\[FAIL\]' /tmp/preflight_check.txt || true
     exit 1
 fi
+echo "preflight: non-git failures=$HARD_FAILS, total rc=$PREFLIGHT_RC (proceeding)"
 
 # Spawn 3-pane tmux session: training | safety | monitor.
 if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
