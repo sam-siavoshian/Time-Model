@@ -102,6 +102,28 @@ def main():
     from model.h7_contradiction import H7_check
     results["H7"] = H7_check(model, n_pairs=args.n_trials, chunk_length=cfg.chunk_length)
 
+    # Prefix Integrity Test (SPEC.tex §16.4)
+    print("Running Prefix Integrity Test...")
+    from model.prefix_integrity import prefix_integrity_test
+    results["PrefixIntegrity"] = prefix_integrity_test(
+        model, n_pairs=args.n_trials, chunk_length=cfg.chunk_length
+    )
+
+    # Diagnostic metrics on a random batch
+    print("Running diagnostic metrics...")
+    import torch as _torch
+    from model.metrics import prefix_entropy, slot_utilization_entropy, adapter_drift
+    _torch.manual_seed(123)
+    probe_ids = _torch.randint(0, cfg.vocab_size, (cfg.chunk_length,))
+    out = model.forward_chunk(probe_ids, tau_t=1.0, delta_tau=1.0)
+    H_u, H_u_max = slot_utilization_entropy(model.memory.usage + 1.0)
+    results["DiagMetrics"] = {
+        "prefix_entropy_H_P": prefix_entropy(out.alpha_prefix),
+        "slot_util_entropy_H_u": H_u,
+        "slot_util_entropy_max_if_uniform": H_u_max,
+        "adapter_drift_D_Omega": adapter_drift(model, None),
+    }
+
     # ---------- Render report ----------
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -128,6 +150,29 @@ def main():
     r6 = results["H6"]; lines.append(f"| H6 | KL(real, ablated) | {r6.get('KL_mean', 0):.6f} | nonzero | {'NONZERO' if r6.get('KL_mean', 0) > 0 else 'ZERO'} |")
     r7 = results["H7"]; lines.append(f"| H7 | KL_amb / KL_exp | {r7.get('KL_amb_mean', 0):.4f} / {r7.get('KL_exp_mean', 0):.4f} | >= 0.5 / <= 0.1 | {'PASS' if r7.get('passes_overall') else 'FAIL'} |")
     lines.append("")
+
+    # Prefix Integrity + diagnostic table
+    pi = results.get("PrefixIntegrity", {})
+    if pi:
+        lines.append("## Prefix Integrity (SPEC.tex §16.4)")
+        lines.append("")
+        lines.append("| Condition | Accuracy |")
+        lines.append("|---|---|")
+        lines.append(f"| correct | {pi.get('acc_correct', 0):.4f} |")
+        lines.append(f"| zero | {pi.get('acc_zero', 0):.4f} |")
+        lines.append(f"| shuffled | {pi.get('acc_shuffled', 0):.4f} |")
+        lines.append(f"| adversarial | {pi.get('acc_adversarial', 0):.4f} |")
+        lines.append(f"\nExpected: {pi.get('expected_ordering', '')}")
+        lines.append("")
+    dm = results.get("DiagMetrics", {})
+    if dm:
+        lines.append("## Diagnostic metrics (SPEC.tex §17.2)")
+        lines.append("")
+        lines.append(f"- H_P (prefix entropy): {dm.get('prefix_entropy_H_P', 0):.4f}")
+        lines.append(f"- H_u (slot util entropy): {dm.get('slot_util_entropy_H_u', 0):.4f} "
+                     f"(max if uniform: {dm.get('slot_util_entropy_max_if_uniform', 0):.4f})")
+        lines.append(f"- D_Omega (adapter drift): {dm.get('adapter_drift_D_Omega', 0):.4f}")
+        lines.append("")
 
     lines.append("## Raw results")
     lines.append("")
