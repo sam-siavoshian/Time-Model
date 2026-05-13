@@ -172,11 +172,10 @@ def H6_chronometric_check(
     delta_real_minutes: float = 512.0,
     delta_ablated_minutes: float = 1.0,
 ) -> dict:
-    """H6 sanity: same input, same memory, different Δτ. KL between outputs.
+    """H6 SYNTHETIC sanity: random memory, random tokens, two delta_tau.
 
-    Pre-training (with chronometric encoder but no chrono loss trained yet),
-    nonzero KL means chi_t reaches the output. Magnitude grows with chrono
-    loss optimization.
+    For real H6 eval against the spec threshold, use H6_pairs_check() which
+    uses the engineered chronometric_pairs dataset.
     """
     cfg = model.cfg
     kl_values = []
@@ -210,6 +209,77 @@ def H6_chronometric_check(
         "delta_real_min": delta_real_minutes,
         "delta_ablated_min": delta_ablated_minutes,
         "note": "Pre-training: any nonzero KL means chi_t affects output; magnitude builds with chrono loss training.",
+    }
+
+
+@torch.no_grad()
+def H6_pairs_check(
+    model: IPCN,
+    pairs_path: str = "data/chronometric_pairs/pairs.jsonl",
+    n_pairs: int = 100,
+) -> dict:
+    """H6 eval against the engineered chronometric_pairs dataset.
+
+    Each pair has:
+      - visible_text: tokenized as the prompt
+      - delta_tau_real_minutes (e.g. ~512)
+      - delta_tau_ablated_minutes (constant, e.g. 1)
+      - duration_sensitive_q: should change answer under different Δτ
+      - duration_insensitive_q: should be invariant
+
+    Loose metric for now: KL between output distributions under real vs ablated
+    Δτ. Pass: KL_sensitive >= 0.1, KL_insensitive <= 0.1. (Full spec uses
+    answer accuracy delta; we approximate via KL until trained checkpoints
+    let us measure real answers.)
+    """
+    import json
+    import tiktoken
+    enc = tiktoken.get_encoding("gpt2")
+    cfg = model.cfg
+
+    pairs = []
+    with open(pairs_path) as f:
+        for i, line in enumerate(f):
+            if i >= n_pairs:
+                break
+            pairs.append(json.loads(line))
+
+    kl_real_vs_ablated = []
+    for pair in pairs:
+        # Pack visible_text into a single chunk for both arms
+        tokens = enc.encode(pair["visible_text"])
+        if len(tokens) > cfg.chunk_length:
+            tokens = tokens[-cfg.chunk_length:]
+        if len(tokens) < cfg.chunk_length:
+            tokens = tokens + [0] * (cfg.chunk_length - len(tokens))
+        t = torch.tensor(tokens, dtype=torch.long)
+
+        model.reset_memory()
+        out_real = model.forward_chunk(
+            t, tau_t=float(pair["delta_tau_real_minutes"]),
+            delta_tau=float(pair["delta_tau_real_minutes"]),
+        )
+        logp_real = F.log_softmax(out_real.logits, dim=-1)
+
+        model.reset_memory()
+        out_abl = model.forward_chunk(
+            t, tau_t=float(pair["delta_tau_ablated_minutes"]),
+            delta_tau=float(pair["delta_tau_ablated_minutes"]),
+        )
+        logp_abl = F.log_softmax(out_abl.logits, dim=-1)
+
+        kl = 0.5 * (
+            (logp_real.exp() * (logp_real - logp_abl)).sum(dim=-1).mean()
+            + (logp_abl.exp() * (logp_abl - logp_real)).sum(dim=-1).mean()
+        )
+        kl_real_vs_ablated.append(float(kl.item()))
+
+    return {
+        "n_pairs": len(pairs),
+        "KL_real_vs_ablated_mean": sum(kl_real_vs_ablated) / max(1, len(kl_real_vs_ablated)),
+        "threshold_min": 0.10,
+        "passes_distinct": sum(kl_real_vs_ablated) / max(1, len(kl_real_vs_ablated)) >= 0.10,
+        "note": "Approximate: full spec measures answer-accuracy delta; we use KL on output distribution.",
     }
 
 

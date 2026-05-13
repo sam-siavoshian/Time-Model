@@ -92,10 +92,10 @@ def main():
             streams.append(json.loads(line))
     results["H5"] = H5_check(model, streams, chunk_length=cfg.chunk_length)
 
-    # H6
-    print("Running H6 (chronometric ablation)...")
-    from model.predictions import H6_chronometric_check
-    results["H6"] = H6_chronometric_check(model, n_trials=args.n_trials)
+    # H6 — use engineered chronometric_pairs dataset
+    print("Running H6 (chronometric pairs)...")
+    from model.predictions import H6_pairs_check
+    results["H6"] = H6_pairs_check(model, n_pairs=min(args.n_trials, 100))
 
     # H7
     print("Running H7 (contradiction pairs)...")
