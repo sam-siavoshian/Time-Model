@@ -85,15 +85,37 @@ def build_optimizer(model: IPCN, cfg: IPCNConfig) -> torch.optim.Optimizer:
     return torch.optim.AdamW(groups, weight_decay=0.01)
 
 
-def compute_u_prefix_estimate(
+@torch.no_grad()
+def compute_u_prefix(
     model: IPCN,
-    batch: ChunkBatch,
-) -> torch.Tensor:
-    """Cheap stand-in for prefix attribution: random subset of chunks gets a
-    second forward pass with zero prefix, and we measure the loss delta. For
-    training-step efficiency we estimate this lazily; full computation runs
-    once every K chunks. For v1 we just use zeros as a placeholder."""
-    return torch.zeros(batch.input_ids.shape[0])
+    input_ids: torch.Tensor,
+    targets: torch.Tensor,
+    tau_t: float,
+    delta_tau: float,
+    base_logits: torch.Tensor,
+) -> tuple[torch.Tensor, float]:
+    """Real prefix attribution: per-token (loss_zero_prefix - loss_with_prefix).
+
+    Positive values mean the prefix HELPED predict that token.
+
+    Returns:
+        u_prefix:  (L,) per-token attribution
+        u_prefix_bar:  scalar chunk-mean attribution
+
+    Cost: one extra forward pass per call. Caller controls frequency
+    (e.g., 10-25 percent of training chunks per SPEC.tex).
+    """
+    # Forward with zero prefix
+    out_zero = model.forward_chunk(
+        input_ids=input_ids,
+        tau_t=tau_t,
+        delta_tau=delta_tau,
+        zero_prefix_for_ablation=True,
+    )
+    ce_zero = F.cross_entropy(out_zero.logits, targets, reduction="none")     # (L,)
+    ce_normal = F.cross_entropy(base_logits, targets, reduction="none")       # (L,)
+    u_prefix = ce_zero - ce_normal                                             # positive = helped
+    return u_prefix, float(u_prefix.mean().item())
 
 
 def train_step(
@@ -102,6 +124,7 @@ def train_step(
     batch: ChunkBatch,
     cfg: IPCNConfig,
     step: int,
+    attribution_p: float = 0.15,
 ) -> StepLog:
     device = next(model.parameters()).device
     input_ids = batch.input_ids.to(device)
@@ -123,10 +146,17 @@ def train_step(
     # 1) LM loss
     L_lm = lm_loss(out.logits, targets)
 
-    # 2) Pre-influence + precision: cheap proxy via gate magnitude.
-    # We use a stub U_t = (LM loss baseline - L_lm). Real impl runs second
-    # forward with zero prefix on 10-25% of chunks; v1 uses zero stub.
-    u_t = torch.tensor(0.0, device=device)
+    # 2) Prefix attribution sampled on ~15% of chunks (cost: one extra fwd pass)
+    do_attribution = (torch.rand(1).item() < attribution_p)
+    if do_attribution:
+        with torch.no_grad():
+            base_logits_detached = out.logits.detach()
+        _, u_prefix_bar_val = compute_u_prefix(
+            model, input_ids, targets, batch.tau_t, batch.delta_tau, base_logits_detached
+        )
+        u_t = torch.tensor(u_prefix_bar_val, device=device)
+    else:
+        u_t = torch.tensor(0.0, device=device)
     gate_bar = out.gate.mean()
     L_pre = pre_influence_loss(u_t, gate_bar, cfg.rho_helped, cfg.tau_gate)
     L_prec = precision_loss(u_t, gate_bar)
