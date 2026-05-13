@@ -24,6 +24,23 @@ from typing import Optional
 
 from data_gen.schemas import LatentWorldQuestion, LatentWorldStream, WorldEvent
 
+# Empirical from smoke test: ~18 tokens per event line (GPT-2 BPE).
+# Plus rules (~3 × 15) + gap (~15) + questions (~3 × 25). Calibrate per bin.
+TOKENS_PER_EVENT = 18
+
+BIN_CONFIG = {
+    # target_tokens: (n_events, target_minutes)
+    # Calibrated empirically: 5-stream smoke at each bin should hit within 10% of target.
+    1024:   (  70,    2_500),
+    2048:   ( 155,    5_000),
+    4096:   ( 310,   10_000),
+    8192:   ( 615,   20_000),
+    16384:  (1230,   40_000),
+    32768:  (2465,   80_000),
+    65536:  (4930,  160_000),
+    131072: (9860,  320_000),
+}
+
 
 # ---------- The hidden simulator ----------
 
@@ -123,7 +140,13 @@ class World:
 
         self.tau = target_tau
 
-    def emit_event(self, text: str, event_type: str = "state_change", affected: Optional[list[str]] = None):
+    def emit_event(
+        self,
+        text: str,
+        event_type: str = "state_change",
+        affected: Optional[list[str]] = None,
+        include_snapshot: bool = False,
+    ):
         self.events.append(
             WorldEvent(
                 tau_minutes=self.tau,
@@ -131,7 +154,7 @@ class World:
                 text=text,
                 event_type=event_type,                       # type: ignore[arg-type]
                 affected_entities=affected or [],
-                hidden_state_snapshot=self.snapshot(),
+                hidden_state_snapshot=self.snapshot() if include_snapshot else None,
             )
         )
         self.last_event_tau = self.tau
@@ -190,31 +213,70 @@ class World:
 
 # ---------- Stream generator ----------
 
-def generate_stream(seed: int, target_minutes: int = 1000, n_events: int = 30) -> LatentWorldStream:
-    """Generate one stream with rules, events, silent gap, and questions."""
+def generate_stream(
+    seed: int,
+    target_tokens: int = 1024,
+    bias_active_pre_gap: bool = True,
+    include_snapshots: bool = False,
+) -> LatentWorldStream:
+    """Generate one stream with rules, events, silent gap, and questions.
+
+    target_tokens: nominal token-length bin (1024, 2048, ..., 131072).
+    bias_active_pre_gap: bump devices to active before the silent gap so
+                        Δτ-sensitive decay actually fires for that stream.
+    include_snapshots:  attach full world state to each event (debug only,
+                        very disk-heavy).
+    """
+    if target_tokens not in BIN_CONFIG:
+        raise ValueError(f"target_tokens must be one of {list(BIN_CONFIG)}, got {target_tokens}")
+    n_events, target_minutes = BIN_CONFIG[target_tokens]
+
     world = World(seed)
 
-    # Intro: emit all rules as event lines at t=0
+    # Intro: emit all rules at t=0
     for rule in world.rules:
-        world.emit_event(text=f"Rule: {rule['text']}", event_type="rule_intro")
+        world.emit_event(
+            text=f"Rule: {rule['text']}",
+            event_type="rule_intro",
+            include_snapshot=include_snapshots,
+        )
 
     # Body: random actions at random minute timestamps
-    event_taus = sorted(world.rng.sample(range(1, target_minutes), min(n_events, target_minutes - 1)))
+    n_actual = min(n_events, target_minutes - 1)
+    event_taus = sorted(world.rng.sample(range(1, target_minutes), n_actual))
     for tau in event_taus:
         world.tick_to(tau)
         line = world.random_action()
         if line:
-            world.emit_event(text=f"At minute {int(tau):05d}, {line}", event_type="state_change")
+            world.emit_event(
+                text=f"At minute {int(tau):05d}, {line}",
+                event_type="state_change",
+                include_snapshot=include_snapshots,
+            )
 
-    # Silent gap before question. THIS IS THE Δτ-substrate test.
+    # Bias: leave at least one device active and recently-charged before the
+    # silent gap, so decay + delayed_transition rules actually fire.
+    if bias_active_pre_gap:
+        devices = [k for k, v in world.entities.items() if v.get("type") == "device"]
+        if devices:
+            dev = world.rng.choice(devices)
+            if world.entities[dev]["mode"] != "active":
+                world.entities[dev]["mode"] = "active"
+                world.emit_event(
+                    text=f"At minute {int(world.tau):05d}, {dev} switched to active mode.",
+                    event_type="state_change",
+                    include_snapshot=include_snapshots,
+                )
+
+    # Silent gap (THE Δτ-substrate test)
     gap_length = world.rng.choice([60, 120, 256, 512, 1024])
     world.tick_to(world.tau + gap_length)
     world.emit_event(
         text=f"Time passes for {gap_length} minutes. No new events are observed.",
         event_type="silent_gap",
+        include_snapshot=include_snapshots,
     )
 
-    # Build questions
     questions = build_questions(world, gap_length)
 
     return LatentWorldStream(
@@ -222,7 +284,7 @@ def generate_stream(seed: int, target_minutes: int = 1000, n_events: int = 30) -
         duration_minutes=world.tau,
         events=world.events,
         questions=questions,
-        target_token_length=1000,                            # filled later after real tokenization
+        target_token_length=target_tokens,
     )
 
 
@@ -281,15 +343,16 @@ def build_questions(world: World, gap_length: float) -> list[LatentWorldQuestion
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--n", type=int, default=10, help="number of streams to generate")
-    p.add_argument(
-        "--out",
-        type=str,
-        default="data/latent_world/smoke_test.jsonl",
-        help="output JSONL path",
-    )
+    p.add_argument("--out", type=str, default="data/latent_world/smoke_test.jsonl")
     p.add_argument("--seed", type=int, default=42, help="base seed (seed_i = seed + i)")
-    p.add_argument("--target-minutes", type=int, default=1000, help="stream span in minutes")
-    p.add_argument("--n-events", type=int, default=30, help="events per stream")
+    p.add_argument(
+        "--target-tokens",
+        type=int,
+        default=1024,
+        choices=list(BIN_CONFIG.keys()),
+        help="nominal token-length bin",
+    )
+    p.add_argument("--include-snapshots", action="store_true", help="debug only, very heavy")
     args = p.parse_args()
 
     out_path = Path(args.out)
@@ -299,12 +362,12 @@ def main():
         for i in range(args.n):
             stream = generate_stream(
                 seed=args.seed + i,
-                target_minutes=args.target_minutes,
-                n_events=args.n_events,
+                target_tokens=args.target_tokens,
+                include_snapshots=args.include_snapshots,
             )
             f.write(stream.model_dump_json() + "\n")
 
-    print(f"Wrote {args.n} streams to {out_path}")
+    print(f"Wrote {args.n} streams to {out_path} (bin={args.target_tokens})")
 
 
 if __name__ == "__main__":
