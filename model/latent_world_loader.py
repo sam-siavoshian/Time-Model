@@ -139,7 +139,10 @@ class LatentWorldChunkDataset:
                 if len(inputs) < self.L:
                     pad = self.L - len(inputs)
                     inputs = inputs + [0] * pad
-                    targets = targets + [0] * pad
+                    # Target pad = -100 (F.cross_entropy ignore_index); see
+                    # dataset.py rationale: token 0 = <|endoftext|> which
+                    # would contaminate the LM loss if used as pad.
+                    targets = targets + [-100] * pad
                 yield ChunkBatch(
                     input_ids=torch.tensor(inputs, dtype=torch.long),
                     targets=torch.tensor(targets, dtype=torch.long),

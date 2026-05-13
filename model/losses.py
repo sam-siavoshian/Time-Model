@@ -13,8 +13,12 @@ import torch.nn.functional as F
 
 
 def lm_loss(logits: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
-    """logits: (L, V), targets: (L,) — next-token CE."""
-    return F.cross_entropy(logits, targets)
+    """logits: (L, V), targets: (L,) — next-token CE.
+
+    Targets with value -100 are ignored (PyTorch convention). Datasets pad
+    targets with -100 so padding positions don't contaminate the loss.
+    """
+    return F.cross_entropy(logits, targets, ignore_index=-100)
 
 
 def pre_influence_loss(

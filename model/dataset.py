@@ -119,11 +119,15 @@ class SequentialChunkDataset:
                     continue
                 inputs = segment[:-1].astype(np.int64)
                 targets = segment[1:].astype(np.int64)
-                # Pad to L if last chunk is short
+                # Pad to L if last chunk is short.
+                # IMPORTANT: target padding uses -100 (PyTorch ignore_index),
+                # NOT 0. Token 0 is <|endoftext|> in GPT-2 vocab; padding
+                # with 0 contaminates LM loss by reinforcing EOS prediction
+                # at arbitrary positions. -100 is masked by F.cross_entropy.
                 if len(inputs) < self.L:
                     pad = self.L - len(inputs)
                     inputs = np.concatenate([inputs, np.zeros(pad, dtype=np.int64)])
-                    targets = np.concatenate([targets, np.zeros(pad, dtype=np.int64)])
+                    targets = np.concatenate([targets, np.full(pad, -100, dtype=np.int64)])
                 yield ChunkBatch(
                     input_ids=torch.from_numpy(inputs),
                     targets=torch.from_numpy(targets),
