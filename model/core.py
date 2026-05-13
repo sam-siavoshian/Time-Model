@@ -39,25 +39,24 @@ class CausalSelfAttention(nn.Module):
         V = self.v_proj(x).view(S, self.n_heads, self.d_head).transpose(0, 1)
         scores = (Q @ K.transpose(-2, -1)) / (self.d_head ** 0.5)              # (H, S, S)
 
-        # Mask: prefix tokens are bidirectional among themselves; content tokens
-        # are causal w.r.t. content and have full access to all prefix tokens.
+        # Vectorized mask:
+        #   prefix-to-prefix: bidirectional (full block)
+        #   content-to-prefix: full access (prefix rows are visible to all content)
+        #   content-to-content: causal lower-triangular
         device = x.device
-        mask = torch.zeros(S, S, device=device, dtype=torch.bool)
         K_p = self.prefix_len
-        # Prefix-to-prefix: full (bidirectional). Already True via remaining defaults below.
-        # Content-to-content: causal lower-triangular.
-        for i in range(K_p, S):
-            for j in range(K_p, i + 1):
-                mask[i, j] = True
-            # Content-to-prefix: full access
-            for j in range(K_p):
-                mask[i, j] = True
-        for i in range(K_p):
-            for j in range(K_p):
-                mask[i, j] = True
-        # Apply: -inf where NOT allowed
-        scores = scores.masked_fill(~mask, float("-inf"))
+        # Build allowed-mask in one shot
+        idx = torch.arange(S, device=device)
+        i = idx.unsqueeze(1)                                                    # (S, 1) row = query position
+        j = idx.unsqueeze(0)                                                    # (1, S) col = key position
+        is_prefix_i = i < K_p
+        is_prefix_j = j < K_p
+        causal_content = (i >= K_p) & (j >= K_p) & (j <= i)                     # content-to-content lower-tri
+        allow_content_to_prefix = (i >= K_p) & is_prefix_j                      # content rows attend all prefix
+        allow_prefix_to_prefix = is_prefix_i & is_prefix_j                      # prefix bidirectional
+        mask = allow_prefix_to_prefix | allow_content_to_prefix | causal_content
 
+        scores = scores.masked_fill(~mask, float("-inf"))
         attn = F.softmax(scores, dim=-1)
         out = attn @ V                                                          # (H, S, d_head)
         out = out.transpose(0, 1).contiguous().view(S, d)
