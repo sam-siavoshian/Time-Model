@@ -135,6 +135,7 @@ def compute_CTI(
     rules_subset: list[dict],
     chunk_length: int,
     eps: float = 1e-6,
+    min_slot_effect: float = 0.05,
 ) -> dict:
     """Compute CTI averaged across a subset of rules. For each rule:
 
@@ -142,19 +143,32 @@ def compute_CTI(
     2. Identify slot with highest usage (the "owner" of this rule).
     3. Score accuracy on first K=5 query chunks with slot active vs zeroed.
     4. Repeat under both pre and post models.
-    5. CTI_i = (Acc_post_without - Acc_pre_without) / (Acc_pre_with - Acc_pre_without + eps)
+    5. CTI_i = (Acc_post_without - Acc_pre_without) / (Acc_pre_with - Acc_pre_without)
+
+    Rules where the slot does NOT demonstrably help pre-consolidation
+    (Acc_pre_with - Acc_pre_without < min_slot_effect) are EXCLUDED from
+    the average. With a near-zero or negative denominator, CTI is either
+    blown up by 1/eps noise or has the wrong sign, neither of which
+    measures consolidation transfer. We track how many rules were dropped
+    so a high skip ratio surfaces as a data-quality signal rather than a
+    silently misleading CTI_mean.
     """
     enc = tiktoken.get_encoding("gpt2")
     cti_values = []
     pre_with_all, pre_without_all = [], []
     post_with_all, post_without_all = [], []
+    n_skipped_no_effect = 0
+    n_skipped_no_answers = 0
+    n_attempted = 0
 
     for rule_idx, rule in enumerate(rules_subset):
         prompts_answers = [_extract_query_answers(q) for q in rule["query_chunks"][:5]]
         prompts = [p for p, _ in prompts_answers]
         answers = [a for _, a in prompts_answers]
         if not any(answers):
+            n_skipped_no_answers += 1
             continue
+        n_attempted += 1
 
         # Use a fixed seed per rule so the 4 paired evaluations see the SAME
         # initial random slot-key state. Otherwise the "with"/"without" pair
@@ -170,6 +184,15 @@ def compute_CTI(
             pre_model, enc, rule["intro_chunk"], prompts, answers,
             chunk_length, zero_primary_slot=True, reset_seed=rule_seed,
         )
+
+        # Filter: slot must demonstrably help pre-consolidation. Without
+        # this, denominator goes to ~0 (or negative), CTI explodes or
+        # flips sign, mean becomes meaningless.
+        slot_effect_pre = acc_pre_with - acc_pre_without
+        if slot_effect_pre < min_slot_effect:
+            n_skipped_no_effect += 1
+            continue
+
         acc_post_with = _accuracy_on_queries(
             post_model, enc, rule["intro_chunk"], prompts, answers,
             chunk_length, zero_primary_slot=False, reset_seed=rule_seed,
@@ -179,22 +202,33 @@ def compute_CTI(
             chunk_length, zero_primary_slot=True, reset_seed=rule_seed,
         )
 
-        cti = (acc_post_without - acc_pre_without) / (acc_pre_with - acc_pre_without + eps)
+        cti = (acc_post_without - acc_pre_without) / (slot_effect_pre + eps)
         cti_values.append(cti)
         pre_with_all.append(acc_pre_with)
         pre_without_all.append(acc_pre_without)
         post_with_all.append(acc_post_with)
         post_without_all.append(acc_post_without)
 
+    # If too many rules were skipped, the metric is unreliable. Report it.
+    skip_ratio = (
+        n_skipped_no_effect / n_attempted if n_attempted > 0 else 0.0
+    )
+    reliable = (len(cti_values) >= 5) and (skip_ratio < 0.75)
+
     return {
         "n_rules": len(cti_values),
+        "n_skipped_no_effect": n_skipped_no_effect,
+        "n_skipped_no_answers": n_skipped_no_answers,
+        "skip_ratio_no_effect": skip_ratio,
+        "min_slot_effect": min_slot_effect,
+        "metric_reliable": reliable,
         "CTI_mean": mean(cti_values) if cti_values else 0.0,
         "Acc_pre_with":     mean(pre_with_all)     if pre_with_all else 0.0,
         "Acc_pre_without":  mean(pre_without_all)  if pre_without_all else 0.0,
         "Acc_post_with":    mean(post_with_all)    if post_with_all else 0.0,
         "Acc_post_without": mean(post_without_all) if post_without_all else 0.0,
         "threshold": 0.7,
-        "passes": (mean(cti_values) if cti_values else 0.0) > 0.7,
+        "passes": reliable and ((mean(cti_values) if cti_values else 0.0) > 0.7),
     }
 
 
@@ -205,6 +239,13 @@ def main():
     p.add_argument("--pre-checkpoint", type=str, default=None)
     p.add_argument("--post-checkpoint", type=str, default=None)
     p.add_argument("--device", type=str, default="cpu")
+    p.add_argument(
+        "--min-slot-effect", type=float, default=0.05,
+        help="minimum pre-consolidation slot effect (Acc_pre_with - "
+             "Acc_pre_without) required for a rule to count toward CTI. "
+             "Filters out rules where slot does not help, which would "
+             "make denominator unstable.",
+    )
     args = p.parse_args()
 
     torch.manual_seed(0)
@@ -228,7 +269,11 @@ def main():
             rules.append(json.loads(line))
 
     print(f"=== H4 CTI eval (n={len(rules)} rules) ===")
-    r = compute_CTI(pre_model, post_model, rules, chunk_length=cfg.chunk_length)
+    r = compute_CTI(
+        pre_model, post_model, rules,
+        chunk_length=cfg.chunk_length,
+        min_slot_effect=args.min_slot_effect,
+    )
     for k, v in r.items():
         print(f"  {k}: {v}")
 
