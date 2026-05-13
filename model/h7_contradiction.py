@@ -44,9 +44,18 @@ def feed_memory_then_input(
     input_text: str,
     tau_offset: float = 0.0,
     chunk_length: int = 256,
+    reset_seed: int | None = None,
 ) -> torch.Tensor:
     """Reset model, feed memory chunk, then forward input chunk. Return logits
-    averaged over the input chunk."""
+    averaged over the input chunk.
+
+    reset_seed: if set, fix torch.manual_seed before reset so the random
+    initial slot keys are reproducible across paired (mem_a/mem_b) calls.
+    Without this, each call has different random init and KL between paired
+    arms includes init noise — bad for an eval metric.
+    """
+    if reset_seed is not None:
+        torch.manual_seed(reset_seed)
     model.reset_memory()
     mem_text = render_memory_block(facts)
     mem_toks = torch.tensor(enc.encode(mem_text), dtype=torch.long)
@@ -115,18 +124,26 @@ def H7_check(
 
     kl_amb_vals = []
     kl_exp_vals = []
-    for pair in pairs:
+    for i, pair in enumerate(pairs):
+        # Use a deterministic seed per pair so the four memory-bank inits
+        # below all start identical. KL then reflects ONLY the memory state
+        # difference, not init noise.
+        seed = 2_000_000 + i
         logits_amb_a = feed_memory_then_input(
-            model, enc, pair["memory_a_facts"], pair["ambiguous_input"], chunk_length=chunk_length
+            model, enc, pair["memory_a_facts"], pair["ambiguous_input"],
+            chunk_length=chunk_length, reset_seed=seed,
         )
         logits_amb_b = feed_memory_then_input(
-            model, enc, pair["memory_b_facts"], pair["ambiguous_input"], chunk_length=chunk_length
+            model, enc, pair["memory_b_facts"], pair["ambiguous_input"],
+            chunk_length=chunk_length, reset_seed=seed,
         )
         logits_exp_a = feed_memory_then_input(
-            model, enc, pair["memory_a_facts"], pair["explicit_input"], chunk_length=chunk_length
+            model, enc, pair["memory_a_facts"], pair["explicit_input"],
+            chunk_length=chunk_length, reset_seed=seed,
         )
         logits_exp_b = feed_memory_then_input(
-            model, enc, pair["memory_b_facts"], pair["explicit_input"], chunk_length=chunk_length
+            model, enc, pair["memory_b_facts"], pair["explicit_input"],
+            chunk_length=chunk_length, reset_seed=seed,
         )
         kl_amb_vals.append(symmetric_kl(logits_amb_a, logits_amb_b))
         kl_exp_vals.append(symmetric_kl(logits_exp_a, logits_exp_b))

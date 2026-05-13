@@ -42,8 +42,16 @@ def _feed_memory_then_extract(
     input_text: str,
     chunk_length: int = 256,
     tau_t_input: float = 1.0,
+    reset_seed: int | None = None,
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    """Returns (H0_pooled, H1_pooled) — mean over content tokens at each layer."""
+    """Returns (H0_pooled, H1_pooled) — mean over content tokens at each layer.
+
+    reset_seed: fix torch.manual_seed before reset for reproducible random
+    slot keys across paired calls. Critical for H2: probe accuracy comparison
+    between (mem_a, mem_b) requires matched init noise.
+    """
+    if reset_seed is not None:
+        torch.manual_seed(reset_seed)
     model.reset_memory()
     # Feed memory chunk
     mem_text = render_memory_block(facts)
@@ -138,12 +146,15 @@ def H2_probe_check(
     X0_list = []
     X1_list = []
     y_list = []
-    for pair in pairs:
+    for i, pair in enumerate(pairs):
+        seed = 3_000_000 + i
         H0_a, H1_a = _feed_memory_then_extract(
-            model, enc, pair["memory_a_facts"], pair["ambiguous_input"], chunk_length=model.cfg.chunk_length
+            model, enc, pair["memory_a_facts"], pair["ambiguous_input"],
+            chunk_length=model.cfg.chunk_length, reset_seed=seed,
         )
         H0_b, H1_b = _feed_memory_then_extract(
-            model, enc, pair["memory_b_facts"], pair["ambiguous_input"], chunk_length=model.cfg.chunk_length
+            model, enc, pair["memory_b_facts"], pair["ambiguous_input"],
+            chunk_length=model.cfg.chunk_length, reset_seed=seed,
         )
         X0_list.append(H0_a.numpy()); y_list.append(0)
         X0_list.append(H0_b.numpy()); y_list.append(1)
