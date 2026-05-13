@@ -59,7 +59,16 @@ def main():
                    help="save intermediate checkpoint every N steps")
     p.add_argument("--ckpt-template", type=str, default=None,
                    help="path template for intermediate checkpoints (use {step})")
+    p.add_argument("--chunk-length-override", type=int, default=None,
+                   help="override cfg.chunk_length (used by OOM guard to retry "
+                        "with smaller activations on CUDA OOM). Default uses the "
+                        "checkpoint's saved cfg.chunk_length.")
+    p.add_argument("--extra-arg-chunk-length", type=int, default=None,
+                   help="alias for --chunk-length-override (kept for legacy "
+                        "shell wrappers that emit the long form)")
     args = p.parse_args()
+    if args.chunk_length_override is None and args.extra_arg_chunk_length is not None:
+        args.chunk_length_override = args.extra_arg_chunk_length
 
     torch.manual_seed(args.seed)
     phase = PHASES[args.phase]
@@ -82,6 +91,10 @@ def main():
         cfg.t_stable = args.t_stable_override
     if args.tau_cons_override is not None:
         cfg.tau_cons = args.tau_cons_override
+    if args.chunk_length_override is not None:
+        old = cfg.chunk_length
+        cfg.chunk_length = args.chunk_length_override
+        print(f"chunk_length: {old} -> {cfg.chunk_length} (override)")
 
     # Apply phase config
     pc = get_phase_config(phase, cfg)
