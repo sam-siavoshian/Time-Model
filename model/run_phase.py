@@ -21,7 +21,7 @@ from pathlib import Path
 
 import torch
 
-from model.checkpoint import load_checkpoint, save_checkpoint
+from model.checkpoint import load_checkpoint, restore_opt_state_by_name, save_checkpoint
 from model.config import IPCNConfig
 from model.dataset import MixedDataset, SequentialChunkDataset, TokenizedCache
 from model.ipcn import IPCN
@@ -97,11 +97,42 @@ def main():
     # Build optimizer
     opt = build_optimizer(model, cfg)
     if opt_state is not None:
+        # Name-aware restore: this is robust across phase transitions where
+        # the trainable param set changes (e.g. Phase 0 -> Phase 1 narrows
+        # the optimizer from all-params to PFC+LoRA-only). The previous
+        # implementation did opt.load_state_dict(opt_state) inside a
+        # try/except Exception, which ALWAYS failed on phase transitions
+        # (ValueError "param group size doesn't match") and silently fell
+        # back to fresh momentum. Now LoRA/PFC params keep their AdamW
+        # exp_avg / exp_avg_sq across the boundary by name.
         try:
-            opt.load_state_dict(opt_state)
-            print("Restored optimizer state.")
-        except Exception as e:
-            print(f"Could not restore optimizer state: {e}. Starting fresh.")
+            summary = restore_opt_state_by_name(opt, model, opt_state)
+            if summary["used_name_map"]:
+                print(
+                    f"Restored optimizer state by name: "
+                    f"{summary['n_matched']}/{summary['n_new_params']} matched, "
+                    f"{summary['n_missing']} missing, "
+                    f"{summary['n_shape_mismatch']} shape mismatch."
+                )
+            else:
+                # Pre-namelist checkpoint: fall back to legacy positional
+                # load. Will still fail on phase transitions but a Phase 0
+                # smoke-resume will work.
+                try:
+                    opt.load_state_dict(opt_state)
+                    print("Restored optimizer state (positional, legacy checkpoint).")
+                except Exception as e:
+                    print(
+                        f"Could not restore positional optimizer state: {e}. "
+                        f"Starting fresh. (Resave the checkpoint with the "
+                        f"current save_checkpoint to enable name-based "
+                        f"restore across phase transitions.)"
+                    )
+        except Exception as e:                                    # noqa: BLE001
+            print(
+                f"Optimizer state restore failed unexpectedly: "
+                f"{type(e).__name__}: {e}. Starting fresh."
+            )
 
     # Build dataset
     datasets = []
@@ -153,6 +184,7 @@ def main():
         replay_buffer=replay_buffer,
         ckpt_every=args.ckpt_every,
         ckpt_path_template=ckpt_template,
+        optimizer=opt,                                        # without this, train_loop builds its own fresh opt and the one we just restored opt_state into goes unused (saved checkpoint then has empty optimizer state)
     )
 
     # Checkpoint
