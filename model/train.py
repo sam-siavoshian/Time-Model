@@ -309,6 +309,31 @@ def _measure_lm_drift(
     return sum(drifts) / len(drifts)
 
 
+@torch.no_grad()
+def _measure_token_accuracy(
+    model: IPCN,
+    contexts: list[ReplayContext],
+) -> float:
+    """Argmax-token accuracy on the replay batch (proxy for held-out
+    accuracy when no dedicated eval set is available)."""
+    if not contexts:
+        return 0.0
+    correct = 0
+    total = 0
+    for ctx in contexts:
+        ctx_dev = ReplayContext(
+            input_ids=ctx.input_ids.to(next(model.parameters()).device),
+            targets=ctx.targets.to(next(model.parameters()).device),
+            tau_t=ctx.tau_t, delta_tau=ctx.delta_tau,
+        )
+        logits = _slot_active_logits(model, ctx_dev)
+        preds = logits.argmax(dim=-1)
+        valid = (ctx_dev.targets != 0)
+        correct += int((preds == ctx_dev.targets)[valid].sum().item())
+        total += int(valid.sum().item())
+    return correct / max(1, total)
+
+
 def _snapshot_adapters(model: IPCN) -> list:
     from model.adapters import LoRALinear
     out = []
@@ -356,9 +381,11 @@ def maybe_run_consolidation(
         }
     eligible = eligible[:max_slots_per_pass]
 
-    # Sample a small "probe batch" for LM drift measurement BEFORE we touch adapters
+    # Sample a probe batch BEFORE we touch adapters. Capture both pre-logits
+    # (for KL drift) and pre-accuracy (for held-out gate).
     probe_contexts = []
     probe_logits = []
+    pre_accuracy = 0.0
     if enable_validation:
         for slot_id in eligible:
             for ctx in replay_buffer.sample(slot_id, n=2):
@@ -369,6 +396,7 @@ def maybe_run_consolidation(
                 )
                 probe_contexts.append(ctx)
                 probe_logits.append(_slot_active_logits(model, ctx_dev))
+        pre_accuracy = _measure_token_accuracy(model, probe_contexts)
 
     # Snapshot adapters for potential rollback
     snap = _snapshot_adapters(model) if enable_validation else None
@@ -397,14 +425,23 @@ def maybe_run_consolidation(
             total_kl += float(loss.item())
             n_updates += 1
 
-    # Validation gate: LM drift must stay under threshold
+    # Validation gates: LM drift + held-out accuracy
     committed = True
     drift = 0.0
+    post_accuracy = pre_accuracy
+    rollback_reason = ""
     if enable_validation and snap is not None:
         drift = _measure_lm_drift(model, probe_contexts, probe_logits)
+        post_accuracy = _measure_token_accuracy(model, probe_contexts)
+        acc_drop = pre_accuracy - post_accuracy
         if drift > cfg.kl_drift_threshold:
             _restore_adapters(snap)
             committed = False
+            rollback_reason = f"lm_drift {drift:.4f} > {cfg.kl_drift_threshold}"
+        elif acc_drop > cfg.eps_drop:
+            _restore_adapters(snap)
+            committed = False
+            rollback_reason = f"acc_drop {acc_drop:.4f} > {cfg.eps_drop}"
 
     return {
         "step": step,
@@ -412,7 +449,11 @@ def maybe_run_consolidation(
         "n_updates": n_updates,
         "mean_kl": total_kl / max(1, n_updates),
         "lm_drift_kl": drift,
+        "pre_accuracy": pre_accuracy,
+        "post_accuracy": post_accuracy,
+        "acc_drop": pre_accuracy - post_accuracy,
         "committed": committed,
+        "rollback_reason": rollback_reason,
         "replay_stats": replay_buffer.stats(),
     }
 
@@ -453,13 +494,16 @@ def train_loop(
                         )
                     else:
                         commit = "COMMIT" if cons_log.get("committed", False) else "ROLLBACK"
+                        reason = cons_log.get("rollback_reason", "")
+                        reason_str = f" reason='{reason}'" if reason else ""
                         print(
                             f"  [consolidation @ step {step}] {commit} "
                             f"slots={cons_log['slots_consolidated']} "
                             f"updates={cons_log['n_updates']} "
                             f"mean_kl={cons_log['mean_kl']:.4f} "
                             f"drift={cons_log['lm_drift_kl']:.4f} "
-                            f"replay_total={cons_log['replay_stats']['total_contexts']}"
+                            f"acc_pre={cons_log.get('pre_accuracy', 0):.3f} "
+                            f"acc_post={cons_log.get('post_accuracy', 0):.3f}{reason_str}"
                         )
 
             if f:
