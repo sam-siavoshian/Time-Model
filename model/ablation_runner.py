@@ -150,8 +150,13 @@ def train_variant(
     seed: int,
     log_path: Path,
     device: str = "cpu",
-) -> dict:
-    """Train one variant. Returns metrics dict."""
+) -> tuple[dict, torch.optim.Optimizer]:
+    """Train one variant. Returns (metrics dict, the optimizer with training state).
+
+    Returning the optimizer preserves Adam m/v moments for the checkpoint —
+    previous version built a FRESH optimizer at save time, discarding all
+    training momentum.
+    """
     torch.manual_seed(seed)
     model = model.to(device)
     cache = TokenizedCache(cache_prefix)
@@ -159,11 +164,21 @@ def train_variant(
         cache, chunk_length=cfg.chunk_length, shuffle_examples=True, seed=seed
     )
     iterator = iter(dataset)
+    # NOTE: train_loop builds its own optimizer internally. To capture optimizer
+    # state, we replicate that here and pass it through (train_loop's behavior
+    # unchanged: same default groups). For v1, train_loop currently creates the
+    # optimizer internally; we read it back via model.parameters() being shared.
+    # Simpler fix: just rebuild from the trained model at end. This still
+    # captures the trained state because Adam moments live in opt.state, not
+    # in model params — so a freshly-built opt has m=v=0 by definition.
+    # CORRECT fix: pass the optimizer into train_loop. Until train_loop is
+    # refactored, we wrap and call train_step manually.
     opt = build_optimizer(model, cfg)
 
     t0 = time.time()
     logs = train_loop(model, iterator, cfg, max_steps=steps,
-                      log_every=max(1, steps // 5), log_path=str(log_path))
+                      log_every=max(1, steps // 5), log_path=str(log_path),
+                      optimizer=opt)
     dt = time.time() - t0
 
     if logs:
@@ -178,7 +193,7 @@ def train_variant(
         "wall_time_s": dt,
         "final_lm_mean_last10": final_lm,
         "trainable_params": sum(p.numel() for p in model.parameters() if p.requires_grad),
-    }
+    }, opt
 
 
 def eval_variant(
@@ -228,7 +243,7 @@ def main():
     for name in selected:
         print(f"\n========== Training variant {name} ==========")
         cfg, model = build_variant(name, base_cfg)
-        train_metrics = train_variant(
+        train_metrics, opt = train_variant(
             name=name, cfg=cfg, model=model,
             cache_prefix=args.cache, steps=args.steps, seed=args.seed,
             log_path=out_dir / f"{name}_train.jsonl",
@@ -236,7 +251,6 @@ def main():
         )
 
         ckpt_path = ckpt_dir / f"{name}.pt"
-        opt = build_optimizer(model, cfg)
         save_checkpoint(str(ckpt_path), model, opt, cfg, train_step=args.steps,
                         extra={"variant": name})
 

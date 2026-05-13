@@ -554,8 +554,9 @@ def train_loop(
     replay_buffer: Optional[ReplayBuffer] = None,
     ckpt_every: Optional[int] = None,
     ckpt_path_template: Optional[str] = None,
+    optimizer: Optional[torch.optim.Optimizer] = None,
 ) -> list[StepLog]:
-    opt = build_optimizer(model, cfg)
+    opt = optimizer if optimizer is not None else build_optimizer(model, cfg)
     if enable_consolidation and replay_buffer is None:
         replay_buffer = ReplayBuffer(n_slots=cfg.n_slots, capacity_per_slot=256)
 
