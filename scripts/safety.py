@@ -96,6 +96,21 @@ def main():
                    help="kill if LM > factor * rolling mean")
     p.add_argument("--min-free-gb", type=float, default=10.0,
                    help="kill if free disk drops below this")
+    p.add_argument(
+        "--stall-secs", type=float, default=600.0,
+        help="kill if process is alive but log shows no new progress "
+             "(no new lm_loss or consolidation records) within this many "
+             "seconds. Catches dataloader deadlocks, NCCL collective hangs, "
+             "and other live-but-stuck failure modes that NaN/explosion "
+             "checks cannot see.",
+    )
+    p.add_argument(
+        "--start-stall-secs", type=float, default=600.0,
+        help="kill if process is alive but no log file exists OR log is "
+             "still empty after this many seconds of monitor startup. "
+             "Catches pre-step hangs (model init stuck, dataloader "
+             "never producing first batch).",
+    )
     p.add_argument("--alert-path", type=str, default="reports/alerts.jsonl")
     args = p.parse_args()
 
@@ -108,6 +123,8 @@ def main():
 
     parse_errors = 0
     last_parse_error_log = 0.0
+    monitor_start = time.time()
+    last_log_progress = monitor_start                         # time we last saw a real progress record
     while True:
         if not is_alive(args.pid):
             # The process is gone. Decide: clean completion or crash?
@@ -172,8 +189,17 @@ def main():
                                   f"{type(e).__name__}: {e}")
                             last_parse_error_log = time.time()
                         continue
+                    # Any record from train_loop counts as progress -- LM step
+                    # records AND consolidation events both mean the trainer
+                    # is alive. Records without lm_loss (consolidation, etc)
+                    # bump the progress marker but skip the NaN/explosion
+                    # checks below.
+                    if rec.get("event") == "consolidation":
+                        last_log_progress = time.time()
+                        continue
                     if "lm_loss" not in rec:
                         continue
+                    last_log_progress = time.time()
                     lm = rec["lm_loss"]
                     if math.isnan(lm) or math.isinf(lm):
                         kill_training(args.pid, f"NaN/Inf LM loss at step {rec.get('step')}",
@@ -197,6 +223,41 @@ def main():
         if free_gb < args.min_free_gb:
             kill_training(args.pid, f"disk space critical: {free_gb:.1f} GB free",
                           args.alert_path)
+            sys.exit(2)
+
+        # Stall watchdog: process is alive but no new progress record.
+        # Distinguish two states:
+        #   (a) No log lines ever observed AND >start-stall-secs since
+        #       monitor start -> training never produced its first record
+        #       (model init stuck, dataloader deadlock at startup).
+        #   (b) Log has progressed before but no new line in stall-secs
+        #       -> training got stuck mid-run (collective hang, infinite
+        #       inner loop, swap thrashing to a halt).
+        # NaN/explosion checks cannot catch either because they need a
+        # new log line to inspect.
+        now = time.time()
+        secs_since_progress = now - last_log_progress
+        log_ever_has_lines = log_path.exists() and log_path.stat().st_size > 0
+        if not log_ever_has_lines and (now - monitor_start) > args.start_stall_secs:
+            kill_training(
+                args.pid,
+                f"training produced no log records in "
+                f"{now - monitor_start:.0f}s since monitor start "
+                f"(threshold {args.start_stall_secs:.0f}s). Likely model "
+                f"init stuck or dataloader deadlocked before step 0.",
+                args.alert_path,
+            )
+            sys.exit(2)
+        elif log_ever_has_lines and secs_since_progress > args.stall_secs:
+            kill_training(
+                args.pid,
+                f"training stalled: no new progress record for "
+                f"{secs_since_progress:.0f}s (threshold "
+                f"{args.stall_secs:.0f}s). Process still alive but log "
+                f"is not advancing. Likely a collective hang, "
+                f"dataloader deadlock, or swap thrashing.",
+                args.alert_path,
+            )
             sys.exit(2)
 
         time.sleep(args.check_every)
