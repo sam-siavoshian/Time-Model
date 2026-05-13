@@ -39,7 +39,15 @@ from pathlib import Path
 import torch
 
 
-ROOT = Path("/Users/samsiavoshian/Desktop/Coding Stuff/Time-Model")
+_ENV_ROOT = os.environ.get("IPCN_ROOT")
+if _ENV_ROOT:
+    ROOT = Path(_ENV_ROOT)
+else:
+    # Default to the directory containing this script's parent (scripts/ -> repo root).
+    # Falls back to the historical hardcoded macOS path if neither resolves.
+    _SCRIPT_PARENT = Path(__file__).resolve().parent.parent
+    _MAC_DEFAULT = Path("/Users/samsiavoshian/Desktop/Coding Stuff/Time-Model")
+    ROOT = _SCRIPT_PARENT if (_SCRIPT_PARENT / "pyproject.toml").exists() else _MAC_DEFAULT
 
 
 @dataclass
