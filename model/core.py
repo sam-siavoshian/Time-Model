@@ -122,13 +122,13 @@ class CoreTransformer(nn.Module):
         """input_ids: (L,) -> embeddings: (L, d_model). Positions added later inside forward()."""
         return self.tok_emb(input_ids)
 
-    def forward(
+    def compute_hidden(
         self,
-        H0: torch.Tensor,                # (S, d_model) — already injected (prefix + tilde_e)
-        b_full: Optional[torch.Tensor] = None,    # (S, d_model) — for Route-3 LN mod (prefix rows zero or replicated)
+        H0: torch.Tensor,                # (S, d_model)
+        b_full: Optional[torch.Tensor] = None,
         return_hidden: bool = False,
     ):
-        """Run the core stack. Returns (logits: (S, vocab), hidden_layers: list)."""
+        """Forward core blocks only. Returns (h_post_blocks, layer_outputs)."""
         S, d = H0.shape
         positions = torch.arange(S, device=H0.device)
         x = H0 + self.pos_emb(positions)
@@ -137,9 +137,27 @@ class CoreTransformer(nn.Module):
             x = block(x, b_broadcast=b_full)
             if return_hidden:
                 layer_outputs.append(x)
-        x = self.ln_f(x)
-        # Compute logits only on content positions (skip prefix)
+        return x, (layer_outputs if return_hidden else None)
+
+    def decode(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        """Apply final LayerNorm + LM head to a hidden state.
+
+        Input shape: (S, d_model) full sequence including prefix.
+        Returns: (logits_content_only: (L, vocab), normalized_full: (S, d_model)).
+        """
+        x_norm = self.ln_f(x)
         K_p = self.cfg.prefix_length
-        content = x[K_p:]
+        content = x_norm[K_p:]
         logits = self.lm_head(content)
-        return logits, layer_outputs if return_hidden else None, x
+        return logits, x_norm
+
+    def forward(
+        self,
+        H0: torch.Tensor,
+        b_full: Optional[torch.Tensor] = None,
+        return_hidden: bool = False,
+    ):
+        """Convenience wrapper: compute_hidden + decode."""
+        x, layer_outputs = self.compute_hidden(H0, b_full=b_full, return_hidden=return_hidden)
+        logits, x_norm = self.decode(x)
+        return logits, layer_outputs, x_norm

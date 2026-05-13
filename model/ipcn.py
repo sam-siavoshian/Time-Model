@@ -29,6 +29,7 @@ from model.chronometric import ChronometricEncoder
 from model.config import IPCNConfig
 from model.core import CoreTransformer
 from model.injection import BroadcastPreconditioner, schedule_lambda_pre
+from model.late_retrieval import LateRetrievalHead
 from model.memory import MemoryBank
 from model.pfc import PrefixFormingController
 
@@ -54,6 +55,7 @@ class IPCN(nn.Module):
         self.pfc = PrefixFormingController(cfg)
         self.broadcast = BroadcastPreconditioner(cfg)
         self.core = CoreTransformer(cfg)
+        self.late_retrieval = LateRetrievalHead(cfg)         # A1 baseline path
 
         # Temporal self-state z_t
         self.register_buffer("z", torch.zeros(cfg.d_temporal_state))

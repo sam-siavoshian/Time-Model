@@ -48,10 +48,25 @@ def _A0(cfg: IPCNConfig):
     return cfg
 
 
+def _A1(cfg: IPCNConfig):
+    # A1 late-retrieval-only baseline. Memory bank populated, but no
+    # pre-forward prefix; memory is consulted AFTER the core transformer.
+    cfg.enable_episodic_memory = True
+    cfg.enable_evolution = False
+    cfg.enable_late_retrieval_only = True
+    cfg.use_route1_prepend = False
+    cfg.use_route2_broadcast = False
+    cfg.use_route3_lnmod = False
+    cfg.consolidate_pfc = False
+    cfg.consolidated_layers = ()
+    return cfg
+
+
 def _A2(cfg: IPCNConfig):
     # Slots + prefix prepend only. No broadcast, no LN mod, no evolution, no consolidation.
     cfg.enable_episodic_memory = True
     cfg.enable_evolution = False
+    cfg.enable_late_retrieval_only = False
     cfg.use_route1_prepend = True
     cfg.use_route2_broadcast = False
     cfg.use_route3_lnmod = False
@@ -110,6 +125,7 @@ def _A6(cfg: IPCNConfig):
 
 VARIANTS = {
     "A0": _A0,
+    "A1": _A1,
     "A2": _A2,
     "A3": _A3,
     "A4": _A4,
@@ -263,17 +279,19 @@ def main():
     lines.append("## H3 ordering checks")
     d0_by_name = {r["name"]: r["eval_D0_mean"] for r in summary_rows}
     amb_by_name = {r["name"]: r["eval_ambiguity_acc"] for r in summary_rows}
-    order = ["A0", "A2", "A3", "A4", "A5", "A6"]
+    order = ["A0", "A1", "A2", "A3", "A4", "A5", "A6"]
     available = [n for n in order if n in d0_by_name]
-    lines.append("Expected: A0 < A2 < A3 < A4 < A5 < A6")
+    lines.append("Expected: A0 < A1 < A2 < A3 < A4 < A5 < A6")
     lines.append("D_0 observed:        " + " < ".join(f"{n}={d0_by_name[n]:.3f}" for n in available))
     lines.append("Ambig acc observed:  " + " < ".join(f"{n}={amb_by_name[n]:.3f}" for n in available))
     lines.append("")
-    lines.append("Pass criterion (SPEC.tex H3): Acc(A3+) - Acc(A1) >= 0.03 on ambiguity tasks.")
-    lines.append("Here A1 is the deferred late-retrieval baseline; we use A0 as the weakest reference.")
-    if "A3" in amb_by_name and "A0" in amb_by_name:
-        gap = amb_by_name["A3"] - amb_by_name["A0"]
-        lines.append(f"Acc(A3) - Acc(A0) = {gap:.4f}  (threshold 0.03)")
+    lines.append("Pass criterion (SPEC.tex H3): Acc(A3) - Acc(A1) >= 0.03 on ambiguity tasks.")
+    if "A3" in amb_by_name and "A1" in amb_by_name:
+        gap = amb_by_name["A3"] - amb_by_name["A1"]
+        lines.append(f"Acc(A3) - Acc(A1) = {gap:.4f}  (threshold 0.03)")
+    if "A6" in amb_by_name and "A1" in amb_by_name:
+        gap = amb_by_name["A6"] - amb_by_name["A1"]
+        lines.append(f"Acc(A6) - Acc(A1) = {gap:.4f}")
     summary_path.write_text("\n".join(lines))
     print(f"Summary: {summary_path}")
     for line in lines:
