@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 from dataclasses import asdict, fields
 from pathlib import Path
 
@@ -54,6 +55,33 @@ def save_checkpoint(
     train_step: int,
     extra: dict | None = None,
 ):
+    """Atomically save a checkpoint.
+
+    torch.save() is NOT atomic. If a SIGKILL hits mid-write (OOM kill,
+    safety watchdog kill, manual ctrl-c on a non-responsive process, a
+    Cloud Run container being preempted, etc), the destination .pt file
+    is left half-written. Worse, it has already overwritten the previous
+    good checkpoint, so resume has nothing to fall back to. A 4-hour
+    Spark run can lose its last intermediate save this way.
+
+    Atomic-write pattern:
+      1. Write to <path>.tmp.<pid>.<ts> in the same directory so the
+         final rename is on the same filesystem (rename across mounts
+         is NOT atomic).
+      2. fsync the temp file's bytes to disk so a power loss between
+         write and rename does not leave a half-written tmp + a clobbered
+         old path.
+      3. os.replace(tmp, dst) -- POSIX-atomic rename. Readers see EITHER
+         the old complete file OR the new complete file, never partial.
+      4. On any exception, attempt to delete the tmp file. The old
+         checkpoint at <path> is untouched.
+
+    fsync of the parent directory (so the rename itself is durable) is
+    skipped for portability; on macOS/Linux a torch.save crash leaves
+    the rename in the OS write-back cache, which is fine for our
+    crash-recovery model (we just want non-corrupt files, not strict
+    durability ordering).
+    """
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
 
@@ -66,7 +94,27 @@ def save_checkpoint(
         "rng_state_cpu": torch.get_rng_state(),
         "extra": extra or {},
     }
-    torch.save(state, str(p))
+    tmp = p.with_name(f"{p.name}.tmp.{os.getpid()}.{int(time.time()*1000)}")
+    try:
+        with open(tmp, "wb") as f:
+            torch.save(state, f)
+            f.flush()
+            try:
+                os.fsync(f.fileno())
+            except OSError:
+                # Some filesystems (e.g. tmpfs on certain configurations)
+                # do not support fsync. Skip rather than fail the save.
+                pass
+        os.replace(str(tmp), str(p))
+    except Exception:
+        # Clean up the orphaned tmp so subsequent saves don't pile up
+        # .tmp files in the checkpoints directory. The original <path>
+        # is unchanged.
+        try:
+            tmp.unlink(missing_ok=True)
+        except OSError:
+            pass
+        raise
 
 
 def _reconstruct_cfg(saved_cfg: dict) -> IPCNConfig:
