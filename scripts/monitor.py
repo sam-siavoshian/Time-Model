@@ -22,6 +22,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import time
 from collections import deque
 from pathlib import Path
@@ -29,13 +30,38 @@ from typing import Iterator
 
 
 def _follow(path: str, sleep: float = 1.0) -> Iterator[str]:
+    """Tail a file. Handles file truncation / rotation by reopening on shrink."""
     f = open(path, "r")
-    while True:
-        line = f.readline()
-        if not line:
+    try:
+        last_inode = os.fstat(f.fileno()).st_ino if hasattr(os, "fstat") else None
+        while True:
+            line = f.readline()
+            if line:
+                yield line
+                continue
+            # No new line: check if file was rotated/truncated
+            try:
+                st = os.stat(path)
+                if st.st_size < f.tell():
+                    # File shrunk -> truncated. Reopen from start.
+                    f.close()
+                    f = open(path, "r")
+                    last_inode = st.st_ino
+                    continue
+                if last_inode is not None and st.st_ino != last_inode:
+                    # File replaced (rotated). Reopen.
+                    f.close()
+                    f = open(path, "r")
+                    last_inode = st.st_ino
+                    continue
+            except FileNotFoundError:
+                pass
             time.sleep(sleep)
-            continue
-        yield line
+    finally:
+        try:
+            f.close()
+        except Exception:                                     # noqa: BLE001
+            pass
 
 
 def _read_all(path: str) -> list[str]:
@@ -62,13 +88,14 @@ def main():
     args = p.parse_args()
 
     Path(args.alert_path).parent.mkdir(parents=True, exist_ok=True)
-    alert_f = open(args.alert_path, "a")
+    # Line-buffered append; flushes on every '\n' write so alerts survive SIGKILL
+    alert_f = open(args.alert_path, "a", buffering=1)
 
     lm_window: deque[float] = deque(maxlen=args.window)
     grad_window: deque[float] = deque(maxlen=args.window)
     mem_window: deque[float] = deque(maxlen=args.window)
     last_step = -1
-    last_time = time.time()
+    last_time = None                                          # None until first log line seen
     consolidation_events = 0
     rollback_events = 0
 
@@ -83,8 +110,9 @@ def main():
         rec = _safe_load(line)
         if rec is None:
             return
-        if "event" in rec and rec["event"] == "consolidation":
+        if rec.get("event") == "consolidation":
             consolidation_events += 1
+            last_time = time.time()                            # consolidation event counts as activity
             if not rec.get("committed", True):
                 rollback_events += 1
                 fire_alert("consolidation_rollback", {
@@ -128,16 +156,30 @@ def main():
             )
 
     if args.tail:
-        for line in _follow(args.log_path):
-            process_line(line)
-            # Stall watchdog (5 min)
-            if time.time() - last_time > 300:
-                fire_alert("training_stall", {"last_step": last_step,
-                                              "seconds_since_last": time.time() - last_time})
-                last_time = time.time()
+        try:
+            for line in _follow(args.log_path):
+                process_line(line)
+                # Stall watchdog (5 min) — only fires AFTER first log line observed
+                if last_time is not None and time.time() - last_time > 300:
+                    fire_alert("training_stall", {
+                        "last_step": last_step,
+                        "seconds_since_last": time.time() - last_time,
+                    })
+                    last_time = time.time()                   # debounce: don't spam alerts every line
+        finally:
+            try:
+                alert_f.close()
+            except Exception:                                 # noqa: BLE001
+                pass
     else:
-        for line in _read_all(args.log_path):
-            process_line(line)
+        try:
+            for line in _read_all(args.log_path):
+                process_line(line)
+        finally:
+            try:
+                alert_f.close()
+            except Exception:                                 # noqa: BLE001
+                pass
 
 
 if __name__ == "__main__":
