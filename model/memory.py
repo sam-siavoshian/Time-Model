@@ -271,12 +271,28 @@ class MemoryBank(nn.Module):
         new_k = F.normalize(new_k, dim=-1)                    # renormalize keys
         new_v = one_minus.unsqueeze(-1) * self.v + eta.unsqueeze(-1) * v_target
 
-        # Conflict: cosine distance between old v and new contribution
+        # Conflict: cosine distance between old v direction and new
+        # contribution direction. Only meaningful when BOTH have nonzero
+        # magnitude. If old_v is zero (fresh slot getting its first write),
+        # F.normalize(0) returns 0 and the cosine collapses to 0, which
+        # would yield delta_conflict = 1.0 -- a maximum-conflict signal
+        # the moment a slot is first populated. That artificially
+        # suppresses the slot in subsequent prefix_attention reads
+        # (scores -= beta_delta * conflict) and cascades into lower
+        # usage -> never consolidated.
+        # Gate delta_conflict on both vectors having nonzero magnitude.
         contribution = v_target / (used_mass.unsqueeze(-1) + 1e-6)
+        old_v_mag = self.v.norm(dim=-1)                       # (N_m,)
+        contrib_mag = contribution.norm(dim=-1)               # (N_m,)
         old_norm = F.normalize(self.v, dim=-1)
         contrib_norm = F.normalize(contribution, dim=-1)
         cos_old_new = (old_norm * contrib_norm).sum(dim=-1)
-        delta_conflict = (1.0 - cos_old_new) * (used_mass > 1e-6).float()
+        defined_mask = (
+            (used_mass > 1e-6)
+            & (old_v_mag > 1e-6)
+            & (contrib_mag > 1e-6)
+        ).float()
+        delta_conflict = (1.0 - cos_old_new) * defined_mask
 
         # Confidence update
         new_conf = torch.clamp(
