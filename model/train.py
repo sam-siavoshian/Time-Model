@@ -369,7 +369,15 @@ def _measure_token_accuracy(
         )
         logits = _slot_active_logits(model, ctx_dev)
         preds = logits.argmax(dim=-1)
-        valid = (ctx_dev.targets != 0)
+        # Valid mask: dataset pads target positions with -100 (PyTorch
+        # ignore_index convention). Token 0 (<|endoftext|>) is a REAL
+        # token and should be scored; the pre-fix mask `targets != 0`
+        # incorrectly excluded EOS predictions while INcluding -100
+        # pad positions (since -100 != 0), which dilutes accuracy
+        # toward 0 (preds can never equal -100). That biases the
+        # held-out acc_drop gate downward and lets unsafe
+        # consolidations commit.
+        valid = (ctx_dev.targets >= 0)
         correct += int((preds == ctx_dev.targets)[valid].sum().item())
         total += int(valid.sum().item())
     return correct / max(1, total)
