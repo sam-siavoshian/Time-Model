@@ -25,7 +25,9 @@ from model.checkpoint import load_checkpoint, save_checkpoint
 from model.config import IPCNConfig
 from model.dataset import MixedDataset, SequentialChunkDataset, TokenizedCache
 from model.ipcn import IPCN
+from model.latent_world_loader import LatentWorldChunkDataset
 from model.phases import Phase, apply_phase, get_phase_config, trainable_param_count
+from model.replay_buffer import ReplayBuffer
 from model.train import build_optimizer, train_loop
 
 
@@ -43,6 +45,10 @@ def main():
     p.add_argument("--log-every", type=int, default=50)
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--device", type=str, default="cpu")
+    p.add_argument("--use-real-tau", action="store_true",
+                   help="use LatentWorldChunkDataset (real tau from event metadata, slower)")
+    p.add_argument("--enable-consolidation", action="store_true",
+                   help="enable consolidation passes during training (Phase 1+)")
     args = p.parse_args()
 
     torch.manual_seed(args.seed)
@@ -80,11 +86,25 @@ def main():
             print(f"Could not restore optimizer state: {e}. Starting fresh.")
 
     # Build dataset
-    caches = [TokenizedCache(prefix) for prefix in pc.data_caches if Path(prefix + ".tokens.bin").exists()]
-    if not caches:
-        raise RuntimeError("no caches available for this phase")
-    datasets = [SequentialChunkDataset(c, chunk_length=cfg.chunk_length, shuffle_examples=True, seed=args.seed + i)
-                for i, c in enumerate(caches)]
+    datasets = []
+    for i, prefix in enumerate(pc.data_caches):
+        if args.use_real_tau and "/latent_world/" in prefix:
+            # Map tokenized cache prefix back to JSONL: e.g.
+            # data/tokenized/latent_world/train_1k -> data/latent_world/train_1k.jsonl
+            split = prefix.rsplit("/", 1)[-1]
+            jsonl_path = f"data/latent_world/{split}.jsonl"
+            if Path(jsonl_path).exists():
+                datasets.append(LatentWorldChunkDataset(
+                    jsonl_path, chunk_length=cfg.chunk_length, shuffle=True, seed=args.seed + i
+                ))
+                continue
+        if Path(prefix + ".tokens.bin").exists():
+            cache = TokenizedCache(prefix)
+            datasets.append(SequentialChunkDataset(
+                cache, chunk_length=cfg.chunk_length, shuffle_examples=True, seed=args.seed + i
+            ))
+    if not datasets:
+        raise RuntimeError("no datasets available for this phase")
     if len(datasets) == 1:
         iterator = iter(datasets[0])
     else:
@@ -95,7 +115,21 @@ def main():
     log_path = args.log_path or f"logs/{pc.name}.jsonl"
     Path(log_path).parent.mkdir(parents=True, exist_ok=True)
     print(f"Training {max_steps} steps. Logging to {log_path}.")
-    train_loop(model, iterator, cfg, max_steps=max_steps, log_every=args.log_every, log_path=log_path)
+    print(f"Real-tau extraction: {args.use_real_tau}")
+    print(f"Consolidation: {args.enable_consolidation}")
+
+    replay_buffer = None
+    if args.enable_consolidation:
+        replay_buffer = ReplayBuffer(n_slots=cfg.n_slots, capacity_per_slot=256, seed=args.seed)
+
+    train_loop(
+        model, iterator, cfg,
+        max_steps=max_steps,
+        log_every=args.log_every,
+        log_path=log_path,
+        enable_consolidation=args.enable_consolidation,
+        replay_buffer=replay_buffer,
+    )
 
     # Checkpoint
     out_ckpt = args.out_ckpt or f"checkpoints/{pc.name}.pt"

@@ -37,12 +37,14 @@ from model.dataset import ChunkBatch, MixedDataset, SequentialChunkDataset, Toke
 from model.ipcn import IPCN
 from model.losses import (
     chronometric_loss,
+    consolidation_kl,
     diversity_loss,
     lm_loss,
     pre_influence_loss,
     precision_loss,
     slot_util_loss,
 )
+from model.replay_buffer import ReplayBuffer, ReplayContext
 
 
 @dataclass
@@ -125,6 +127,7 @@ def train_step(
     cfg: IPCNConfig,
     step: int,
     attribution_p: float = 0.15,
+    replay_buffer: Optional[ReplayBuffer] = None,
 ) -> StepLog:
     device = next(model.parameters()).device
     input_ids = batch.input_ids.to(device)
@@ -203,17 +206,35 @@ def train_step(
         novelty = 1.0 - sim.max(dim=-1).values
         u_prefix = torch.zeros_like(surprise)
 
+        u_prefix_bar_for_memory = float(u_t.item()) if do_attribution else 0.0
         model.update_memory_and_state(
             out=out,
             surprise=surprise,
             novelty=novelty,
             u_prefix=u_prefix,
-            u_prefix_bar=0.0,
+            u_prefix_bar=u_prefix_bar_for_memory,
             gate_bar=gate_bar.item(),
             tau_t=batch.tau_t,
             delta_tau=batch.delta_tau,
             do_evolve=True,
         )
+
+        # Replay buffer push: only when we measured real u_prefix and it
+        # was positive (memory genuinely helped). Push chunk context into
+        # top-k slot buffers by attention mass.
+        if replay_buffer is not None and do_attribution and u_prefix_bar_for_memory > 0:
+            ctx = ReplayContext(
+                input_ids=input_ids.detach().cpu(),
+                targets=targets.detach().cpu(),
+                tau_t=batch.tau_t,
+                delta_tau=batch.delta_tau,
+            )
+            replay_buffer.push_top_k(
+                alpha_p=out.alpha_prefix.detach().cpu(),
+                u_prefix_bar=u_prefix_bar_for_memory,
+                ctx=ctx,
+                k=4,
+            )
 
         # BPTT detachment: every cfg.bptt_chunks chunks, detach z and mem state
         # (state-dict copy is a no-op for detachment; we rely on no_grad above
@@ -237,6 +258,95 @@ def train_step(
     )
 
 
+@torch.no_grad()
+def _slot_active_logits(model: IPCN, ctx: ReplayContext) -> torch.Tensor:
+    """Teacher pass: full model, all slots active. Returns logits (L, V)."""
+    out = model.forward_chunk(ctx.input_ids, tau_t=ctx.tau_t, delta_tau=ctx.delta_tau)
+    return out.logits.detach()
+
+
+def _slot_attenuated_logits(model: IPCN, ctx: ReplayContext, slot_id: int) -> torch.Tensor:
+    """Student pass: forward with slot_id key/value temporarily zeroed.
+    LoRA grads ON. Returns logits with gradient."""
+    # Save and zero
+    orig_k = model.memory.k[slot_id].clone()
+    orig_v = model.memory.v[slot_id].clone()
+    with torch.no_grad():
+        model.memory.k[slot_id].zero_()
+        model.memory.v[slot_id].zero_()
+    try:
+        out = model.forward_chunk(ctx.input_ids, tau_t=ctx.tau_t, delta_tau=ctx.delta_tau)
+        logits = out.logits
+    finally:
+        # Restore
+        with torch.no_grad():
+            model.memory.k[slot_id].copy_(orig_k)
+            model.memory.v[slot_id].copy_(orig_v)
+    return logits
+
+
+def maybe_run_consolidation(
+    model: IPCN,
+    opt: torch.optim.Optimizer,
+    replay_buffer: ReplayBuffer,
+    cfg: IPCNConfig,
+    step: int,
+    min_buffer_size: int = 8,
+    max_slots_per_pass: int = 4,
+    samples_per_slot: int = 4,
+) -> Optional[dict]:
+    """Run a consolidation pass if conditions are met. Returns log dict or None.
+
+    For v1: no validation gate (always commit). Wire validation in Phase 2+.
+    """
+    if step == 0 or step % cfg.consolidation_frequency != 0:
+        return None
+
+    eligible = model.eligible_slots_for_consolidation()
+    if not eligible:
+        return None
+
+    # Filter to slots with enough replay data
+    eligible = [s for s in eligible if replay_buffer.size(s) >= min_buffer_size]
+    if not eligible:
+        return None
+
+    eligible = eligible[:max_slots_per_pass]
+
+    total_kl = 0.0
+    n_updates = 0
+    for slot_id in eligible:
+        contexts = replay_buffer.sample(slot_id, samples_per_slot)
+        if not contexts:
+            continue
+        for ctx in contexts:
+            ctx_dev = ReplayContext(
+                input_ids=ctx.input_ids.to(next(model.parameters()).device),
+                targets=ctx.targets.to(next(model.parameters()).device),
+                tau_t=ctx.tau_t,
+                delta_tau=ctx.delta_tau,
+            )
+            teacher_logits = _slot_active_logits(model, ctx_dev)
+            student_logits = _slot_attenuated_logits(model, ctx_dev, slot_id)
+            loss = consolidation_kl(teacher_logits, student_logits)
+            opt.zero_grad(set_to_none=True)
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(
+                [p for p in model.parameters() if p.requires_grad], max_norm=1.0
+            )
+            opt.step()
+            total_kl += float(loss.item())
+            n_updates += 1
+
+    return {
+        "step": step,
+        "slots_consolidated": len(eligible),
+        "n_updates": n_updates,
+        "mean_kl": total_kl / max(1, n_updates),
+        "replay_stats": replay_buffer.stats(),
+    }
+
+
 def train_loop(
     model: IPCN,
     iterator: Iterator[ChunkBatch],
@@ -244,15 +354,35 @@ def train_loop(
     max_steps: int,
     log_every: int = 10,
     log_path: Optional[str] = None,
+    enable_consolidation: bool = False,
+    replay_buffer: Optional[ReplayBuffer] = None,
 ) -> list[StepLog]:
     opt = build_optimizer(model, cfg)
+    if enable_consolidation and replay_buffer is None:
+        replay_buffer = ReplayBuffer(n_slots=cfg.n_slots, capacity_per_slot=256)
+
     logs: list[StepLog] = []
     step = 0
     f = open(log_path, "w") if log_path else None
     try:
         for batch in iterator:
-            log = train_step(model, opt, batch, cfg, step)
+            log = train_step(model, opt, batch, cfg, step, replay_buffer=replay_buffer)
             logs.append(log)
+
+            # Periodic consolidation
+            if enable_consolidation and replay_buffer is not None:
+                cons_log = maybe_run_consolidation(model, opt, replay_buffer, cfg, step)
+                if cons_log is not None and f:
+                    f.write(json.dumps({"event": "consolidation", **cons_log}) + "\n")
+                if cons_log is not None:
+                    print(
+                        f"  [consolidation @ step {step}] "
+                        f"slots={cons_log['slots_consolidated']} "
+                        f"updates={cons_log['n_updates']} "
+                        f"mean_kl={cons_log['mean_kl']:.4f} "
+                        f"replay_total={cons_log['replay_stats']['total_contexts']}"
+                    )
+
             if f:
                 f.write(json.dumps(asdict(log)) + "\n")
                 f.flush()

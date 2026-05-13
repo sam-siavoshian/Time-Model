@@ -71,8 +71,8 @@ def evolution_self_predict_loss(
 
 
 def chronometric_loss(
-    delta_tau_hat: torch.Tensor,                      # (B,)
-    delta_tau_true: torch.Tensor,                     # (B,)
+    delta_tau_hat: torch.Tensor,                      # (B,) raw model output (treated as log-space prediction)
+    delta_tau_true: torch.Tensor,                     # (B,) real elapsed minutes
     phase_hat: Optional[torch.Tensor] = None,         # (B, C)
     phase_true: Optional[torch.Tensor] = None,        # (B,) class labels
     future_mem_hat: Optional[torch.Tensor] = None,
@@ -81,13 +81,20 @@ def chronometric_loss(
     lambda_phase: float = 0.5,
     lambda_future: float = 0.5,
 ) -> torch.Tensor:
-    L_dur = F.mse_loss(delta_tau_hat, delta_tau_true)
+    """Predict log(1 + delta_tau) in log-space for numerical stability.
+
+    Raw delta_tau values can be 1-65,536 minutes; raw-MSE explodes.
+    The encoder already represents tau as log(1+tau), so prediction in
+    log-space matches the encoding basis.
+    """
+    target_log = torch.log1p(delta_tau_true.clamp_min(0.0))
+    L_dur = F.smooth_l1_loss(delta_tau_hat.squeeze(-1) if delta_tau_hat.dim() > 1 else delta_tau_hat, target_log)
     L_phase = torch.tensor(0.0, device=delta_tau_hat.device, dtype=delta_tau_hat.dtype)
     if phase_hat is not None and phase_true is not None:
         L_phase = F.cross_entropy(phase_hat, phase_true)
     L_future = torch.tensor(0.0, device=delta_tau_hat.device, dtype=delta_tau_hat.dtype)
     if future_mem_hat is not None and future_mem_true is not None:
-        L_future = F.mse_loss(future_mem_hat, future_mem_true.detach())
+        L_future = F.smooth_l1_loss(future_mem_hat, future_mem_true.detach())
     return lambda_dur * L_dur + lambda_phase * L_phase + lambda_future * L_future
 
 
