@@ -307,6 +307,116 @@ Three families:
 
 ---
 
+## Section 13.5: Deep-Read Findings (2026-05-12)
+
+Four agents fetched and read full PDFs / blog posts of the highest-risk prior work. All quotes verbatim from extracted PDF text. Verification level: PDFs fetched via WebFetch, extracted via pdftotext, arXiv IDs verified, GitHub repo files inspected directly. Quotes carry char-level provenance. Tertiary facts (author bios) less verified — re-check before paper submit.
+
+### Hard numbers (the motivation section)
+
+| Source | Finding | Use in paper |
+|---|---|---|
+| Garikaparthi (TCS 2026, arXiv 2604.00010) | GPT-5 overshoots own task durations by **6.11×** (median, r=0.55***). GPT-4o: 3.60×. | Lead motivation paragraph |
+| Garikaparthi | GPT-5 on counter-intuitive ordering pairs: **18% accuracy, p=0.033** — significantly BELOW chance | Hard evidence of architectural gap |
+| Garikaparthi | Agentic tasks: 5-10× off across all 6 ReAct tasks | AGI-prerequisite framing |
+| Wang et al (Monash EMNLP 2025, arXiv 2506.05790) | Llama-8B under conflicting time cues drops to **16.3%**, Qwen-7B to 12.9%. Only LRMs (DeepSeek-R1-Distill 94.3%, QwQ-32B 99.1%) survive | Shows Token-Time proxy collapses |
+| Wang et al | "Token-Time Hypothesis" — LLMs use token counts as wall-clock proxy | The framing IPCN replaces with substrate |
+
+### Verbatim quotes (re-verify before publish)
+
+**Garikaparthi (the diagnostic predecessor):**
+
+1. *"models possess propositional knowledge about duration from training but lack experiential grounding in their own inference time"* — abstract
+2. *"timing is often represented only indirectly through step counts, token counts, timeout wrappers, or prompt-level timestamps. These are useful control signals, but they are ad hoc substitutes for continuous temporal perception."* — Section 4
+3. *"the architectural limitation requires deeper solutions beyond scaffolding and introducing timestamps through external infrastructure. Future work should explore training with explicit timing signals and architectures that better retain and use temporally grounded state."* — Section 5
+
+He PUNTS the architectural fix to future work. IPCN delivers it.
+
+**Wang et al (the substrate concession):**
+
+> *"we establish a direct mapping between reasoning token usage (Token-Time) and simulated elapsed time, rather than using real-world time that would introduce variability across models."* — Section 5
+
+They HAD TO simulate wall-clock via tokens because real elapsed time has no causal pathway into model state. IPCN provides exactly that pathway. **This is our wedge.**
+
+**Nested Learning / Hope (the lane handoff):**
+
+> *"in this work, we focus on the first stage: memory consolidation as an online process."* — Lines 95-119
+
+Same team as Titans (Behrouz + Razaviyayn + Zhong + Mirrokni). Invokes synaptic vs systems consolidation (Frey 1997, Goto 2021, Yang 2024), then explicitly DEFERS the offline systems consolidation phase. **That deferred regime is IPCN's lane.** Cite, point to deferral, claim the gap.
+
+### Refined risk assessment (post deep-read)
+
+| Prior work | OLD risk | NEW risk | Reason |
+|---|---|---|---|
+| Timely Machine (arXiv 2601.16486) | HIGHEST | **LOW** | Within-episode budget via tool text + reward shaping. NO persistent memory. NO consolidation. NO Δτ between sessions. Single sin in their paper is reward smoothing, NOT positional time. Orthogonal scope. |
+| Nested Learning (Behrouz et al) | high | **HIGH (confirmed)** | Same team as Titans, 6 months later. Beats EWC. But explicitly defers offline systems consolidation = our lane. Step-indexed, not wall-clock. |
+| MIRAS (Behrouz et al) | medium | **MEDIUM** (confirmed) | In-layer memory framework. No pre-layer-1 injection, no wall-clock, no consolidation into base weights, no rollback. |
+| DKI (LucasMa2025) | high | **MEDIUM (downgraded)** | NOT abandoned — pivoted to "Recall v4." Author is undergraduate, 0 stars. Citing as preemptive cover of obvious reviewer critique, not famous prior. |
+| Garikaparthi | medium overlap | **MUST-CITE diagnostic predecessor** | Diagnoses exact gap, punts fix. Use 6.11× number + "ad hoc substitutes" quote. |
+| Wang et al | medium overlap | **MUST-CITE substrate concession** | BombRush had to simulate wall-clock via tokens. Cite as exact statement of the pathway IPCN provides. |
+
+### DKI inherits failure mode 2 — must own
+
+DKI's 4 failure modes verbatim from their README:
+
+1. **Capacity** — K/V token count grows linearly with conversation, hard fail at ~600 tokens. IPCN solves via 256 fixed slots + 32 prefix tokens (bounded by design).
+2. **No referenceability** — "history injected via K/V cannot be explicitly referenced." **IPCN INHERITS this.** Hidden-state injection is implicit. Frame IPCN as influence/style/preferences, delegate explicit fact recall to RAG.
+3. **OOD shift** — "Large-scale K/V injection at negative positions causes severe training distribution shift." IPCN solves via three gates: precision loss, contradiction safety, KL drift floor.
+4. **Factual accuracy loss** — qualitative claim, no numbers published. IPCN solves via validation gates + mechanical rollback.
+
+### 5 draft subsection titles for paper's "Mechanical Defense" section
+
+1. **§Defense.1** Why Hidden-State Injection Differs From Attention-Hook K/V Splicing (DKI = zero learned params, splice across many layers; IPCN = trained LoRA, single insertion pre-layer-0)
+2. **§Defense.2** Bounded Capacity Through Fixed Memory Bank Geometry (addresses DKI failure 1)
+3. **§Defense.3** Three-Gate Defense Against Distribution Drift (addresses DKI failure 3)
+4. **§Defense.4** Validation-Gated Adapter Commits Prevent DKI-Class Accuracy Collapse (addresses DKI failure 4)
+5. **§Defense.5** The Referenceability Limit We Inherit and Bound (addresses DKI failure 2 — IPCN for influence, citation delegated to RAG)
+
+### Ready-to-paste paragraphs
+
+**Intro / motivation sentence (use as paper's opening hook):**
+
+> Garikaparthi (2026) shows that frontier LLMs overshoot their own task durations by 4-7× and perform significantly below chance (GPT-5: 18%, p=0.033) on diagnostic relative-ordering pairs, concluding that "the architectural limitation requires deeper solutions beyond scaffolding and introducing timestamps through external infrastructure"; Wang et al. (2025) formalize this as the Token-Time Hypothesis, showing that LLMs proxy continuous wall-clock duration through discrete token counts and collapse (16.3% on Llama-8B) when token and timestamp cues conflict; IPCN supplies the missing substrate, an Involuntary Prefix Consolidation Network that lifts elapsed wall-clock time from a prompt-level cue into a causal operator on memory state.
+
+**Related-work paragraph — MIRAS:**
+
+> MIRAS [Behrouz et al. 2025b] presents a unifying framework for in-layer test-time memorization, parameterized by memory architecture, attentional bias, retention gate, and update algorithm. IPCN is complementary: where MIRAS addresses how memory is stored *within* a transformer block, IPCN addresses how memory is injected *before* the first block (as pre-computational hidden state) and how it is consolidated *across sessions* (via usage-driven LoRA adapter merge, gated by elapsed wall-clock time).
+
+**Related-work paragraph — Nested Learning (the strong one):**
+
+> Concurrent work on Nested Learning [Behrouz et al. 2025c] proposes that continual learning emerges from multi-frequency optimization of nested associative-memory modules, and explicitly focuses on *online* synaptic consolidation while deferring the *offline systems consolidation* phase from neurophysiology [Frey et al. 1997; Goto et al. 2021]. IPCN targets exactly that deferred regime: usage-driven LoRA consolidation indexed by real elapsed time, with rollback as a safety net. The two approaches address adjacent halves of the brain-consolidation analogy.
+
+**Related-work paragraph — Timely Machine (downgraded, scope-orthogonal):**
+
+> Concurrent to our work, Ma et al. (2026) propose Timely Machine, which redefines test-time scaling as wall-clock time and trains models via a GRPO variant to budget elapsed seconds within a single agentic episode; our work is complementary and orthogonal — they treat time as a per-episode resource for tool-call planning, while IPCN treats real elapsed time between sessions as a causal substrate driving the evolution of persistent memory slots, with time entering the model through a 13-scale sinusoidal encoding, a Δτ-driven memory operator, and a chronometric auxiliary loss rather than through reward shaping on a single decode.
+
+### Three positioning moves (to avoid parasitic-motivation framing)
+
+1. **Operational vs perceptual.** Garikaparthi + Wang study readout ("can LLMs perceive time?"). IPCN builds the read/write path ("can elapsed time operate on memory?"). Passive sensing vs causal substrate.
+2. **Memory consolidation is uniquely ours.** Neither motivation paper touches it. Neither MIRAS, NL, Titans, TTT, Mamba, Memorizing Transformers, NTM, Memformer touches base-weight migration with rollback.
+3. **Real wall-clock vs simulated.** Wang explicitly sidesteps real wall-clock by tokenizing it. Our wedge: "Wang et al. found token-time substitution necessary because real wall-clock has no causal pathway into model state. IPCN provides that pathway."
+
+### Source verification (provenance trail)
+
+- Garikaparthi: PDF at https://arxiv.org/pdf/2604.00010, full extract via pdftotext, all quotes verbatim with section refs
+- Wang et al: PDF at https://arxiv.org/pdf/2506.05790, EMNLP version at https://aclanthology.org/2025.findings-emnlp.1016/, all numbers from Tables 2-3
+- MIRAS: blog at https://research.google/blog/titans-miras-helping-ai-have-long-term-memory/, paper at https://arxiv.org/pdf/2504.13173 (1492 lines)
+- Nested Learning: blog at https://research.google/blog/introducing-nested-learning-a-new-ml-paradigm-for-continual-learning/, paper at https://abehrouz.github.io/files/NL.pdf (3021 lines), arXiv 2512.24695
+- DKI: README at https://github.com/LucasMa2025/DKI, code inspected directly (full_attention_injector.py, etc.)
+- Timely Machine: PDF at https://arxiv.org/pdf/2601.16486, full extract (1367 lines), all numbers from Tables 1-3
+
+### Additional citations to add (surfaced by Timely Machine's bibliography)
+
+- **Han 2024** — token-budget-aware inference
+- **Wen 2025** — BudgetThinker
+- **Fan 2025** — Timebill (arXiv 2512.21859)
+- **Wang 2025** — Latency-Aware Test-Time Scaling (arXiv 2505.19634)
+- **Liu 2025** — budget-aware tool-use
+- **Wang 2025** — AgentTTS
+
+All from concurrent test-time-scaling literature. IPCN's substrate-vs-budget axis differentiates cleanly.
+
+---
+
 ## Section 14: Novelty bets (what survives)
 
 After 4 scans, 5 distinct claims survive:
@@ -499,15 +609,17 @@ Fail any → architecture doesn't support claimed mechanism. Investigate.
 
 ---
 
-## Section 20: Risk map
+## Section 20: Risk map (updated 2026-05-12 post deep-reads)
 
 | Risk | Likelihood | Mitigation |
 |---|---|---|
-| DeepMind ships time + memory + consolidation paper before we submit | Medium-high | Sprint. Pre-register on OSF NOW. |
-| Timely Machine extends to persistent memory in follow-up | Medium | Cite as concurrent, distinguish scope (persistent + cross-session). |
-| Reviewers cite DKI deprecation as evidence approach won't work | High | Address all 3 DKI failure modes in experimental design. |
+| DeepMind Nested Learning extends to offline systems consolidation in follow-up | **HIGH** | Same team (Behrouz + Mirrokni) already cites the synaptic-vs-systems distinction. Sprint. Pre-register on OSF NOW. Lock the deferred-regime claim. |
+| Reviewers cite DKI failure modes as evidence approach won't work | High | Address all 4 DKI failure modes explicitly. Section §Defense.1-5 drafted. Own failure mode 2 (referenceability) — scope IPCN as influence, not citation. |
+| Timely Machine extends to cross-session persistent memory | **LOW (downgraded)** | Their scope is single-episode budget via tool text + reward shaping. Architectural orthogonal. Cite cleanly. |
+| MIRAS extends to pre-layer-1 hidden-state injection | Medium | Same team as NL. Different design axis (in-layer vs pre-layer). Distinguish via injection location. |
 | Berg et al "subjective experience" gets conflated with our claims | Medium | Hard scope wall in intro: "we do not claim phenomenal experience." |
-| Garikaparthi's diagnostic eats our motivation | Medium | Cite as diagnostic predecessor. Frame IPCN as substrate fix. |
+| Garikaparthi's diagnostic eats our motivation | Low-medium | Cite as diagnostic predecessor. Use his "ad hoc substitutes" quote as bridge. Frame IPCN as substrate fix to his diagnosis. |
+| Wang et al's BombRush forces us to acknowledge real-wall-clock pathway absence | Low | Their concession IS our wedge. Use the "rather than using real-world time" quote as motivation. |
 
 ---
 
@@ -549,6 +661,23 @@ For the full LaTeX spec with all math (equations, defaults, loss terms, slot upd
 **Background:**
 - Vaswani et al, "Attention Is All You Need" arXiv 1706.03762 (positional encoding)
 - Bennett, "A Mind Cannot Be Smeared Across Time" arXiv 2601.11620
+
+**DeepMind / Behrouz lineage (concurrent work):**
+- Behrouz, Razaviyayn, Mirrokni, "MIRAS" arXiv 2504.13173 (Apr 2025) — unifying in-layer test-time memorization framework
+- Behrouz, Razaviyayn, Zhong, Mirrokni, "Nested Learning" arXiv 2512.24695 (Nov 2025 blog, NeurIPS 2025) — multi-frequency continual learning. **CRITICAL: explicitly defers offline systems consolidation.**
+
+**Time-budgeted inference (concurrent, surfaced via Timely Machine bibliography):**
+- Ma et al, "Timely Machine: Awareness of Time Makes Test-Time Scaling Agentic" arXiv 2601.16486 (Jan 2026) — per-episode wall-clock budgeting via tool + reward shaping
+- Han et al, "Token-Budget-Aware LLM Reasoning" (2024)
+- Wen et al, "BudgetThinker" (2025)
+- Fan et al, "Timebill: Time-Budgeted Inference" arXiv 2512.21859 (2025)
+- Wang et al, "Faster and Better LLMs via Latency-Aware Test-Time Scaling" arXiv 2505.19634 (2025)
+- Liu et al, "Budget-Aware Tool-Use" (2025)
+- Wang et al, "AgentTTS" (2025)
+- Paglieri et al, "Learning When to Plan" (2025)
+
+**Closest deprecated live attempt (must-cite for preemptive critique cover):**
+- LucasMa2025, DKI repo (github.com/LucasMa2025/DKI, Feb 2026) — attention-hook K/V injection at negative token positions. Author deprecated two strategies (Full Attention, Engram-Inspired) citing four failure modes: capacity, no referenceability, OOD shift, factual accuracy loss. IPCN inherits failure mode 2 (referenceability) and must own that scope boundary.
 
 ---
 
@@ -1068,4 +1197,5 @@ Fail any → architecture does not yet support claimed mechanism. Investigate be
 
 ---
 
-*End of paper. Word count: ~6,800. Living document, update as scans deepen and prototype progresses.*
+*End of paper. Word count: ~10,500. Living document, update as scans deepen and prototype progresses.*
+*Last update: 2026-05-12 — Section 13.5 added with deep-read findings on 6 highest-risk priors (Garikaparthi, Wang, MIRAS, Nested Learning, DKI, Timely Machine). All 5 novelty bets survived scrutiny. Risk map refreshed: Timely Machine downgraded to LOW, Nested Learning confirmed HIGH. Ready-to-paste paragraphs drafted. Provenance trail to verified PDFs included.*
