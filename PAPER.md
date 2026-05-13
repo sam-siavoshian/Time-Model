@@ -552,4 +552,520 @@ For the full LaTeX spec with all math (equations, defaults, loss terms, slot upd
 
 ---
 
-*End of paper. Word count: ~3,800. Living document, update as scans deepen and prototype progresses.*
+## Appendix C: Critical Math (Implementation Reference)
+
+Everything needed to keep working without re-reading the full LaTeX spec. Each formula has a one-line plain-English caption.
+
+### C.1 Core IPCN computation graph
+
+**Baseline LLM (what NOT to do):**
+```
+H_t^L = F_θ(E(X_t))
+y_t ~ p_θ(· | H_t^L)
+```
+Input X_t embedded → run through layers F → predict.
+
+**Retrieval-augmented LLM (RAG-style):**
+```
+r_t = R(H_t^ℓ, M_t)
+y_t ~ p_θ(· | H_t^L, r_t)
+```
+Retrieve r_t AFTER intermediate hidden state H_t^ℓ exists.
+
+**IPCN (the move):**
+```
+P_t = C_φ(M_{t-1}, z_{t-1}, χ_t, S(X_t))      # build prefix BEFORE main
+H_t^0 = Inject(E(X_t), P_t, z_{t-1})           # inject into initial hidden state
+H_t^L = F_{θ, Ω_t}(H_t^0; P_t)                 # main model with LoRA adapters
+y_t ~ p_θ(· | H_t^L)
+M_t, z_t, Ω_{t+1} = Update(M_{t-1}, H_t^L, χ_t)  # write, evolve, consolidate
+```
+**Key difference:** P_t comes from PFC controller C_φ before main stack F runs. Memory is causal parent of initial condition.
+
+### C.2 Episodic memory slot
+
+```
+M_t = {m_{t,i}}_{i=1..N_m}        with N_m = 256
+
+m_{t,i} = (k_{t,i}, v_{t,i}, q_{t,i}, a_{t,i}, u_{t,i}, c_{t,i}, ρ_{t,i}, δ_{t,i})
+```
+
+| Symbol | Domain | Meaning |
+|---|---|---|
+| k_{t,i} | R^{d_m} | slot key (used for retrieval matching) |
+| v_{t,i} | R^{d_m} | slot value/content |
+| q_{t,i} | R^{d_m} | slot temporal-dynamics state (used by evolution GRU) |
+| a_{t,i} | R_+ | age since last decisive write |
+| u_{t,i} | R_+ | usage count (incremented on prefix use × usefulness) |
+| c_{t,i} | [0,1] | confidence/stability |
+| ρ_{t,i} | [0,1] | plasticity (high = easy to modify) |
+| δ_{t,i} | R_+ | running conflict score |
+
+Defaults: d_m = 256.
+
+**Slot temporal metadata (the chronometric layer):**
+```
+m̃_{t,i} = (m_{t,i}, τ^write_{t,i}, τ^use_{t,i}, χ^slot_{t,i})
+
+a_{t,i} = τ_t - τ^write_{t,i}          # age in real seconds
+d_{t,i} = τ_t - τ^use_{t,i}            # disuse in real seconds
+```
+
+### C.3 Temporal self-state z_t
+
+128-dim running "vibe vector" updated each chunk via GRU.
+
+```
+z_t ∈ R^{d_z},   d_z = 128
+
+z_t = GRU_ζ(z_{t-1}, b_t)
+
+b_t = [h̄_t; p̄_t; ℓ̄_t; H(α_t^pre); ||M_t - M_{t-1}||_F; c̄_t; ū_t; δ̄_t]
+```
+
+b_t bundles: average hidden state, average prefix, average loss, prefix entropy, memory velocity, mean confidence, mean usage, mean conflict.
+
+### C.4 Chronometric encoding (Gap 1 + 2 fix)
+
+**Full chronometric vector:**
+```
+χ_t = [τ_t, Δτ_t, ψ(τ_t), ψ(Δτ_t), ν_t, gap_t] ∈ R^{d_χ}
+```
+- τ_t = absolute stream time
+- Δτ_t = τ_t - τ_{t-1} (elapsed since last update)
+- ν_t = event density
+- gap_t ∈ {0, 1} (silent-gap flag)
+
+**Multi-scale time basis:**
+```
+ψ(τ) = [log(1+τ), sin(2π·τ/T_b), cos(2π·τ/T_b)]_{T_b ∈ 𝒯}
+
+𝒯 = {2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 4096, 16384, 65536}
+```
+
+13 timescales. Each gives 3 numbers (log + sin + cos). ψ(τ) is 39-dim. ψ(Δτ) is 39-dim. χ_t total = 82-dim.
+
+### C.5 PFC: prefix construction
+
+**Inputs.** Cheap input sketch:
+```
+e_{t,j} = E[x_{t,j}]                                       # word embedding
+s_t = [mean_j W_s·e_{t,j}; max_j W_s·e_{t,j}; e_{t,1}; e_{t,L}; z_{t-1}]
+```
+Average + max pool of embeddings + first/last token + temporal state. No main-model forward pass.
+
+**Prefix queries (K_p = 32):**
+```
+Q_t^P = reshape(W_Q^P · [s_t; z_{t-1}; χ_t],  K_p, d_m)
+```
+
+**Prefix-memory attention (with all biases):**
+```
+α_{t,r,i}^P = softmax_i (
+    (Q_{t,r}^P)^T · k_{t-1,i} / √d_m
+    + β_c · c_{t-1,i}
+    + β_u · log(1 + u_{t-1,i})
+    - β_a · a_{t-1,i}
+    - β_d · d_{t-1,i}
+    - β_δ · δ_{t-1,i}
+    + β_τ · κ_τ(χ_t, χ^slot_{t-1,i})
+)
+```
+
+Defaults: β_c=0.5, β_u=0.2, β_a=0.05, β_d=0.03, β_δ=0.4, β_τ=0.25.
+
+**Temporal compatibility kernel:**
+```
+κ_τ(χ_t, χ^slot_{t-1,i}) = cos(W_χ · χ_t, W_s^χ · χ^slot_{t-1,i})
+```
+
+**Raw prefix vectors:**
+```
+P̂_{t,r} = Σ_i α_{t,r,i}^P · v_{t-1,i}
+```
+
+**Refined prefix (small transformer):**
+```
+P_t = PFC_φ(P̂_t, s_t, z_{t-1}, χ_t; Ω_t) ∈ R^{K_p × d_model}
+```
+PFC: 2 self-attention layers over prefix tokens, 4 heads, hidden 512, FFN 1024, LoRA rank 8.
+
+### C.6 Three injection routes (mandatory + recommended + optional)
+
+**Route 1 (mandatory): prefix prepending.**
+```
+Y_t^0 = [P_t; E(X_t)] ∈ R^{(K_p + L) × d_model}
+mask(j, r) = 1   for content tokens j attending to prefix tokens r
+```
+Prefix-internal attention bidirectional; content tokens causal w.r.t. content.
+
+**Route 2 (strongly recommended): broadcast preconditioning.**
+```
+η_{t,j,r} = softmax_r ((W_e·e_{t,j})^T · (W_p·P_{t,r}) / √d_model)
+b_{t,j} = Σ_r η_{t,j,r} · P_{t,r}                          # token-specific prefix read
+
+γ_{t,j} = σ(W_γ · [e_{t,j}; b_{t,j}; z_{t-1}])             # gate
+ẽ_{t,j} = LN(e_{t,j} + λ_pre · γ_{t,j} ⊙ W_b · b_{t,j})    # preconditioned embedding
+
+H_t^0 = [P_t; ẽ_{t,1}; ...; ẽ_{t,L}]                       # main input
+```
+
+λ_pre: 0.5 (steps 0-50k), ramps to 1.0 by step 100k.
+
+**Route 3 (optional, layers 1-2 only): LayerNorm modulation.**
+```
+Γ_{t,j}^ℓ = 1 + α_film · tanh(W_Γ^ℓ · b_{t,j})
+B_{t,j}^ℓ = α_film · tanh(W_B^ℓ · b_{t,j})
+
+LN^ℓ_IPCN(h_{t,j}) = Γ_{t,j}^ℓ ⊙ LN(h_{t,j}) + B_{t,j}^ℓ
+```
+
+α_film = 0.1. Only layers 1 and 2 in v1.
+
+### C.7 LoRA consolidated weights
+
+```
+Ω_t = {A_t^ℓ, B_t^ℓ, g_t^ℓ}_{ℓ ∈ ℒ_c}
+
+W_eff,t^ℓ = W^ℓ + λ_c · B_t^ℓ · A_t^ℓ
+```
+
+ℒ_c = {PFC, core layers 0-2}. Rank r = 8 (start), 16 (scale-up). Base W frozen, only A, B trainable.
+
+### C.8 Memory writing (after main forward pass)
+
+**Surprise (token-level):**
+```
+ℓ_{t,j} = -log p(x_{t,j+1} | X_{≤t,j}, M_{t-1}, P_t, Ω_t)
+s_{t,j} = (ℓ_{t,j} - μ_ℓ,t) / (σ_ℓ,t + ε)        # z-scored within chunk
+```
+
+**Novelty (vs existing slots):**
+```
+k̂_{t,j} = W_k^m · h_{t,j}^L
+n_{t,j} = 1 - max_i cos(k̂_{t,j}, k_{t-1,i})
+```
+
+**Prefix attribution (was prefix useful here?):**
+```
+u^prefix_{t,j} = ℓ^zero-prefix_{t,j} - ℓ^prefix_{t,j}     # positive = prefix helped
+```
+Estimate on random 10-25% of chunks to halve cost.
+
+**Write score:**
+```
+ω_{t,j} = σ(λ_s · s_{t,j} + λ_n · n_{t,j} + λ_r · r_{t,j} + λ_p · u^prefix_{t,j})
+
+r_{t,j} = w_r^T · [h_{t,j}^L; b_{t,j}; z_{t-1}]
+```
+
+Defaults: λ_s=0.7, λ_n=0.5, λ_r=0.4, λ_p=0.8. Select top K_w = 16 candidates per chunk.
+
+**Slot assignment (which slot does this candidate go to?):**
+```
+β_{t,j,i} = softmax_i (
+    η_sim · cos(k̂_{t,j}, k_{t-1,i})
+    - η_c · c_{t-1,i}                  # avoid high-confidence slots
+    - η_u · log(1 + u_{t-1,i})         # avoid high-usage slots
+    - η_δ · δ_{t-1,i}                  # avoid conflicted slots
+)
+```
+
+Defaults: η_sim=2.0, η_c=0.5, η_u=0.2, η_δ=0.7. Top-1 for debug, top-2 soft later.
+
+**Slot update (key and value):**
+```
+v̂_{t,j} = W_v^m · h_{t,j}^L
+η_{t,i} = σ(w_η^T · [v_{t-1,i}; z_{t-1}; c_{t-1,i}; ρ_{t-1,i}; a_{t-1,i}]) · ρ_{t-1,i}
+
+k_{t,i}^+ = norm((1 - η_{t,i}) · k_{t-1,i} + η_{t,i} · Σ_j β_{t,j,i} · ω_{t,j} · k̂_{t,j})
+v_{t,i}^+ = (1 - η_{t,i}) · v_{t-1,i} + η_{t,i} · Σ_j β_{t,j,i} · ω_{t,j} · v̂_{t,j}
+```
+
+**Conflict, confidence, plasticity:**
+```
+Δ_{t,i} = 1 - cos(v_{t-1,i}, Σ_j β_{t,j,i} · v̂_{t,j})              # conflict
+c_{t,i}^+ = clip_[0,1](c_{t-1,i} + ξ_use·1[i used] - ξ_conf·Δ_{t,i} - ξ_age·a_{t-1,i})
+ρ_{t,i}^+ = clip_[0,1](1 - c_{t,i}^+ + ξ_nov · n̄_{t,i})
+```
+
+### C.9 Memory evolution (the silent-gap mechanism)
+
+**Slot interaction graph (sparse, top-K):**
+```
+A_{t,i,j} = TopK_j softmax_j (k_{t,i}^+T · k_{t,j}^+ / √d_m)        |N(i)| = 8
+```
+
+**Continuous-style transition:**
+```
+λ_{t,i} = σ(w_λ^T · [v_{t,i}^+; q_{t,i}^+; z_t; c_{t,i}^+; a_{t,i}^+])
+
+Δv_{t,i} = -λ_{t,i} · v_{t,i}^+                                      # decay
+         + Σ_{j ∈ N(i)} A_{t,i,j} · W_A · v_{t,j}^+                  # neighbor influence
+         + W_φ · tanh(W_v · v_{t,i}^+ + W_q · q_{t,i}^+ + W_z · z_t) # dynamics
+
+v_{t,i}^evo = LN(v_{t,i}^+ + ε_dyn · Δv_{t,i})
+q_{t,i}^evo = GRU_q(q_{t-1,i}, [v_{t,i}^evo; z_t; Δv_{t,i}])
+```
+
+ε_dyn = 0.1.
+
+**Duration-sensitive evolution (THE key chronometric coupling):**
+```
+v_{t+1,i}^evo = LN(v_{t,i}^+ + ε_dyn · clip(Δτ_t, 0, Δτ_max) · Δv_{t,i})
+
+M_{t+1} = Evolve_φ(M_t, z_t, χ_t, Δτ_t)
+```
+
+**Silent gap iteration (G chunks, no input):**
+```
+M_{t+g+1} = Evolve_φ(M_{t+g}, z_{t+g}, Δτ_g),    g = 0, ..., G-1
+```
+
+Memory keeps changing during silent gaps based on real elapsed Δτ. This is what makes time a substrate.
+
+### C.10 Usage-driven consolidation into LoRA
+
+**Slot usage signal:**
+```
+ū^prefix_t = (1/L) · Σ_j (ℓ^zero-prefix_{t,j} - ℓ^prefix_{t,j})       # prefix benefit this chunk
+Δu_{t,i} = Σ_r α_{t,r,i}^P · ReLU(ū^prefix_t) · stopgrad(ḡ_t)         # weighted by attention + benefit + gate
+
+u_{t,i}^+ = λ_u · u_{t-1,i} + Δu_{t,i}                                # λ_u = 0.995 (slow decay)
+```
+
+**Consolidation eligibility score:**
+```
+κ_{t,i} = log(1 + u_{t,i}) · c_{t,i} · (1 - δ_{t,i}) · ReLU(ū^prefix_i) · (1 - ρ_{t,i})
+```
+
+Slot i eligible if κ_{t,i} > τ_cons (=3.0) AND slot stable ≥ T_stable (=512 chunks).
+
+**Consolidation loss (teacher-student KL distillation):**
+```
+p_T(y|x) = p_{θ, Ω_t}(y | x, M_t)                          # teacher: slot present
+p_S(y|x) = p_{θ, Ω_t + ΔΩ}(y | x, M_t \ {m_i})             # student: slot removed, LoRA trainable
+
+ℒ_cons^(i) = E_{x ~ B_i}[ KL(stopgrad(p_T(·|x)) || p_S(·|x)) ]
+           + λ_Ω · ||ΔΩ||_F^2
+           + λ_EWC · ℛ_stable
+```
+
+LoRA update:
+```
+Ω_{t+1} = Ω_t - η_cons · ∇_Ω Σ_{i ∈ C_t} ℒ_cons^(i)
+```
+
+Defaults: η_cons = 1e-5, λ_Ω = 1e-4, λ_EWC = 1e-3.
+
+**Soft vs hard consolidation:**
+```
+Soft:  ΔΩ stored in adapter, slot still active.
+Hard:  v_{t,i} ← (1 - χ_i) · v_{t,i},   c_{t,i} ← (1 - χ_i) · c_{t,i}
+```
+
+χ_i (attenuation rate) allowed to grow only if:
+```
+ΔAcc_i = Acc(M_t) - Acc(M_t \ {m_i}) < ε_drop = 0.02
+```
+
+**Safety constraints (rollback if either fails):**
+```
+Acc_contra(Ω_{t+1}) ≥ Acc_contra(Ω_t) - 0.01                # contradiction floor
+E_{x ~ D_LM}[ KL(p_{θ,Ω_t}(·|x) || p_{θ,Ω_{t+1}}(·|x)) ] < 0.02   # LM drift floor
+```
+
+### C.11 Full training objective
+
+```
+ℒ = ℒ_LM
+  + λ_pre  · ℒ_pre-influence
+  + λ_prec · ℒ_precision
+  + λ_mem  · ℒ_mem-predict
+  + λ_div  · ℒ_diversity
+  + λ_slot · ℒ_slot-util
+  + λ_evo  · ℒ_evolution
+  + λ_chrono · ℒ_chrono
+  + λ_cons · ℒ_cons
+```
+
+**Default weights:**
+
+| Term | Weight |
+|---|---|
+| ℒ_LM | 1.0 |
+| ℒ_pre-influence | 0.02 |
+| ℒ_precision | 0.02 |
+| ℒ_mem-predict | 0.05 |
+| ℒ_diversity | 0.001 |
+| ℒ_slot-util | 0.001 |
+| ℒ_evolution | 0.02 |
+| ℒ_chrono | 0.03 |
+| ℒ_cons | 0.1 during consolidation phases, 0 otherwise |
+
+**Individual loss terms:**
+
+**Language modeling:**
+```
+ℒ_LM = Σ_{t,j} -log p(x_{t,j+1} | X_{≤t,j}, M_{t-1}, P_t, Ω_t)
+```
+
+**Pre-computational influence (force prefix gate when memory helps):**
+```
+U_t = (1/L) · Σ_j (ℓ^zero-prefix_{t,j} - ℓ^prefix_{t,j})
+
+ℒ_pre-influence = 1[U_t > ρ] · max(0, τ_g - ḡ_t)
+```
+ρ = 0.03, τ_g = 0.2.
+
+**Precision (suppress prefix when it hurts):**
+```
+ℒ_precision = 1[U_t < 0] · ḡ_t
+```
+
+**Memory usefulness prediction (learnable predictor of U_t):**
+```
+Û_t = P_U(s_t, P_t, z_{t-1})
+ℒ_mem-predict = ||Û_t - stopgrad(U_t)||_2^2
+```
+
+**Slot diversity (avoid collapsing keys):**
+```
+ℒ_diversity = (1/N_m^2) · Σ_{i≠j} cos(k_i, k_j)^2
+```
+
+**Slot utilization entropy (avoid winner-take-all):**
+```
+p_i = u_i / (Σ_j u_j + ε)
+H_u = -Σ_i p_i log p_i
+
+ℒ_slot-util = max(0, H_min - H_u),       H_min = 0.5 · log(N_m)
+```
+
+**Evolution self-prediction (forecast next state):**
+```
+ẑ_{t+1} = P_z(M_t, z_t)
+ℒ_z = ||ẑ_{t+1} - stopgrad(z_{t+1})||_2^2
+
+ΔM̂_{t+1} = P_M(M_t, z_t)
+ℒ_M = ||ΔM̂_{t+1} - stopgrad(M_{t+1} - M_t)||_F^2
+
+ℒ_evolution = ℒ_z + 0.5 · ℒ_M
+```
+
+**Chronometric prediction (THE time-grounding loss):**
+```
+ℒ_chrono = λ_dur   · ||Δτ̂_t - Δτ_t||_2^2                            # predict elapsed time
+         + λ_phase · CE(φ̂_t, φ_t)                                    # predict periodic phase
+         + λ_future · ||pool(M̂_{t+h}) - pool(M_{t+h})||_2^2          # predict future memory
+```
+h ∈ {1, 4, 16, 64} sampled. Without this loss, χ_t inputs may be ignored.
+
+### C.12 Metrics for the 7 falsifiable predictions
+
+**Prediction 1: memory must change layer 0.**
+```
+H_0^A = Inject(E(X), C_φ(M^A, z^A, S(X)))                # memory state A
+H_0^B = Inject(E(X), C_φ(M^B, z^B, S(X)))                # memory state B
+
+D_0 = ||H_0^A - H_0^B||_F / (||E(X)||_F + ε)             # normalized layer-0 difference
+```
+Pass: D_0 > 0.1 on ambiguous inputs. Fail: D_0 ≈ 0 (late retrieval level).
+
+**Prediction 3 ablation order:** B0 < B1 < B2 < B3 < B4 < B5 < B6 on ambiguity.
+Weakened if: Acc(B5) - Acc(B1) < 0.03.
+
+**Prediction 4: Consolidation Transfer Index (CTI).**
+```
+Acc_pre^with     = Acc(M)                                # before consolidation, slot present
+Acc_pre^without  = Acc(M \ {m_i})                        # before consolidation, slot removed
+Acc_post^with    = Acc(M, Ω_post)                        # after consolidation, slot present
+Acc_post^without = Acc(M \ {m_i}, Ω_post)                # after consolidation, slot removed
+
+CTI_i = (Acc_post^without - Acc_pre^without) / (Acc_pre^with - Acc_pre^without + ε)
+```
+Pass: CTI > 0.7 AND contradiction accuracy drops < 1%.
+
+**Prediction 5: silent-gap evolution.**
+```
+Acc(IPCN_evolve) - Acc(IPCN_static) ≥ 0.15    at 64k context, 512 silent minutes
+```
+
+**Prediction 6: chronometric ablation.**
+```
+Acc(Δτ-aware) - Acc(Δτ-ablated) ≥ 0.10                   # duration-sensitive tasks
+KL(p(y|X, Δτ_a) || p(y|X, Δτ_b)) ≤ 0.1                    # duration-insensitive tasks
+```
+
+**Prediction 7: explicit-evidence override.**
+```
+KL(p(y|X_amb, M^A) || p(y|X_amb, M^B)) ≥ 0.5             # ambiguous: memory matters
+KL(p(y|X_explicit, M^A) || p(y|X_explicit, M^B)) ≤ 0.1   # explicit: memory swap doesn't move output
+```
+
+### C.13 Diagnostic metrics (additional)
+
+**Pre-computation influence index (force prefix to land in early layers):**
+```
+I_pre = ||H_0^prefix - H_0^zero||_F / (||H_L^prefix - H_L^zero||_F + ε)
+```
+Pass: I_pre > 0.25 on prefix-useful tasks.
+
+**Prefix entropy (focused or spread?):**
+```
+H_P = -(1/K_p) · Σ_r Σ_i α_{r,i}^P · log α_{r,i}^P
+```
+
+**Memory velocity (how fast is memory changing?):**
+```
+V_t = ||M_t - M_{t-1}||_F
+```
+
+**Adapter drift (how far has LoRA moved from init?):**
+```
+D_Ω = ||Ω_t - Ω_0||_F
+```
+
+### C.14 Default hyperparameters (v1 prototype)
+
+| Item | Value |
+|---|---|
+| Core layers | 8 |
+| Core width d_model | 512 |
+| Attention heads | 8 |
+| FFN dimension | 2048 |
+| Content chunk length L | 256 tokens |
+| Local content window | 1024 tokens |
+| Prefix length K_p | 32 |
+| Episodic memory slots N_m | 256 |
+| Episodic memory dimension d_m | 256 |
+| Temporal self-state dim d_z | 128 |
+| Time basis 𝒯 | {2, 4, ..., 65536} (13 scales) |
+| LoRA rank r | 8 (start), 16 (scale-up) |
+| Training precision | bf16 |
+| Optimizer | AdamW |
+| Base learning rate | 3e-4 |
+| LoRA consolidation LR η_cons | 1e-5 to 5e-5 |
+| Backprop through chunks | 4 chunks, then detach |
+| Synthetic training steps | 100k |
+| Mixed LM training steps | 100k |
+| Consolidation frequency | every 256 chunks after warmup |
+| Adapter update steps per consolidation batch | 1-5 |
+| Validation before adapter commit | required |
+| Rollback if contradiction or LM drift fail | required |
+
+### C.15 Hard pass criteria (Phase 0 first experiment)
+
+```
+Acc(A3) - Acc(A1) ≥ 0.10                       on ambiguity
+I_pre(A3) ≥ 0.25                                when prefix useful
+Acc_explicit(A3) ≥ Acc_explicit(A1) - 0.02      explicit contradiction (no overuse)
+CTI(A5) ≥ 0.70                                  after consolidation
+OLP(A5) ≤ 1.05 × OLP(A3)                        LM perplexity drift
+```
+
+Fail any → architecture does not yet support claimed mechanism. Investigate before scale-up.
+
+---
+
+*End of paper. Word count: ~6,800. Living document, update as scans deepen and prototype progresses.*
