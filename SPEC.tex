@@ -1,0 +1,1261 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsfonts,mathtools}
+\usepackage{booktabs,array,longtable,multirow}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{listings}
+\usepackage{caption}
+\usepackage{titlesec}
+\usepackage{mdframed}
+
+\hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
+\setlist[itemize]{leftmargin=1.4em}
+\setlist[enumerate]{leftmargin=1.6em}
+\titleformat{\section}{\large\bfseries}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}{\normalsize\itshape}{\thesubsubsection}{0.6em}{}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\softmax}{\operatorname{softmax}}
+\newcommand{\LN}{\operatorname{LN}}
+\newcommand{\sg}{\operatorname{sg}}
+\newcommand{\KL}{\operatorname{KL}}
+\newcommand{\cosine}{\operatorname{cos}}
+\newcommand{\concat}{\mathbin{\Vert}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\TopK}{\operatorname{TopK}}
+\newcommand{\PFC}{\operatorname{PFC}}
+\newcommand{\Core}{\operatorname{Core}}
+\newcommand{\Prefix}{\operatorname{Prefix}}
+\newcommand{\Evolve}{\operatorname{Evolve}}
+\newcommand{\Write}{\operatorname{Write}}
+\newcommand{\Read}{\operatorname{Read}}
+\newcommand{\Consolidate}{\operatorname{Consolidate}}
+\newcommand{\Mem}{\mathcal{M}}
+\newcommand{\PrefixSet}{\mathcal{P}}
+\newcommand{\Adapter}{\mathcal{A}}
+\newcommand{\Base}{\Theta}
+\newcommand{\Fast}{\Phi}
+\newcommand{\Slow}{\Omega}
+
+\definecolor{boxbg}{RGB}{248,249,252}
+\definecolor{boxline}{RGB}{80,95,140}
+\newmdenv[linecolor=boxline,backgroundcolor=boxbg,linewidth=0.8pt,roundcorner=3pt,skipabove=8pt,skipbelow=8pt]{specbox}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  columns=fullflexible,
+  keepspaces=true
+}
+
+\title{\textbf{Involuntary Prefix Consolidation Networks}\\
+\large A Falsifiable Architecture for Pre-Computational Memory, Mandatory Memory Prefixing, and Usage-Driven Weight Consolidation}
+\author{Technical research specification}
+\date{May 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This document specifies \emph{Involuntary Prefix Consolidation Networks} (IPCN), an architecture in which persistent memory is not merely retrieved after computation, appended as context, or reused as a static KV cache. Instead, a pre-computational controller compiles the current persistent memory state into an \emph{involuntary prefix} before the main neural network forward pass. The main network never receives a neutral input: its initial hidden state is already biased by memory. Over time, frequently used, high-confidence memories are distilled from external episodic slots into slow, low-rank adapter weights inside the prefix-forming controller, allowing repeated memories to become part of long-term computation. The approach combines five mechanisms: (i) persistent evolving episodic memory, (ii) explicit chronometric state, (iii) pre-forward prefix compilation, (iv) mandatory prefix incorporation into every forward pass, and (v) usage-triggered consolidation into weights. The central falsifiable claim is that memory-as-prefix and memory-as-consolidated-weight outperform KV-cache reuse, late retrieval, recurrent memory tokens, and static memory banks on tasks where prior experience must shape interpretation before deliberative computation begins, while still remaining suppressible by explicit contradictory evidence.
+\end{abstract}
+
+\section{Computational claim}
+
+The core claim is not that a model should have more context. The claim is that persistent memory should be a causal parent of the next forward pass's \emph{initial condition}. A conventional causal language model computes
+\begin{equation}
+    H_t^L = F_\theta(E(X_t)), \qquad y_t \sim p_\theta(\cdot \mid H_t^L),
+\end{equation}
+where \(X_t\) is the current chunk and \(E\) is the token embedding table. A retrieval-augmented model usually computes a memory read after a query representation exists:
+\begin{equation}
+    r_t = R(H_t^\ell, \Mem_t), \qquad y_t \sim p_\theta(\cdot \mid H_t^L, r_t).
+\end{equation}
+IPCN instead computes
+\begin{equation}
+    P_t = C_\phi(\Mem_{t-1}, z_{t-1}, S(X_t)),
+\end{equation}
+\emph{before} the main stack runs, then forces the main stack to process
+\begin{equation}
+    H_t^0 = \operatorname{Inject}(E(X_t), P_t, z_{t-1}), \qquad H_t^L = F_{\theta,\Omega_t}(H_t^0; P_t).
+\end{equation}
+Here \(C_\phi\) is the prefix-forming controller, \(\Mem_t\) is persistent episodic memory, \(z_t\) is a compact temporal self-state, and \(\Omega_t\) denotes slowly changing consolidated adapter weights. The controller plays the role of an engineered ``prefrontal'' memory compiler, but the term is a computational analogy rather than a literal neuroscience mapping.
+
+\begin{specbox}
+\textbf{One-sentence thesis.} Memory should not merely be retrieved as content after reasoning; it should be compiled into an involuntary hidden prefix that shapes the initial conditions of reasoning, and stable high-usage memories should be gradually consolidated into slow weights.
+\end{specbox}
+
+\section{Relation to prior work and non-claims}
+
+IPCN is grounded in existing memory-augmented and recurrent sequence modeling work. Memory Networks and Neural Turing Machines introduced differentiable external memory with learned read/write mechanisms \cite{weston2014memory,graves2014ntm}. Transformer-XL introduced segment recurrence beyond a fixed-length context \cite{dai2019transformerxl}. Recurrent Memory Transformer introduced memory tokens for segment-level recurrence \cite{bulatov2022rmt}. Mamba uses selective state-space dynamics to propagate or forget state in linear time \cite{gu2023mamba}. Titans proposes neural long-term memory and test-time memorization \cite{behrouz2024titans}. TTT layers treat the hidden state as a machine learning model updated by self-supervised learning at test time \cite{sun2024ttt}. These systems motivate IPCN but do not fully instantiate the specific topology proposed here: persistent memory is precompiled into a mandatory prefix before the main forward pass, and repeated memory use triggers consolidation into prefix-controller weights.
+
+The biological analogy is intentionally constrained. IPCN does not claim that the human prefrontal cortex literally performs this algorithm. The analogy is that hippocampal-prefrontal interaction and memory replay/consolidation suggest a broad computational pattern: recently acquired memories can influence future interpretation, and repeated/replayed experiences may become represented in more stable long-term circuits \cite{preston2013hippocampus,brodt2023sleep,moscovitch2022systems}. IPCN abstracts this into an engineered loop: episodic slots \(\rightarrow\) involuntary prefix \(\rightarrow\) main computation \(\rightarrow\) usage evidence \(\rightarrow\) slow-weight consolidation.
+
+\subsection{What IPCN is not claiming}
+
+\begin{itemize}
+    \item It is not claiming to implement consciousness or subjective experience.
+    \item It is not claiming that all memory should bypass deliberation. The prefix is mandatory, but precision gates and contradiction losses constrain its strength.
+    \item It is not claiming to replace attention or KV caching. The core model may still use local attention and ordinary KV caching during generation.
+    \item It is not claiming novelty for external memory, prefix tuning, recurrent states, or adapter training individually. The novel claim is the combined topology and its falsifiable behavioral signature.
+\end{itemize}
+
+\section{Terminology}
+
+IPCN uses four memory tiers.
+
+\begin{longtable}{p{0.20\linewidth}p{0.29\linewidth}p{0.39\linewidth}}
+\toprule
+\textbf{Tier} & \textbf{Symbol} & \textbf{Function} \\
+\midrule
+Local KV state & \(K_t,V_t\) & Short-lived autoregressive computation reuse inside the current sequence. Static and append-only during decoding. \\
+Episodic memory & \(\Mem_t\) & Persistent slot memory storing recently useful latent facts, rules, entities, and temporal state. Evolves across chunks and can survive beyond a context window. \\
+Involuntary prefix & \(P_t\) & A hidden prefix compiled from episodic memory before the main forward pass. It is prepended and broadcast into current token representations. \\
+Consolidated weights & \(\Omega_t\) & Slow adapter weights inside the prefix-forming controller and early core layers. High-usage memories are distilled here. \\
+\bottomrule
+\end{longtable}
+
+The phrase \emph{prefrontal controller} below means \emph{Prefix-Forming Controller} (PFC), not an anatomical claim. It is the module that precomputes memory into a prefix. The phrase \emph{sense of time} means an explicit computational representation of elapsed duration, order, rhythm, age, and temporal phase; it does not mean subjective temporal experience.
+
+\section{High-level computation graph}
+
+At chunk \(t\), IPCN executes the following sequence:
+
+\begin{enumerate}
+    \item \textbf{Sketch current input cheaply.} Compute a shallow sketch \(s_t=S_\omega(X_t)\) without running the main Transformer stack.
+    \item \textbf{Precompute memory.} The prefix-forming controller reads persistent memory \(\Mem_{t-1}\), temporal self-state \(z_{t-1}\), and sketch \(s_t\), producing involuntary prefix tokens \(P_t\).
+    \item \textbf{Inject prefix before main weights.} The current token embeddings are preconditioned by \(P_t\). The core model receives \([P_t; \tilde{E}(X_t)]\), not \(E(X_t)\).
+    \item \textbf{Main forward pass.} The core model computes logits using fixed base weights \(\theta\) plus slow consolidated adapters \(\Omega_t\).
+    \item \textbf{Write episodic memory.} Surprise, novelty, relevance, and prefix-attribution signals select memory writes.
+    \item \textbf{Evolve memory.} Episodic memory evolves autonomously, including during silent time gaps.
+    \item \textbf{Consolidate.} Memories repeatedly used by the involuntary prefix are distilled into slow adapter weights; the external slot is gradually attenuated after validation.
+\end{enumerate}
+
+\begin{equation}
+\boxed{
+\Mem_{t-1},z_{t-1},X_t
+\xrightarrow{\;C_\phi\;}
+P_t
+\xrightarrow{\;\operatorname{Inject}\;}
+H_t^0
+\xrightarrow{\;F_{\theta,\Omega_t}\;}
+H_t^L
+\xrightarrow{\;\Write,\Evolve,\Consolidate\;}
+\Mem_t,z_t,\Omega_{t+1}
+}
+\end{equation}
+
+\section{Model state}
+
+\subsection{Episodic memory slots}
+
+Let the persistent episodic memory be
+\begin{equation}
+    \Mem_t = \{m_{t,i}\}_{i=1}^{N_m}, \qquad N_m=256.
+\end{equation}
+Each slot is
+\begin{equation}
+    m_{t,i}=\left(k_{t,i},v_{t,i},q_{t,i},a_{t,i},u_{t,i},c_{t,i},\rho_{t,i},\delta_{t,i}\right),
+\end{equation}
+where
+\begin{align*}
+    k_{t,i}&\in\R^{d_m} && \text{slot key},\\
+    v_{t,i}&\in\R^{d_m} && \text{slot value/content},\\
+    q_{t,i}&\in\R^{d_m} && \text{slot temporal-dynamics state},\\
+    a_{t,i}&\in\R_+ && \text{age since last decisive write},\\
+    u_{t,i}&\in\R_+ && \text{usage count, updated by prefix use and gradients},\\
+    c_{t,i}&\in[0,1] && \text{confidence/stability},\\
+    \rho_{t,i}&\in[0,1] && \text{plasticity, high means easy to modify},\\
+    \delta_{t,i}&\in\R_+ && \text{running conflict score}.
+\end{align*}
+Use \(d_m=256\) for the first implementation.
+
+\subsection{Temporal self-state}
+
+The temporal self-state is
+\begin{equation}
+    z_t\in\R^{d_z}, \qquad d_z=128.
+\end{equation}
+It summarizes memory velocity, prefix entropy, prefix usefulness, surprise, slot usage distribution, and contradiction evidence:
+\begin{equation}
+    z_t = \operatorname{GRU}_\zeta(z_{t-1}, b_t),
+\end{equation}
+where
+\begin{equation}
+    b_t = [\bar{h}_t;\bar{p}_t;\bar{\ell}_t;H(\alpha_t^{pre});\|\Mem_t-\Mem_{t-1}\|_F;\bar{c}_t;\bar{u}_t;\bar{\delta}_t].
+\end{equation}
+
+
+\subsection{Chronometric substrate: operational sense of time}
+
+IPCN includes a computational sense of time by making elapsed duration and temporal phase explicit causal inputs to memory retrieval, prefix formation, memory evolution, and consolidation. Define a chronometric state
+\begin{equation}
+    \chi_t = [\tau_t,\Delta\tau_t,\psi(\tau_t),\psi(\Delta\tau_t),\nu_t,gap_t]\in\R^{d_\chi},
+\end{equation}
+where \(\tau_t\) is absolute stream time, \(\Delta\tau_t=\tau_t-\tau_{t-1}\) is elapsed time since the previous update, \(\nu_t\) is event density, and \(gap_t\in\{0,1\}\) indicates whether the update occurs during a silent gap. The time basis is multi-scale:
+\begin{equation}
+    \psi(\tau)=\left[\log(1+\tau),\;\sin\left(\frac{2\pi\tau}{T_b}\right),\;\cos\left(\frac{2\pi\tau}{T_b}\right)\right]_{T_b\in\mathcal{T}},
+\end{equation}
+with
+\begin{equation}
+    \mathcal{T}=\{2,4,8,16,32,64,128,256,512,1024,4096,16384,65536\}.
+\end{equation}
+This lets the model represent short intervals, long intervals, and periodic phase without relying only on token position.
+
+Each episodic slot stores temporal metadata:
+\begin{equation}
+    \tilde{m}_{t,i}=\left(m_{t,i},\tau^{write}_{t,i},\tau^{use}_{t,i},\chi^{slot}_{t,i}\right),
+\end{equation}
+where \(\tau^{write}_{t,i}\) is the last decisive write time, \(\tau^{use}_{t,i}\) is the last prefix-use time, and \(\chi^{slot}_{t,i}\) is a learned temporal signature of the context in which the memory is valid. Slot age and disuse are therefore not vague counters:
+\begin{equation}
+    a_{t,i}=\tau_t-\tau^{write}_{t,i},\qquad d_{t,i}=\tau_t-\tau^{use}_{t,i}.
+\end{equation}
+
+The PFC receives time explicitly:
+\begin{equation}
+    P_t=C_\phi(\Mem_{t-1},z_{t-1},\chi_t,S(X_t);\Omega_t).
+\end{equation}
+Prefix-memory attention also includes temporal compatibility:
+\begin{equation}
+    \alpha_{t,r,i}^{P}=\softmax_i\left(
+    \frac{(Q_{t,r}^{P})^\top k_{t-1,i}}{\sqrt{d_m}}
+    +\beta_c c_{t-1,i}+\beta_u\log(1+u_{t-1,i})
+    -\beta_a a_{t-1,i}-\beta_d d_{t-1,i}
+    -\beta_\delta\delta_{t-1,i}
+    +\beta_\tau \kappa_\tau(\chi_t,\chi^{slot}_{t-1,i})
+    \right),
+\end{equation}
+where
+\begin{equation}
+    \kappa_\tau(\chi_t,\chi^{slot}_{t-1,i})=\cosine(W_\chi\chi_t,W_s^\chi\chi^{slot}_{t-1,i}).
+\end{equation}
+Default added coefficients:
+\begin{equation}
+    \beta_d=0.03,\qquad \beta_\tau=0.25.
+\end{equation}
+
+Memory evolution is duration-sensitive rather than chunk-count-sensitive:
+\begin{equation}
+    \Mem_{t+1}=\Evolve_\phi(\Mem_t,z_t,\chi_t,\Delta\tau_t).
+\end{equation}
+For a slot value, use
+\begin{equation}
+    v_{t+1,i}^{evo}=\LN\left(v_{t,i}^{+}+\epsilon_{dyn}\,\operatorname{clip}(\Delta\tau_t,0,\Delta\tau_{max})\,\Delta v_{t,i}\right).
+\end{equation}
+Thus two streams with the same number of tokens but different elapsed durations can produce different memory states. This is the operational criterion for a model-level sense of time.
+
+Add a chronometric prediction loss:
+\begin{equation}
+    \mathcal{L}_{chrono}=\lambda_{dur}\|\hat{\Delta\tau}_t-\Delta\tau_t\|_2^2+\lambda_{phase}\operatorname{CE}(\hat{\varphi}_t,\varphi_t)+\lambda_{future}\|\widehat{\operatorname{pool}(\Mem_{t+h})}-\operatorname{pool}(\Mem_{t+h})\|_2^2,
+\end{equation}
+where \(\varphi_t\) is a discretized temporal phase label for periodic rules and \(h\in\{1,4,16,64\}\) is sampled. This loss forces the system to learn duration, order, rhythm, and future memory trajectory rather than treating time as an incidental token feature.
+
+\begin{specbox}
+\textbf{Chronometric falsification.} Hold the visible token sequence constant but change \(\Delta\tau_t\). IPCN should change answers on duration-sensitive tasks, such as decay and delayed transitions, while keeping answers fixed on duration-insensitive tasks. If replacing \(\Delta\tau_t\) with a constant does not reduce silent-gap and time-warp accuracy, the architecture has not learned a meaningful computational sense of time.
+\end{specbox}
+
+\subsection{Consolidated adapter weights}
+
+The base network weights \(\theta\) are not updated during ordinary inference. Long-term consolidation is stored in low-rank adapters:
+\begin{equation}
+    \Omega_t = \{A_t^\ell,B_t^\ell,g_t^\ell\}_{\ell\in\mathcal{L}_c},
+\end{equation}
+where \(\mathcal{L}_c\) initially contains the prefix-forming controller plus the first two core layers. For a weight matrix \(W^\ell\), the effective weight is
+\begin{equation}
+    W_{\text{eff},t}^\ell = W^\ell + \lambda_c B_t^\ell A_t^\ell,
+\end{equation}
+with rank \(r=8\) or \(r=16\). Consolidation updates \(A_t^\ell,B_t^\ell\), not the full base \(W^\ell\), during the first experimental phase.
+
+\section{The Prefix-Forming Controller}
+
+The PFC is a small network that runs before the main Transformer. It receives a cheap input sketch rather than full deep representations. This matters because the architecture should not wait for the main network to interpret the input before memory can bias interpretation.
+
+\subsection{Input sketch}
+
+For input chunk
+\begin{equation}
+    X_t=(x_{t,1},\ldots,x_{t,L}), \qquad L=256,
+\end{equation}
+define a shallow sketch
+\begin{align}
+    e_{t,j} &= E[x_{t,j}],\\
+    s_t &= S_\omega(X_t)=\left[\frac{1}{L}\sum_{j=1}^L W_s e_{t,j};\; \max_j W_s e_{t,j};\; e_{t,1};\; e_{t,L};\; z_{t-1}\right].
+\end{align}
+The sketch uses embeddings and pooling but not the main Transformer stack.
+
+\subsection{Memory read for prefix construction}
+
+The PFC produces \(K_p\) prefix queries:
+\begin{equation}
+    Q_t^P = \operatorname{reshape}\left(W_Q^P[s_t;z_{t-1};\chi_t], K_p,d_m\right), \qquad K_p=32.
+\end{equation}
+For each prefix index \(r\in\{1,\ldots,K_p\}\), compute memory attention
+\begin{equation}
+    \alpha_{t,r,i}^{P} = \softmax_i\left(
+        \frac{(Q_{t,r}^{P})^\top k_{t-1,i}}{\sqrt{d_m}}
+        + \beta_c c_{t-1,i}
+        + \beta_u \log(1+u_{t-1,i})
+        - \beta_a a_{t-1,i}
+        - \beta_\delta \delta_{t-1,i}
+    \right).
+\end{equation}
+Default coefficients:
+\begin{equation}
+    \beta_c=0.5,\quad \beta_u=0.2,\quad \beta_a=0.05,\quad \beta_\delta=0.4.
+\end{equation}
+The raw memory prefix vectors are
+\begin{equation}
+    \hat{P}_{t,r}=\sum_{i=1}^{N_m}\alpha_{t,r,i}^{P}v_{t-1,i}.
+\end{equation}
+
+\subsection{Prefix refinement}
+
+Prefix tokens are refined by a small Transformer or gated MLP:
+\begin{equation}
+    P_t = \operatorname{PFC}_\phi(\hat{P}_t, s_t,z_{t-1},\chi_t;\Omega_t)\in\R^{K_p\times d_{model}}.
+\end{equation}
+Use \(d_{model}=512\). In the first experiment, the PFC should be small:
+\begin{itemize}
+    \item 2 self-attention layers over prefix tokens,
+    \item 4 attention heads,
+    \item hidden size 512,
+    \item FFN size 1024,
+    \item LoRA rank 8 for consolidated weights.
+\end{itemize}
+
+\subsection{Why this is not a KV cache}
+
+A KV cache stores previous layer keys and values to avoid recomputing attention over earlier tokens. It is append-only within a sequence and attention decides which previous states to use. IPCN's prefix is different in four ways:
+\begin{enumerate}
+    \item It is computed from persistent memory before the main forward pass.
+    \item It is not a copy of previous layer states; it is a compressed memory prior produced by a controller.
+    \item It is injected as a mandatory initial condition, including a residual broadcast that cannot be skipped by ordinary attention sparsity.
+    \item It can be distilled into slow weights through usage-driven consolidation.
+\end{enumerate}
+
+\section{Mandatory involuntary prefix injection}
+
+A pure prefix prepended to the sequence may still be ignored by attention. IPCN therefore uses three injection routes. The first is mandatory in all experiments; the second is strongly recommended; the third is optional.
+
+\subsection{Route 1: prefix prepending}
+
+The main model input sequence becomes
+\begin{equation}
+    Y_t^0=[P_t;E(X_t)]\in\R^{(K_p+L)\times d_{model}}.
+\end{equation}
+The attention mask allows every content token to attend to all prefix tokens:
+\begin{equation}
+    \operatorname{mask}(j,r)=1 \quad \forall j\in\{K_p+1,\ldots,K_p+L\},\; r\in\{1,\ldots,K_p\}.
+\end{equation}
+The prefix itself may attend bidirectionally within prefix tokens, while content tokens remain causal with respect to content tokens.
+
+\subsection{Route 2: prefix broadcast preconditioning}
+
+Define token-specific prefix reads from the prefix tokens:
+\begin{equation}
+    \eta_{t,j,r}=\softmax_r\left(\frac{(W_e e_{t,j})^\top (W_p P_{t,r})}{\sqrt{d_{model}}}\right),
+\end{equation}
+\begin{equation}
+    b_{t,j}=\sum_{r=1}^{K_p}\eta_{t,j,r}P_{t,r}.
+\end{equation}
+Then compute
+\begin{equation}
+    \gamma_{t,j}=\sigma\left(W_\gamma[e_{t,j};b_{t,j};z_{t-1}]\right),
+\end{equation}
+\begin{equation}
+    \tilde{e}_{t,j}=\LN\left(e_{t,j}+\lambda_{pre}\gamma_{t,j}\odot W_b b_{t,j}\right).
+\end{equation}
+Default:
+\begin{equation}
+    \lambda_{pre}=0.5\quad\text{for steps }0\ldots 50k,
+    \qquad \lambda_{pre}\rightarrow 1.0\quad\text{by step }100k.
+\end{equation}
+The actual main input is
+\begin{equation}
+    H_t^0 = [P_t;\tilde{e}_{t,1};\ldots;\tilde{e}_{t,L}].
+\end{equation}
+Thus, even before attention decides anything, memory changes the content token hidden states.
+
+\subsection{Route 3: early LayerNorm modulation}
+
+For layers \(\ell\in\{1,2\}\), modulate LayerNorm with prefix-derived parameters:
+\begin{equation}
+    \Gamma_{t,j}^{\ell}=1+\alpha_{film}\tanh(W_\Gamma^\ell b_{t,j}),
+\end{equation}
+\begin{equation}
+    B_{t,j}^{\ell}=\alpha_{film}\tanh(W_B^\ell b_{t,j}),
+\end{equation}
+\begin{equation}
+    \operatorname{LN}_{IPCN}^{\ell}(h_{t,j})=\Gamma_{t,j}^{\ell}\odot \LN(h_{t,j})+B_{t,j}^{\ell}.
+\end{equation}
+Default:
+\begin{equation}
+    \alpha_{film}=0.1.
+\end{equation}
+Do not modulate all layers in the first implementation. Early-only modulation makes the hypothesis easier to falsify: if memory-as-initial-condition matters, layer 0--2 should show it.
+
+\section{The main core network}
+
+Use a decoder-only local Transformer for the first implementation:
+\begin{longtable}{p{0.44\linewidth}p{0.42\linewidth}}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value}\\
+\midrule
+Core layers & 8 \\
+Model width & 512 \\
+Attention heads & 8 \\
+FFN dimension & 2048 \\
+Content chunk length & 256 \\
+Local content window & 1024 \\
+Prefix length & 32 \\
+Episodic memory slots & 256 \\
+Episodic memory dimension & 256 \\
+Temporal self-state dimension & 128 \\
+Consolidated LoRA rank & 8 initially, 16 for scale-up \\
+Training precision & bf16 \\
+Optimizer & AdamW \\
+Learning rate & \(3\times 10^{-4}\) for base training; \(1\times10^{-5}\) to \(5\times10^{-5}\) for consolidation adapters \\
+\bottomrule
+\end{longtable}
+
+The core network may use ordinary KV caching inside a generation segment. This does not contradict IPCN. KV caching is treated as a local compute optimization; the involuntary prefix is treated as persistent memory prior.
+
+\section{Episodic memory writing}
+
+After the main core has processed a chunk, write candidates are chosen using surprise, novelty, relevance, and prefix attribution.
+
+\subsection{Surprise}
+
+Token-level language-model loss:
+\begin{equation}
+    \ell_{t,j}=-\log p(x_{t,j+1}\mid X_{\le t,j},\Mem_{t-1},P_t,\Omega_t).
+\end{equation}
+Normalize within chunk:
+\begin{equation}
+    s_{t,j}=\frac{\ell_{t,j}-\mu_{\ell,t}}{\sigma_{\ell,t}+\epsilon}.
+\end{equation}
+
+\subsection{Novelty}
+
+Use candidate key \(\hat{k}_{t,j}=W_k^m h_{t,j}^L\). Novelty is
+\begin{equation}
+    n_{t,j}=1-\max_i \cosine(\hat{k}_{t,j},k_{t-1,i}).
+\end{equation}
+
+\subsection{Prefix attribution}
+
+Define prefix usefulness by contrasting the normal forward pass with an ablated-prefix forward pass:
+\begin{equation}
+    u^{prefix}_{t,j}=\ell^{zero-prefix}_{t,j}-\ell^{prefix}_{t,j}.
+\end{equation}
+Positive values mean the prefix helped prediction. To avoid doubling training cost every step, estimate this on a random 10--25\% subset of chunks.
+
+\subsection{Write score}
+
+Compute
+\begin{equation}
+    \omega_{t,j}=\sigma\left(
+        \lambda_s s_{t,j}+\lambda_n n_{t,j}+\lambda_r r_{t,j}+\lambda_p u^{prefix}_{t,j}
+    \right),
+\end{equation}
+where \(r_{t,j}\) is learned relevance:
+\begin{equation}
+    r_{t,j}=w_r^\top[h_{t,j}^L;b_{t,j};z_{t-1}].
+\end{equation}
+Defaults:
+\begin{equation}
+    \lambda_s=0.7,\quad \lambda_n=0.5,\quad \lambda_r=0.4,\quad \lambda_p=0.8.
+\end{equation}
+Select top \(K_w=16\) write candidates per chunk.
+
+\subsection{Slot assignment}
+
+For each candidate \(j\), compute assignment
+\begin{equation}
+    \beta_{t,j,i}=\softmax_i\left(
+        \eta_{sim}\cosine(\hat{k}_{t,j},k_{t-1,i})
+        -\eta_c c_{t-1,i}
+        -\eta_u \log(1+u_{t-1,i})
+        -\eta_\delta \delta_{t-1,i}
+    \right).
+\end{equation}
+Recommended first setting:
+\begin{equation}
+    \eta_{sim}=2.0,\quad \eta_c=0.5,\quad \eta_u=0.2,\quad \eta_\delta=0.7.
+\end{equation}
+Use top-1 assignment for debugging, then top-2 soft assignment if slot collapse is controlled.
+
+\subsection{Slot update}
+
+Candidate value:
+\begin{equation}
+    \hat{v}_{t,j}=W_v^m h_{t,j}^L.
+\end{equation}
+Update rate:
+\begin{equation}
+    \eta_{t,i}=\sigma\left(w_\eta^\top[v_{t-1,i};z_{t-1};c_{t-1,i};\rho_{t-1,i};a_{t-1,i}]\right)\rho_{t-1,i}.
+\end{equation}
+Memory update:
+\begin{equation}
+    k_{t,i}^{+}=\operatorname{norm}\left((1-\eta_{t,i})k_{t-1,i}+\eta_{t,i}\sum_j\beta_{t,j,i}\omega_{t,j}\hat{k}_{t,j}\right),
+\end{equation}
+\begin{equation}
+    v_{t,i}^{+}=(1-\eta_{t,i})v_{t-1,i}+\eta_{t,i}\sum_j\beta_{t,j,i}\omega_{t,j}\hat{v}_{t,j}.
+\end{equation}
+Conflict:
+\begin{equation}
+    \Delta_{t,i}=1-\cosine\left(v_{t-1,i},\sum_j\beta_{t,j,i}\hat{v}_{t,j}\right).
+\end{equation}
+Confidence:
+\begin{equation}
+    c_{t,i}^{+}=\operatorname{clip}_{[0,1]}\left(c_{t-1,i}+\xi_{use}\mathbb{1}[i\text{ used}]-\xi_{conf}\Delta_{t,i}-\xi_{age}a_{t-1,i}\right).
+\end{equation}
+Plasticity:
+\begin{equation}
+    \rho_{t,i}^{+}=\operatorname{clip}_{[0,1]}\left(1-c_{t,i}^{+}+\xi_{nov}\bar{n}_{t,i}\right).
+\end{equation}
+
+\section{Autonomous memory evolution}
+
+After writing, episodic memory evolves. This is critical for temporal-state tasks and silent gaps.
+
+\subsection{Slot interaction graph}
+
+Build sparse adjacency:
+\begin{equation}
+    A_{t,i,j}=\TopK_j\softmax_j\left(\frac{k_{t,i}^{+\top}k_{t,j}^{+}}{\sqrt{d_m}}\right), \qquad |\mathcal{N}(i)|=8.
+\end{equation}
+
+\subsection{Continuous-style transition}
+
+For each slot,
+\begin{equation}
+    \lambda_{t,i}=\sigma(w_\lambda^\top[v_{t,i}^{+};q_{t,i}^{+};z_t;c_{t,i}^{+};a_{t,i}^{+}]),
+\end{equation}
+\begin{equation}
+    \Delta v_{t,i}= -\lambda_{t,i}v_{t,i}^{+}+\sum_{j\in\mathcal{N}(i)}A_{t,i,j}W_Av_{t,j}^{+}+W_\phi\tanh(W_vv_{t,i}^{+}+W_q q_{t,i}^{+}+W_zz_t),
+\end{equation}
+\begin{equation}
+    v_{t,i}^{evo}=\LN(v_{t,i}^{+}+\epsilon_{dyn}\Delta v_{t,i}).
+\end{equation}
+Default:
+\begin{equation}
+    \epsilon_{dyn}=0.1.
+\end{equation}
+The temporal dynamics state updates as
+\begin{equation}
+    q_{t,i}^{evo}=\operatorname{GRU}_q(q_{t-1,i},[v_{t,i}^{evo};z_t;\Delta v_{t,i}]).
+\end{equation}
+
+\subsection{Silent gaps}
+
+For a silent gap of \(G\) chunks, no new text is observed. IPCN still performs
+\begin{equation}
+    \Mem_{t+g+1}=\Evolve_\phi(\Mem_{t+g},z_{t+g},\Delta \tau_g),\qquad g=0,\ldots,G-1.
+\end{equation}
+This allows latent states such as decay, periodicity, and delayed transitions to continue changing even without new tokens.
+
+\section{Usage-driven consolidation into weights}
+
+The distinctive long-term mechanism is that high-usage episodic memories eventually become slow computation inside \(\Omega_t\). This is the engineered version of ``used memories merge into the neural network.'' Consolidation is not unrestricted self-modification. It is low-rank, gated, tested, reversible, and initially restricted to the PFC and first two core layers.
+
+\subsection{Memory usage signal}
+
+A slot is considered used when it contributes to the involuntary prefix and the prefix changes loss or representation. Slot usage increment:
+\begin{equation}
+    \Delta u_{t,i}=\sum_{r=1}^{K_p}\alpha_{t,r,i}^{P}\cdot \operatorname{ReLU}(\bar{u}^{prefix}_t)\cdot \operatorname{stopgrad}(\bar{g}_t),
+\end{equation}
+where
+\begin{equation}
+    \bar{u}^{prefix}_t=\frac{1}{L}\sum_j\left(\ell^{zero-prefix}_{t,j}-\ell^{prefix}_{t,j}\right),
+\end{equation}
+and \(\bar{g}_t\) is average prefix broadcast gate. Then
+\begin{equation}
+    u_{t,i}^{+}=\lambda_u u_{t-1,i}+\Delta u_{t,i}, \qquad \lambda_u=0.995.
+\end{equation}
+
+\subsection{Consolidation eligibility}
+
+Define the consolidation score
+\begin{equation}
+    \kappa_{t,i}=\log(1+u_{t,i})\cdot c_{t,i}\cdot(1-\delta_{t,i})\cdot \operatorname{ReLU}(\bar{u}^{prefix}_{i})\cdot (1-\rho_{t,i}).
+\end{equation}
+A slot is eligible if
+\begin{equation}
+    \kappa_{t,i}>\tau_{cons}, \qquad \tau_{cons}=3.0
+\end{equation}
+and if it has remained stable for at least \(T_{stable}=512\) chunks.
+
+\subsection{Consolidation objective}
+
+Let \(\mathcal{B}_i\) be a replay buffer of contexts where slot \(i\) materially helped. For each replay context \(x\), compute a teacher distribution with the external slot active:
+\begin{equation}
+    p_T(y\mid x)=p_{\theta,\Omega_t}(y\mid x,\Mem_t).
+\end{equation}
+Compute a student distribution with the slot removed or attenuated, but with adapter weights trainable:
+\begin{equation}
+    p_S(y\mid x)=p_{\theta,\Omega_t+\Delta\Omega}(y\mid x,\Mem_t\setminus m_i).
+\end{equation}
+The consolidation loss is
+\begin{equation}
+    \mathcal{L}_{cons}^{(i)}=\E_{x\sim\mathcal{B}_i}\left[\KL\left(\sg(p_T(\cdot\mid x))\;\|\;p_S(\cdot\mid x)\right)\right]+\lambda_\Omega\|\Delta\Omega\|_F^2+\lambda_{EWC}\mathcal{R}_{stable}.
+\end{equation}
+The adapter update is
+\begin{equation}
+    \Omega_{t+1}=\Omega_t-\eta_{cons}\nabla_{\Omega}\sum_{i\in\mathcal{C}_t}\mathcal{L}_{cons}^{(i)}.
+\end{equation}
+Default:
+\begin{equation}
+    \eta_{cons}=1\times10^{-5},\quad \lambda_\Omega=10^{-4},\quad \lambda_{EWC}=10^{-3}.
+\end{equation}
+
+\subsection{Soft and hard consolidation}
+
+\textbf{Soft consolidation} means the memory's behavioral effect is stored in an adapter but the external slot remains available. \textbf{Hard consolidation} means the slot is attenuated after validation:
+\begin{equation}
+    v_{t,i}\leftarrow (1-\chi_i)v_{t,i},\qquad c_{t,i}\leftarrow (1-\chi_i)c_{t,i},
+\end{equation}
+where \(\chi_i\in[0,1]\) is allowed to increase only if removing the slot changes performance by less than a threshold:
+\begin{equation}
+    \Delta Acc_i = Acc(\Mem_t)-Acc(\Mem_t\setminus m_i)<\epsilon_{drop}, \qquad \epsilon_{drop}=0.02.
+\end{equation}
+Only after this criterion holds does the slot graduate from episodic memory into slow weights.
+
+\subsection{Consolidation safety constraint}
+
+For a held-out contradiction set \(\mathcal{D}_{contra}\), consolidation must not make the model stubborn. Require
+\begin{equation}
+    Acc_{contra}(\Omega_{t+1})\ge Acc_{contra}(\Omega_t)-0.01.
+\end{equation}
+Also require KL drift on ordinary language modeling samples to stay small:
+\begin{equation}
+    \E_{x\sim\mathcal{D}_{LM}}\left[\KL(p_{\theta,\Omega_t}(\cdot\mid x)\|p_{\theta,\Omega_{t+1}}(\cdot\mid x))\right]<0.02.
+\end{equation}
+If either fails, rollback \(\Omega_{t+1}\).
+
+\section{Training losses}
+
+The full objective is
+\begin{equation}
+\begin{split}
+    \mathcal{L} ={}& \mathcal{L}_{LM}
+    +\lambda_{pre}\mathcal{L}_{pre-influence}
+    +\lambda_{prec}\mathcal{L}_{precision}
+    +\lambda_{mem}\mathcal{L}_{mem-predict}
+    +\lambda_{div}\mathcal{L}_{diversity}\\
+    &+\lambda_{slot}\mathcal{L}_{slot-util}
+    +\lambda_{evo}\mathcal{L}_{evolution}
+    +\lambda_{chrono}\mathcal{L}_{chrono}
+    +\lambda_{cons}\mathcal{L}_{cons}.
+\end{split}
+\end{equation}
+
+\subsection{Language modeling loss}
+
+\begin{equation}
+    \mathcal{L}_{LM}=\sum_{t,j}-\log p(x_{t,j+1}\mid X_{\le t,j},\Mem_{t-1},P_t,\Omega_t).
+\end{equation}
+
+\subsection{Pre-computational influence loss}
+
+The prefix should influence computation when it helps, but not otherwise. Define
+\begin{equation}
+    U_t=\frac{1}{L}\sum_j\left(\ell^{zero-prefix}_{t,j}-\ell^{prefix}_{t,j}\right).
+\end{equation}
+If \(U_t>\rho\), memory helped. Penalize a collapsed prefix gate:
+\begin{equation}
+    \mathcal{L}_{pre-influence}=\mathbb{1}[U_t>\rho]\max(0,\tau_g-\bar{g}_t),
+\end{equation}
+with
+\begin{equation}
+    \rho=0.03,\qquad \tau_g=0.2.
+\end{equation}
+
+\subsection{Precision loss}
+
+If prefix hurts, suppress it:
+\begin{equation}
+    \mathcal{L}_{precision}=\mathbb{1}[U_t<0]\bar{g}_t.
+\end{equation}
+This prevents memory from becoming delusional or overbearing.
+
+\subsection{Memory usefulness prediction}
+
+Train a predictor
+\begin{equation}
+    \hat{U}_t=P_U(s_t,P_t,z_{t-1})
+\end{equation}
+with
+\begin{equation}
+    \mathcal{L}_{mem-predict}=\|\hat{U}_t-\sg(U_t)\|_2^2.
+\end{equation}
+
+\subsection{Diversity and utilization}
+
+Slot diversity:
+\begin{equation}
+    \mathcal{L}_{diversity}=\frac{1}{N_m^2}\sum_{i\ne j}\cosine(k_i,k_j)^2.
+\end{equation}
+Slot utilization entropy target:
+\begin{equation}
+    p_i=\frac{u_i}{\sum_j u_j+\epsilon},\qquad H_u=-\sum_i p_i\log p_i.
+\end{equation}
+Penalize collapse:
+\begin{equation}
+    \mathcal{L}_{slot-util}=\max(0,H_{min}-H_u),\qquad H_{min}=0.5\log N_m.
+\end{equation}
+
+\subsection{Evolution self-prediction}
+
+Predict next self-state and memory delta:
+\begin{equation}
+    \hat{z}_{t+1}=P_z(\Mem_t,z_t),\qquad \mathcal{L}_z=\|\hat{z}_{t+1}-\sg(z_{t+1})\|_2^2,
+\end{equation}
+\begin{equation}
+    \widehat{\Delta\Mem}_{t+1}=P_M(\Mem_t,z_t),\qquad \mathcal{L}_M=\|\widehat{\Delta\Mem}_{t+1}-\sg(\Mem_{t+1}-\Mem_t)\|_F^2.
+\end{equation}
+Then
+\begin{equation}
+    \mathcal{L}_{evolution}=\mathcal{L}_z+0.5\mathcal{L}_M.
+\end{equation}
+
+\subsection{Default loss weights}
+
+\begin{longtable}{p{0.42\linewidth}p{0.36\linewidth}}
+\toprule
+\textbf{Loss term} & \textbf{Weight}\\
+\midrule
+\(\mathcal{L}_{LM}\) & 1.0 \\
+\(\mathcal{L}_{pre-influence}\) & 0.02 \\
+\(\mathcal{L}_{precision}\) & 0.02 \\
+\(\mathcal{L}_{mem-predict}\) & 0.05 \\
+\(\mathcal{L}_{diversity}\) & 0.001 \\
+\(\mathcal{L}_{slot-util}\) & 0.001 \\
+\(\mathcal{L}_{evolution}\) & 0.02 \\
+\(\mathcal{L}_{chrono}\) & 0.03 \\
+\(\mathcal{L}_{cons}\) & 0.1 during consolidation phases; 0 otherwise \\
+\bottomrule
+\end{longtable}
+
+\section{Inference algorithm}
+
+\begin{lstlisting}[caption={IPCN inference for one chunk.}]
+Inputs: current chunk X_t, episodic memory M_{t-1}, temporal state z_{t-1}, chronometric state chi_t, adapters Omega_t
+Output: logits, updated M_t, z_t, Omega_{t+1}
+
+1. e_t <- token_embeddings(X_t)
+2. s_t <- shallow_sketch(e_t, z_{t-1})
+3. Q_prefix <- prefix_queries(s_t, z_{t-1})
+4. alpha_prefix <- memory_attention(Q_prefix, M_{t-1})
+5. P_t <- PFC(alpha_prefix * M_values, s_t, z_{t-1}; Omega_t)
+6. b_tj <- token_prefix_broadcast(e_tj, P_t)
+7. e_tj_tilde <- LN(e_tj + lambda_pre * gate(e_tj, b_tj, z_{t-1}) * W_b b_tj)
+8. H0 <- concat(P_t, e_t_tilde)
+9. H_L, logits <- CoreTransformer(H0; theta, Omega_t)
+10. write_candidates <- TopK(surprise + novelty + relevance + prefix_attribution)
+11. M_plus <- Write(M_{t-1}, write_candidates, H_L)
+12. z_t <- update_temporal_self_state(z_{t-1}, H_L, P_t, M_plus)
+13. M_t <- Evolve(M_plus, z_t)
+14. eligible_slots <- slots with high usage, confidence, stability, low conflict
+15. if consolidation_phase:
+        Omega_{t+1} <- Consolidate(Omega_t, eligible_slots, replay_buffers)
+        validate; rollback if contradiction or LM drift exceeds threshold
+    else:
+        Omega_{t+1} <- Omega_t
+16. return logits, M_t, z_t, Omega_{t+1}
+\end{lstlisting}
+
+\section{Training schedule}
+
+\subsection{Phase 0: sanity training without consolidation}
+
+Train IPCN with episodic memory, prefix injection, and memory evolution, but freeze \(\Omega\). Duration: 50k--100k synthetic steps. Goal: verify that the prefix affects layer 0 and improves memory-biased ambiguity tasks.
+
+\subsection{Phase 1: consolidation warmup}
+
+Enable adapter updates inside the PFC only. Do not update core-layer adapters yet. Use repeated synthetic facts/rules and test whether removing an external memory slot after consolidation produces less than 2\% performance drop.
+
+\subsection{Phase 2: early-core consolidation}
+
+Enable adapters in layers 1--2. Keep base weights frozen. Increase LoRA rank from 8 to 16 only if consolidation capacity bottlenecks.
+
+\subsection{Phase 3: mixed language modeling}
+
+Mix synthetic temporal tasks with ordinary text. Track perplexity drift, prefix-overuse, and contradiction performance. IPCN fails this phase if general LM perplexity increases by more than 5\% over a comparable memory baseline.
+
+\section{Falsifiable predictions}
+
+\subsection{Prediction 1: memory must change layer 0}
+
+Run the same current input \(X\) with two different memory states \(\Mem^A\) and \(\Mem^B\):
+\begin{equation}
+    H_0^A=\operatorname{Inject}(E(X),C_\phi(\Mem^A,z^A,S(X))),
+\end{equation}
+\begin{equation}
+    H_0^B=\operatorname{Inject}(E(X),C_\phi(\Mem^B,z^B,S(X))).
+\end{equation}
+Define
+\begin{equation}
+    D_0=\frac{\|H_0^A-H_0^B\|_F}{\|E(X)\|_F+\epsilon}.
+\end{equation}
+Late retrieval predicts \(D_0\approx0\). IPCN predicts
+\begin{equation}
+    D_0>0.1
+\end{equation}
+on ambiguous inputs where memory matters.
+
+\subsection{Prediction 2: early probes should decode memory-conditioned interpretation}
+
+For ambiguous inputs such as
+\begin{quote}
+``He saw the bat near the entrance.''
+\end{quote}
+with memory states about baseball versus caves, train probes on \(H^0\) and \(H^1\). IPCN predicts layer-0 or layer-1 probe accuracy of at least 80\% for the memory-conditioned sense. Late retrieval should only become separable after the retrieval layer.
+
+\subsection{Prediction 3: involuntary prefix beats late retrieval on interpretation tasks}
+
+Compare:
+\begin{itemize}
+    \item B0: local Transformer, no memory,
+    \item B1: late memory retrieval after final layer,
+    \item B2: mid-layer memory injection after layer 4,
+    \item B3: prefix tokens only,
+    \item B4: prefix tokens plus broadcast preconditioning,
+    \item B5: full IPCN with consolidation disabled,
+    \item B6: full IPCN with consolidation enabled.
+\end{itemize}
+On memory-biased ambiguity tasks, IPCN predicts
+\begin{equation}
+    B5 > B4 > B3 > B2 > B1 > B0.
+\end{equation}
+The hypothesis is weakened if
+\begin{equation}
+    Acc(B5)-Acc(B1)<0.03.
+\end{equation}
+
+\subsection{Prediction 4: consolidation transfers frequently used memories into weights}
+
+Let \(m_i\) be an episodic memory slot repeatedly used for a rule. Test accuracy with and without the slot before and after consolidation:
+\begin{align}
+    Acc_{pre}^{with} &= Acc(\Mem),\\
+    Acc_{pre}^{without} &= Acc(\Mem\setminus m_i),\\
+    Acc_{post}^{with} &= Acc(\Mem,\Omega_{post}),\\
+    Acc_{post}^{without} &= Acc(\Mem\setminus m_i,\Omega_{post}).
+\end{align}
+Define the Consolidation Transfer Index:
+\begin{equation}
+    CTI_i=\frac{Acc_{post}^{without}-Acc_{pre}^{without}}{Acc_{pre}^{with}-Acc_{pre}^{without}+\epsilon}.
+\end{equation}
+A successful consolidation event has
+\begin{equation}
+    CTI_i>0.7
+\end{equation}
+while contradiction accuracy drops by less than 1\%.
+
+\subsection{Prediction 5: silent memory evolution beats static memory}
+
+On temporal-drift tasks with silent gaps, IPCN predicts that autonomous memory evolution improves over static memory:
+\begin{equation}
+    Acc(IPCN_{evolve})-Acc(IPCN_{static})\ge 0.15
+\end{equation}
+at 64k context and 512 silent minutes. If not, the autonomous substrate component is unsupported.
+
+
+\subsection{Prediction 6: explicit elapsed time changes duration-sensitive answers}
+
+For paired streams with identical visible tokens but different elapsed durations, IPCN predicts
+\begin{equation}
+    Acc(\Delta\tau\text{-aware})-Acc(\Delta\tau\text{-ablated})\ge 0.10
+\end{equation}
+on decay, delayed-transition, and periodic-phase questions. For duration-insensitive questions, changing elapsed duration should not strongly change the output:
+\begin{equation}
+    \KL(p(y\mid X,\Delta\tau_a)\|p(y\mid X,\Delta\tau_b))\le 0.1.
+\end{equation}
+This prediction separates a true computational time substrate from a model that only counts tokens.
+
+\subsection{Prediction 7: explicit evidence should override memory}
+
+On explicit disambiguation, memory-swap KL should shrink:
+\begin{equation}
+    D_{KL}(p(y\mid X_{amb},\Mem^A)\|p(y\mid X_{amb},\Mem^B))\ge 0.5,
+\end{equation}
+\begin{equation}
+    D_{KL}(p(y\mid X_{explicit},\Mem^A)\|p(y\mid X_{explicit},\Mem^B))\le 0.1.
+\end{equation}
+If memory remains strong when the input explicitly contradicts it, IPCN is overconsolidating or overprefixing.
+
+\section{Benchmarks}
+
+\subsection{Memory-Biased Ambiguity Suite}
+
+Each sample has three phases:
+\begin{lstlisting}
+Phase 1: Memory formation facts/rules.
+Phase 2: Ambiguous current input.
+Phase 3: Prediction or question that requires prior-conditioned interpretation.
+\end{lstlisting}
+Example:
+\begin{lstlisting}
+Memory A:
+In this world, mips are forest animals with wings.
+A mip sleeps upside down.
+A mip hunts insects at night.
+
+Current input:
+The child saw a mip hanging above the cave.
+
+Question:
+What is the mip likely using?
+A. wings
+B. wheels
+C. keyboard
+D. spoon
+\end{lstlisting}
+The current input is intentionally short; the model must use memory as an interpretive prior.
+
+\subsection{Temporal Latent World}
+
+Generate long event streams from a hidden simulator with entities, rooms, owners, energy, and modes. Rules include decay, delayed transition, periodic transition, and contradiction. The model receives text only and must answer questions about the current hidden state.
+
+\begin{lstlisting}
+At minute 00421, device_07 moved from lab_03 to vault_11.
+At minute 00422, Mara charged device_07 by 9 units.
+At minute 00423, if device_07 is active, its energy decays by 1 every 3 minutes.
+Time passes for 512 minutes. No new events are observed.
+Question: what is the current energy of device_07?
+\end{lstlisting}
+
+Train lengths:
+\begin{equation}
+    1k,2k,4k,8k \text{ tokens}.
+\end{equation}
+Test lengths:
+\begin{equation}
+    16k,32k,64k,128k \text{ tokens}.
+\end{equation}
+
+\subsection{Consolidation Ladder}
+
+This benchmark isolates whether repeated memory use becomes weight-level computation.
+
+\begin{enumerate}
+    \item Introduce a rule \(R\), e.g. ``Rin lies about blue objects but tells the truth about red objects.''
+    \item Query the rule across many contexts until the slot's usage count crosses \(\tau_{cons}\).
+    \item Consolidate into \(\Omega\).
+    \item Remove or mask the episodic memory slot.
+    \item Test whether the model still behaves according to \(R\).
+    \item Present contradictory evidence: ``Rin has stopped lying about blue objects.'' Test whether the model can revise.
+\end{enumerate}
+
+Metrics:
+\begin{align}
+    CTI &= \text{consolidation transfer index},\\
+    CRR &= \text{contradiction revision rate},\\
+    OLP &= \text{ordinary language perplexity drift}.
+\end{align}
+Pass criteria:
+\begin{equation}
+    CTI>0.7,
+    \qquad CRR>0.8,
+    \qquad OLP<1.05\times OLP_{baseline}.
+\end{equation}
+
+\subsection{Prefix Integrity Test}
+
+Run four conditions on the same input:
+\begin{enumerate}
+    \item correct prefix,
+    \item zero prefix,
+    \item shuffled prefix from another example,
+    \item adversarial contradictory prefix.
+\end{enumerate}
+The correct prefix should improve ambiguous tasks. Zero prefix should reduce performance. Shuffled prefix should hurt but be partially suppressed by precision gating. Explicit evidence should defeat adversarial prefix.
+
+\section{Metrics}
+
+\subsection{Task metrics}
+
+\begin{itemize}
+    \item Accuracy by context length.
+    \item Accuracy by silent-gap length.
+    \item Accuracy by number of latent state transitions.
+    \item Ambiguity resolution accuracy.
+    \item Contradiction revision rate.
+    \item Ordinary LM perplexity.
+    \item Consolidation transfer index.
+\end{itemize}
+
+\subsection{Memory and prefix metrics}
+
+Pre-computation influence index:
+\begin{equation}
+    I_{pre}=\frac{\|H_0^{prefix}-H_0^{zero}\|_F}{\|H_L^{prefix}-H_L^{zero}\|_F+\epsilon}.
+\end{equation}
+Pass criterion:
+\begin{equation}
+    I_{pre}>0.25
+\end{equation}
+on tasks where memory is useful.
+
+Prefix entropy:
+\begin{equation}
+    H_P=-\frac{1}{K_p}\sum_{r=1}^{K_p}\sum_i\alpha_{r,i}^{P}\log\alpha_{r,i}^{P}.
+\end{equation}
+
+Slot utilization entropy:
+\begin{equation}
+    H_u=-\sum_i p_i\log p_i,\qquad p_i=\frac{u_i}{\sum_j u_j+\epsilon}.
+\end{equation}
+
+Memory velocity:
+\begin{equation}
+    V_t=\|\Mem_t-\Mem_{t-1}\|_F.
+\end{equation}
+
+Adapter drift:
+\begin{equation}
+    D_\Omega=\|\Omega_t-\Omega_0\|_F.
+\end{equation}
+
+\section{Ablation matrix}
+
+\begin{longtable}{p{0.13\linewidth}p{0.14\linewidth}p{0.13\linewidth}p{0.14\linewidth}p{0.15\linewidth}p{0.16\linewidth}}
+\toprule
+\textbf{Model} & \textbf{Persistent slots} & \textbf{Prefix} & \textbf{Broadcast} & \textbf{Evolution} & \textbf{Consolidation}\\
+\midrule
+A0 & no & no & no & no & no\\
+A1 & yes & no, late read only & no & no & no\\
+A2 & yes & yes & no & no & no\\
+A3 & yes & yes & yes & no & no\\
+A4 & yes & yes & yes & yes & no\\
+A5 & yes & yes & yes & yes & PFC only\\
+A6 & yes & yes & yes & yes & PFC + layers 1--2\\
+\bottomrule
+\end{longtable}
+
+The core IPCN hypothesis requires A3 outperforming A1 on ambiguity tasks, A4 outperforming A3 on silent-gap temporal evolution, and A5/A6 showing positive CTI without contradiction collapse.
+
+\section{Failure modes}
+
+\subsection{Prefix delusion}
+
+The model overuses memory even when current evidence contradicts it. Symptoms:
+\begin{itemize}
+    \item high memory-swap KL on explicit inputs,
+    \item poor contradiction revision rate,
+    \item prefix gates remain high when \(U_t<0\).
+\end{itemize}
+Fixes:
+\begin{itemize}
+    \item increase \(\lambda_{prec}\),
+    \item cap \(\lambda_{pre}\),
+    \item add adversarial contradictory-prefix training,
+    \item lower consolidation threshold for rollback sensitivity.
+\end{itemize}
+
+\subsection{Slot collapse}
+
+A few slots absorb most writes. Symptoms:
+\begin{equation}
+    H_u<0.5\log N_m.
+\end{equation}
+Fixes: diversity loss, usage penalty in slot assignment, top-2 assignment, periodic slot reinitialization for dead slots.
+
+\subsection{Consolidation overfitting}
+
+Adapters memorize specific contexts rather than stable rules. Symptoms: high CTI on replay but poor generalization. Fixes: replay augmentation, paraphrase contexts, stricter held-out consolidation validation.
+
+\subsection{Runaway self-modification}
+
+Adapters drift too far from base behavior. Symptoms: rising LM perplexity, rising KL drift, degraded contradiction accuracy. Fixes: smaller \(\eta_{cons}\), lower rank, EWC-style regularization, adapter rollback.
+
+\section{Minimal experiment to run first}
+
+\subsection{Dataset}
+
+Use Memory-Biased Ambiguity Suite with 100k training examples and 10k held-out examples. Include 20 ambiguity families:
+\begin{itemize}
+    \item object sense: bat, bank, crane, seal,
+    \item invented creature/tool words,
+    \item social reliability priors,
+    \item danger/safety priors,
+    \item spatial convention priors,
+    \item temporal routine priors.
+\end{itemize}
+
+\subsection{Models}
+
+Train A0--A5 from the ablation matrix at the same parameter budget. Keep the base core identical.
+
+\subsection{Hard pass criteria}
+
+\begin{align}
+    Acc(A3)-Acc(A1)&\ge 0.10 && \text{on ambiguity tasks},\\
+    I_{pre}(A3)&\ge 0.25 && \text{when prefix is useful},\\
+    Acc_{explicit}(A3)&\ge Acc_{explicit}(A1)-0.02 && \text{on explicit contradiction},\\
+    CTI(A5)&\ge 0.70 && \text{after consolidation},\\
+    OLP(A5)&\le 1.05\times OLP(A3) && \text{ordinary LM perplexity drift}.
+\end{align}
+
+If these fail, the architecture does not yet support the claimed mechanism.
+
+\section{Implementation sketch}
+
+\begin{lstlisting}[caption={PyTorch-style module skeleton.}]
+class IPCN(nn.Module):
+    def __init__(self, core, pfc, memory, adapters):
+        super().__init__()
+        self.core = core              # decoder-only transformer
+        self.pfc = pfc                # prefix-forming controller
+        self.memory = memory          # persistent episodic slots
+        self.adapters = adapters      # consolidated slow weights
+        self.z = torch.zeros(d_z)     # temporal self-state
+
+    def forward_chunk(self, input_ids, consolidate=False):
+        e = self.core.embed(input_ids)
+        sketch = shallow_sketch(e, self.z)
+
+        # Pre-computation memory path.
+        prefix, prefix_attn = self.pfc(self.memory, self.z, sketch, self.adapters)
+        broadcast = token_prefix_broadcast(e, prefix)
+        gate = torch.sigmoid(self.gate(torch.cat([e, broadcast, self.z.expand_as_time(e)], -1)))
+        e_tilde = layer_norm(e + self.lambda_pre * gate * self.Wb(broadcast))
+
+        # Mandatory involuntary prefix to main forward pass.
+        h0 = torch.cat([prefix, e_tilde], dim=1)
+        logits, hidden = self.core.forward_with_prefix(h0, adapters=self.adapters)
+
+        # Memory update.
+        write_info = compute_write_scores(logits, hidden, e, prefix_attn)
+        self.memory = self.memory.write(write_info)
+        self.z = update_self_state(self.z, hidden, prefix, self.memory)
+        self.memory = self.memory.evolve(self.z)
+
+        # Usage-driven consolidation.
+        if consolidate:
+            eligible = self.memory.eligible_for_consolidation()
+            self.adapters = consolidate_adapters(
+                adapters=self.adapters,
+                memory=self.memory,
+                eligible_slots=eligible,
+                validation_checks=True,
+            )
+        return logits
+\end{lstlisting}
+
+\section{Strongest paper-style novelty statement}
+
+The strongest defensible novelty claim is:
+
+\begin{specbox}
+IPCN distinguishes memory as retrieved content from memory as a pre-computational prior. It forces persistent memory to enter as an involuntary hidden prefix before the main forward pass, then consolidates frequently used memory effects into slow adapter weights. The architecture is falsifiable by layer-0 memory-swap probes, late-retrieval ablations, silent-gap temporal dynamics, and external-slot removal after consolidation.
+\end{specbox}
+
+\section{What would falsify IPCN}
+
+IPCN's core claim is unsupported if any of the following occur under equal parameter and memory budgets:
+\begin{enumerate}
+    \item Late retrieval matches involuntary prefixing on memory-biased ambiguity tasks.
+    \item Layer-0 probes cannot decode memory-conditioned interpretation.
+    \item Prefix ablation has little effect even when memory should help.
+    \item Prefix remains influential under explicit contradictory evidence.
+    \item Consolidation into adapters fails: removing the external slot after consolidation still destroys performance.
+    \item Consolidation improves replay but damages ordinary LM perplexity by more than 5\%.
+    \item Static memory matches evolving memory on silent-gap temporal dynamics.
+\end{enumerate}
+
+\section{Practical first-run configuration}
+
+\begin{longtable}{p{0.42\linewidth}p{0.42\linewidth}}
+\toprule
+\textbf{Item} & \textbf{Value}\\
+\midrule
+GPU target & 1--4 A100/H100-class GPUs for prototype; smaller runs possible with width 256\\
+Core width & 512\\
+Core layers & 8\\
+Prefix length & 32\\
+Memory slots & 256\\
+Memory dimension & 256\\
+Chunk length & 256\\
+Backprop through chunks & 4 chunks, then detach memory values but carry state forward\\
+Synthetic steps & 100k\\
+Mixed LM steps & 100k\\
+Consolidation frequency & every 256 chunks after warmup\\
+Adapter update steps per consolidation batch & 1--5\\
+Validation before adapter commit & required\\
+Rollback & required if contradiction or LM drift thresholds fail\\
+\bottomrule
+\end{longtable}
+
+\section{Conclusion}
+
+IPCN formalizes a specific version of the intuition that memory should involuntarily shape the next computation before deliberate processing occurs. The architecture creates a fast path from persistent memory to the initial hidden state through a prefix-forming controller, while preserving a slow path in which repeatedly useful memories become part of longer-term computation through adapter consolidation. The approach is not validated by better retrieval alone. It is validated only if early representations change under memory swaps, late retrieval cannot match prefix conditioning on interpretation tasks, silent-gap dynamics require evolving memory, and consolidated memories survive external-slot removal without becoming rigid against contradiction.
+
+\begin{thebibliography}{99}
+
+\bibitem{weston2014memory}
+Jason Weston, Sumit Chopra, and Antoine Bordes.
+\newblock Memory Networks.
+\newblock \emph{arXiv:1410.3916}, 2014.
+
+\bibitem{graves2014ntm}
+Alex Graves, Greg Wayne, and Ivo Danihelka.
+\newblock Neural Turing Machines.
+\newblock \emph{arXiv:1410.5401}, 2014.
+
+\bibitem{dai2019transformerxl}
+Zihang Dai, Zhilin Yang, Yiming Yang, Jaime Carbonell, Quoc V. Le, and Ruslan Salakhutdinov.
+\newblock Transformer-XL: Attentive Language Models Beyond a Fixed-Length Context.
+\newblock \emph{arXiv:1901.02860}, 2019.
+
+\bibitem{bulatov2022rmt}
+Aydar Bulatov, Yuri Kuratov, and Mikhail Burtsev.
+\newblock Recurrent Memory Transformer.
+\newblock \emph{arXiv:2207.06881}, 2022.
+
+\bibitem{wu2022memorizing}
+Yuhuai Wu, Markus N. Rabe, DeLesley Hutchins, and Christian Szegedy.
+\newblock Memorizing Transformers.
+\newblock \emph{arXiv:2203.08913}, 2022.
+
+\bibitem{gu2023mamba}
+Albert Gu and Tri Dao.
+\newblock Mamba: Linear-Time Sequence Modeling with Selective State Spaces.
+\newblock \emph{arXiv:2312.00752}, 2023.
+
+\bibitem{sun2024ttt}
+Yu Sun et al.
+\newblock Learning to (Learn at Test Time): RNNs with Expressive Hidden States.
+\newblock \emph{arXiv:2407.04620}, 2024.
+
+\bibitem{behrouz2024titans}
+Ali Behrouz, Peilin Zhong, and Vahab Mirrokni.
+\newblock Titans: Learning to Memorize at Test Time.
+\newblock \emph{arXiv:2501.00663}, 2024.
+
+\bibitem{preston2013hippocampus}
+Alison R. Preston and Howard Eichenbaum.
+\newblock Interplay of hippocampus and prefrontal cortex in memory.
+\newblock \emph{Current Biology}, 2013.
+
+\bibitem{brodt2023sleep}
+S. Brodt et al.
+\newblock Sleep--A brain-state serving systems memory consolidation.
+\newblock \emph{Neuron}, 2023.
+
+\bibitem{moscovitch2022systems}
+Morris Moscovitch et al.
+\newblock Has the concept of systems consolidation outlived its usefulness?
+\newblock \emph{Neurobiology of Learning and Memory}, 2022.
+
+\end{thebibliography}
+
+\end{document}
