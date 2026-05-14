@@ -94,6 +94,16 @@ def main():
     p.add_argument("--check-every", type=float, default=30.0, help="seconds between checks")
     p.add_argument("--lm-explode-factor", type=float, default=10.0,
                    help="kill if LM > factor * rolling mean")
+    p.add_argument(
+        "--lm-explode-consecutive", type=int, default=3,
+        help="number of CONSECUTIVE chunks above the explode factor "
+             "before kill_training fires. Set >1 (default 3) so per-chunk "
+             "loss variance on mixed datasets does not false-fire. Phase 1 "
+             "data includes both easy LM chunks (loss ~0.5) and hard rule "
+             "chunks (loss 15+ until memory is wired into behavior); a "
+             "single 15+ reading is data noise, not divergence. Three "
+             "consecutive 15+ readings IS divergence.",
+    )
     p.add_argument("--min-free-gb", type=float, default=10.0,
                    help="kill if free disk drops below this")
     p.add_argument(
@@ -125,6 +135,7 @@ def main():
     last_parse_error_log = 0.0
     monitor_start = time.time()
     last_log_progress = monitor_start                         # time we last saw a real progress record
+    consecutive_explosions = 0                                # rolling count of in-a-row spikes
     while True:
         if not is_alive(args.pid):
             # The process is gone. Decide: clean completion or crash?
@@ -208,13 +219,19 @@ def main():
                     if len(lm_window) >= 10:
                         mean = sum(lm_window) / len(lm_window)
                         if lm > mean * args.lm_explode_factor:
-                            kill_training(
-                                args.pid,
-                                f"LM loss exploded: {lm:.2f} > {args.lm_explode_factor}x "
-                                f"trailing mean {mean:.2f} at step {rec.get('step')}",
-                                args.alert_path,
-                            )
-                            sys.exit(2)
+                            consecutive_explosions += 1
+                            if consecutive_explosions >= args.lm_explode_consecutive:
+                                kill_training(
+                                    args.pid,
+                                    f"LM loss exploded {consecutive_explosions} "
+                                    f"chunks in a row (last: {lm:.2f} > "
+                                    f"{args.lm_explode_factor}x trailing mean "
+                                    f"{mean:.2f}) at step {rec.get('step')}",
+                                    args.alert_path,
+                                )
+                                sys.exit(2)
+                        else:
+                            consecutive_explosions = 0        # reset the streak
                     lm_window.append(lm)
                 last_pos = f.tell()
 

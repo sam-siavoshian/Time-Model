@@ -42,26 +42,30 @@ done
 
 log_oom() {
     local reason="$1"
-    local chunk="$2"
-    python3 -c "
-import json, time, os, subprocess
+    local chunk="${2:-0}"      # default 0 so the JSON write never has an empty value
+    RETRY_VAL="${RETRY:-0}"
+    python3 - "$RETRY_VAL" "$reason" "$chunk" <<'PYEOF'
+import json, time, sys, subprocess
+retry, reason, chunk = sys.argv[1:4]
 gpu = ''
 try:
-    gpu = subprocess.check_output(['nvidia-smi', '--query-gpu=memory.used,memory.free', '--format=csv,noheader,nounits'], text=True).strip()
+    gpu = subprocess.check_output(
+        ['nvidia-smi', '--query-gpu=memory.used,memory.free',
+         '--format=csv,noheader,nounits'], text=True).strip()
 except Exception:
     pass
 rec = {
     'time': time.time(),
     'kind': 'oom_incident',
-    'retry': $RETRY,
-    'reason': '$reason',
-    'chunk_length_attempted': $chunk,
+    'retry': int(retry),
+    'reason': reason,
+    'chunk_length_attempted': int(chunk) if chunk and chunk.lstrip('-').isdigit() else 0,
     'gpu_state': gpu,
 }
 with open('reports/oom_incidents.jsonl', 'a') as f:
     f.write(json.dumps(rec) + '\n')
-print(f'  [oom-guard] logged incident retry=$RETRY chunk=$chunk reason=$reason')
-"
+print(f'  [oom-guard] logged incident retry={retry} chunk={chunk} reason={reason}')
+PYEOF
 }
 
 run_once() {
