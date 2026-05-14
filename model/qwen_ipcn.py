@@ -390,7 +390,12 @@ class QwenIPCN(nn.Module):
             torch.tensor(tau_t, device=device, dtype=torch.float32),
             torch.tensor(delta_tau, device=device, dtype=torch.float32),
         ).squeeze(0)                                           # (d_chrono,)
-        prefix = self.pfc(self.memory.k, self.memory.v, chi_t)  # (K_p, d_model)
+        # Clone memory buffers so the post-forward in-place write does not
+        # invalidate the autograd graph (the PFC's gradient flows through
+        # memory_k_snap / memory_v_snap, NOT the live buffer).
+        memory_k_snap = self.memory.k.detach().clone()
+        memory_v_snap = self.memory.v.detach().clone()
+        prefix = self.pfc(memory_k_snap, memory_v_snap, chi_t)  # (K_p, d_model)
         prefix = prefix.to(embed.dtype).unsqueeze(0).expand(B, -1, -1)
 
         # Concatenate prefix + token embeddings
