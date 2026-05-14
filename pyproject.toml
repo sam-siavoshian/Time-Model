@@ -10,4 +10,9 @@ dependencies = [
     "tiktoken>=0.12.0",
     "torch>=2.11.0",
     "tqdm>=4.67.3",
+    "transformers>=4.46.0",
+    "accelerate>=0.34.0",
+    "safetensors>=0.4.0",
+    "sentencepiece>=0.2.0",
+    "huggingface-hub>=0.26.0",
 ]
