@@ -183,7 +183,20 @@ def load_checkpoint(
         print(f"checkpoint load: missing={len(missing_keys)}, unexpected={len(unexpected_keys)} "
               f"(strict=False; new modules at init, old modules dropped)")
     if "rng_state_cpu" in state:
-        torch.set_rng_state(state["rng_state_cpu"])
+        rng = state["rng_state_cpu"]
+        # torch.load with map_location='cuda' (or any non-cpu) moves EVERY
+        # tensor in the state dict to the target device, including the CPU
+        # RNG byte tensor. torch.set_rng_state requires a CPU ByteTensor,
+        # so we force it back to CPU before applying. Cast to uint8 in
+        # case map_location returned a different storage type.
+        if hasattr(rng, "cpu"):
+            rng = rng.cpu()
+        if hasattr(rng, "to"):
+            rng = rng.to(dtype=torch.uint8)
+        try:
+            torch.set_rng_state(rng)
+        except Exception as e:                                # noqa: BLE001
+            print(f"checkpoint load: skipping RNG restore ({type(e).__name__}: {e})")
     opt_state = state["opt_state"]
     # Carry the saved param-name layout into the returned opt_state under
     # a known key so a caller can route it to restore_opt_state_by_name.
