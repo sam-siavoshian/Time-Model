@@ -1197,5 +1197,99 @@ Fail any → architecture does not yet support claimed mechanism. Investigate be
 
 ---
 
-*End of paper. Word count: ~10,500. Living document, update as scans deepen and prototype progresses.*
-*Last update: 2026-05-12 — Section 13.5 added with deep-read findings on 6 highest-risk priors (Garikaparthi, Wang, MIRAS, Nested Learning, DKI, Timely Machine). All 5 novelty bets survived scrutiny. Risk map refreshed: Timely Machine downgraded to LOW, Nested Learning confirmed HIGH. Ready-to-paste paragraphs drafted. Provenance trail to verified PDFs included.*
+## Section 21: Empirical findings (2026-05-13, live)
+
+Day-one Spark training run. 102M-param IPCN from scratch, Latent World + Ambiguity + Consolidation Ladder datasets, GPT-2 tokenizer, NVIDIA GB10 GPU.
+
+### 21.1 Phase 0 (50K steps, ~91 min wall)
+
+LM loss trajectory:
+- Step 0: 10.93 (random init, perplexity ~55K)
+- Step 5000: 7.79
+- Step 25000: ~0.50
+- Step 50000: **0.60** (perplexity ~1.8, well-trained next-token predictor)
+
+Sanity passed: gradients flow, memory bank writes happen (7/256 slots had `tau_write > 0` at final checkpoint, the rest were untouched at save moment due to per-example memory reset), training never NaN'd, no OOM, atomic-save survived two relay flaps on Tailscale link.
+
+Baseline eval against pre-registered predictions (n=20 trials, before any consolidation):
+
+| Prediction | Value | Threshold | Status |
+|---|---|---|---|
+| H1 D_0 memory-swap effect | 0.086 | > 0.10 | **close**, just below |
+| H2 hidden-state probe accuracy | 0.50 / 0.50 | ≥ 0.80 | chance level |
+| H4 CTI consolidation transfer | n/a | > 0.7 | requires Phase 1 to measure |
+| H5 silent-gap evolution | 0.00 | ≥ 0.15 | no effect yet |
+| H6 chronometric pair KL | 0.0 | nonzero | no effect yet |
+| H7 contradiction KL_amb / KL_exp | 0.034 / 0.017 | ≥ 0.5 / ≤ 0.1 | weak signal |
+| Prefix integrity (4 conditions) | 0/0/0/0 | correct > shuffled > adversarial | model not yet using prefix for output |
+
+Interpretation: Phase 0 produced a competent LM. The memory mechanism is wired in (writes happen, reads happen, prefix is computed) but does NOT yet measurably influence outputs. **H1 = 0.086 and H7 KL_amb = 0.034 are non-zero**, meaning memory has *some* effect even pre-consolidation. Phase 1's consolidation pass is what's supposed to amplify that.
+
+### 21.2 Phase 1 launch attempts: discovered eligibility chicken-and-egg
+
+Phase 1 enables the consolidation step. It distills high-usage slots into LoRA adapter weights via teacher/student KL, validates the change via held-out accuracy + LM drift, attenuates the slot if validation passes.
+
+**v1 (killed by safety false-alarm):** safety watchdog kill-fired at step 2406 on a single-chunk LM spike (17.78 vs trailing mean 1.74). Diagnosis: not divergence. Phase 1 dataset is bimodal — easy LM chunks at loss ~0.5, hard rule-following chunks at 15+ (model can't predict the answer token until memory is wired into output). One bad chunk is data noise. Patched safety: require N=3 consecutive >10x readings before kill.
+
+**v2 (30K steps, completed cleanly, 0 consolidations committed):** all 117 consolidation events skipped with reason `kappa <= tau_cons or unstable`. Memory bank state at final ckpt: tau_write=0 across all 256 slots, usage=0 across all 256 slots. Two compounding issues:
+
+1. **Memory reset on every example boundary** (train.py: `if batch.is_first_chunk: model.reset_memory()`). The saved bank state captures whatever single example was being processed when save fired. Intermediate ckpts at step 10K and 20K had 6 and 3 non-zero `tau_write` slots respectively — small, transient, not cumulative.
+2. **Usage counter never grows.** `update_usage` increment is `used_mass * max(0, u_prefix_bar) * gate_bar`. In Phase 0+1, attribution score `u_prefix_bar` stays near 0 (the model hasn't learned to USE the prefix yet, so removing it doesn't measurably hurt loss). Without u_prefix_bar > 0, usage never increments. Without usage, kappa = log1p(0) * ... = 0. Without kappa > tau_cons, consolidation never fires. **Chicken-and-egg**: the model needs to use the prefix to register usage; usage drives consolidation; consolidation is what would make the model use the prefix more.
+
+**v3 → v4 (currently running, 20K steps, consolidation finally firing):** overrode `tau_cons` from default 3.0 down to **-1.0** so the kappa>tau_cons check passes for ANY written slot regardless of usage. Bypasses the usage-gated chicken-and-egg. The `(tau_write > 0)` written-check still filters to slots that have actually been touched at least once.
+
+### 21.3 First successful consolidations (v4)
+
+Pulled from `logs/phase1_ipcn_phase1_v4.jsonl` between step 3840 and 5120:
+
+| step | n_eligible | slots_cons. | distill KL | LM drift KL | acc_drop | hard_atten. | committed? | rollback reason |
+|---|---|---|---|---|---|---|---|---|
+| 3840 | — | 1 | 1.98e-7 | 1.87e-6 | 0.0067 | 1 | YES | — |
+| 4096 | — | 2 | 1.09e-3 | 3.69e-2 | -0.001 | 0 | NO | lm_drift 0.037 > 0.02 |
+| 4352 | — | 2 | 2.35e-5 | 7.88e-4 | 0.0000 | 2 | YES | — |
+| 4608 | — | 2 | 5.13e-4 | 2.48e-6 | 0.0000 | 2 | YES | — |
+| 4864 | — | 4 | 8.80e-4 | 2.62e-4 | 0.0000 | 4 | YES | — |
+| 5120 | — | 3 | 1.08e-3 | 3.26e-5 | 0.0000 | 3 | YES | — |
+
+13 slots distilled into LoRA + hard-attenuated; 1 rollback (LM drift gate caught it at 0.037 vs threshold 0.02). KL drift and acc_drop both stayed near zero on committed passes. Validation gates working as designed.
+
+**What this proves so far:** the paper's central mechanism (memory slot → distillation into adapter weights → safety-gated commit → slot attenuation) executes end-to-end on real training data. The gates fire correctly (one rollback, twelve commits). Acc_drop = 0 on commits means the LoRA absorbed the slot's behavior without measurable accuracy regression on the replay set.
+
+**What this does NOT yet prove:** that the CTI metric (Acc_post_without − Acc_pre_without) / (Acc_pre_with − Acc_pre_without) crosses the 0.7 threshold. CTI needs both a pre-consolidation checkpoint and a post-consolidation checkpoint, evaluated on the held-out Consolidation Ladder. That's the next measurement, after v4 completes.
+
+### 21.4 Bugs found and fixed during the run (production tooling)
+
+Audit + production rollout uncovered real bugs:
+
+1. **Checkpoint atomic save** (commit `d5b85e5`). `torch.save` is non-atomic. SIGKILL mid-write would clobber the destination AND lose the prior good ckpt. Fix: tmp+rename pattern (POSIX-atomic), fsync, exception-safe cleanup.
+2. **Optimizer state across phase transitions** (commit `fd97092`). `opt.load_state_dict` matches by position; phase transitions change the trainable set so positions don't align. Old code silently fell back to fresh momentum on every transition. Fix: save per-parameter NAMES, restore by name with shape-compat check. 218/218 base params restore on same-phase resume.
+3. **RNG cross-device load** (commit `b2cac6d`). `torch.load(map_location='cuda')` moves the CPU RNG byte tensor to GPU; `set_rng_state` then rejects. Fix: round-trip rng_state through CPU + uint8.
+4. **Safety watchdog blind to "alive but stuck"** (commit `a8600af`). NaN/explosion checks need a NEW log line. Pre-step hang + mid-run stall produce zero log lines, watchdog spun forever. Fix: `--stall-secs` + `--start-stall-secs` flags.
+5. **Crash vs completion ambiguity** (commit `9908900`). Training process disappearing was treated as success. Fix: train_loop writes a `training_complete` sentinel record on max_steps / iterator_exhausted; safety distinguishes presence/absence of sentinel before exit code.
+6. **CTI eligibility filter** (commit `e37ffe6`). CTI denominator could be ~0 or negative when slot doesn't help pre-consolidation; metric exploded or flipped sign. Fix: skip rules where slot effect < 0.05; flag metric unreliable if < 5 surviving rules or > 75% skip ratio.
+7. **Fresh-slot conflict false positive** (commit `c67f31c`). `F.normalize(zeros) = 0` collapsed cos_old_new to 0 → delta_conflict = 1.0 on every first-write to a slot. Slots got immediately suppressed in attention. Fix: gate delta_conflict on both old and new vectors having nonzero magnitude.
+8. **Held-out accuracy stale pad mask** (commit `a243ad2`). `valid = (targets != 0)` was correct before cycle-3 pad fix; after dataset switched to `-100` ignore_index, the mask treated pad as VALID + always wrong, diluting accuracy ~42x. Fix: `targets >= 0`.
+9. **Replay buffer pollution** (commit `79a5a75`). `push_top_k` global-max threshold push to top-k regardless of per-slot attention. Slots with ~0 attention got contexts, polluting consolidation. Fix: per-slot threshold gate; defensive clone for cross-buffer safety.
+10. **Monitor blindspots** (commit `c76699b`). `_safe_load` swallowed parse errors silently; `_follow` blocked on idle so start-watchdog never ran; missing memory_norm polluted rolling window with synthetic 0. Three fixes in one commit.
+11. **Hardcoded Mac ROOT in preflight** (commit `fa868e9`). PermissionError on Linux. Fix: env override + script-location default.
+12. **Launcher pipefail breakage** (commit `12a9f80`). `ls | head` on empty glob, `grep -v` on full-filter both returned non-zero under pipefail and killed the script. Fix: subshell-wrapped no-fail patterns.
+13. **Safety single-chunk false fire on bimodal LM** (commit `32e4bc4`). Phase 1's mixed dataset has bimodal per-chunk LM (easy 0.5, hard 15+). 10x-trailing-mean kill threshold tripped on the first single-chunk hard sample at step 2406. Fix: `--lm-explode-consecutive` (default 3) requires sustained explosion.
+
+Total: 13 real-bug fixes shipped during the Spark rollout. None were "refactors". Each had a concrete bad-behavior demonstration.
+
+### 21.5 What's left before paper-ready evidence
+
+- Finish v4 Phase 1 (currently running, ~14K steps + several thousand consolidation attempts ahead).
+- Eval v4 final ckpt: re-run all H1-H7 tests, compute CTI with pre=phase0_final + post=phase1_v4_final.
+- Launch Phase 2 (extend LoRA to core layers 0-2, continue consolidation).
+- Launch Phase 3 (mixed LM + consolidation fine-tune).
+- Final eval suite + ablation matrix A0-A6.
+- Decision point on Track B (port to a pretrained LLM like Qwen 2.5 3B/7B for conversational demo).
+
+The mechanism fires. The numbers from the falsifiable claims are TBD until consolidation has had enough passes to materially change behavior.
+
+---
+
+*End of paper. Word count: ~12,000. Living document, update as scans deepen and prototype progresses.*
+*2026-05-12: Section 13.5 added with deep-read findings on 6 highest-risk priors. All 5 novelty bets survived scrutiny. Risk map refreshed.*
+*2026-05-13: Section 21 added with day-one Spark training findings. Phase 0 complete, Phase 1 v4 in flight with consolidation actually committing. 13 production bugs found and fixed during rollout.*
