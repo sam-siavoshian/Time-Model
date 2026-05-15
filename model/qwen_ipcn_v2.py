@@ -249,9 +249,12 @@ class _CrossAttnMemory(nn.Module):
         self.W_q = nn.Linear(d_model, d_memory, bias=False)
         self.W_o = nn.Linear(d_memory, d_model, bias=False)
         self.W_g = nn.Linear(d_model, 1, bias=True)
-        # Init gate close to zero so the cross-attn doesn't disrupt training initially.
+        # Init gate near 0.5 so the cross-attn meaningfully contributes from
+        # step 0. v5 used sigmoid(-3)=0.05 which made the memory pathway
+        # invisible at init; combined with negative-control collapse, the
+        # gate never grew. Sigmoid(0)=0.5 starts memory at half strength.
         nn.init.zeros_(self.W_g.weight)
-        nn.init.constant_(self.W_g.bias, -3.0)                 # sigmoid(-3) ~ 0.05
+        nn.init.constant_(self.W_g.bias, 0.0)
 
     def forward(
         self,
