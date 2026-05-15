@@ -189,6 +189,109 @@ def gen_conversation_with_answer_span(
     return full_text, answer, prefix_text, answer_text
 
 
+def _nonce_lower(rng: random.Random, k: int = 6) -> str:
+    import string
+    return "".join(rng.choices(string.ascii_lowercase, k=k))
+
+
+def _nonce_cap(rng: random.Random, k: int = 6) -> str:
+    return _nonce_lower(rng, k).capitalize()
+
+
+NONCE_GEN = {
+    # Maps the same TEMPLATE_POOL_MAP keys to nonce generators. Result is a
+    # value drawn from ~26^k random strings rather than a pool of 10-12.
+    "color":      lambda r: _nonce_lower(r, 7),
+    "date":       lambda r: f"{r.choice(['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'])} {r.randint(1, 28)}",
+    "password":   lambda r: _nonce_lower(r, 5) + str(r.randint(10, 99)),
+    "name":       lambda r: _nonce_cap(r, 6),
+    "company":    lambda r: _nonce_cap(r, 5) + " " + _nonce_cap(r, 5),
+    "city":       lambda r: _nonce_cap(r, 7),
+    "phone":      lambda r: f"555-{r.randint(0, 9999):04d}",
+    "food":       lambda r: _nonce_lower(r, 7),
+    "car":        lambda r: f"{r.randint(1980, 2024)} " + _nonce_cap(r, 6),
+    "person":     lambda r: _nonce_cap(r, 5),
+    "school":     lambda r: _nonce_cap(r, 6) + " University",
+    "book":       lambda r: "The " + _nonce_cap(r, 6),
+    "movie":      lambda r: _nonce_cap(r, 7),
+    "middlename": lambda r: _nonce_cap(r, 6),
+    "number":     lambda r: str(r.randint(1000, 99999)),
+}
+
+
+def gen_nonce_conversation(rng: random.Random, n_distractors: int) -> tuple[str, str, str, str]:
+    """Same chat structure as gen_conversation_with_answer_span but the
+    fact value is drawn from a HUGE nonce space rather than a 10-12
+    element pool. Defeats template-guessing.
+
+    Returns: (full_text, answer, prefix_text, answer_text)
+    """
+    template_idx = rng.randrange(len(FACT_TEMPLATES))
+    statement, question, answer_tpl = FACT_TEMPLATES[template_idx]
+    pool_key = TEMPLATE_POOL_MAP[template_idx]
+    x = NONCE_GEN[pool_key](rng)
+    statement = statement.format(x=x)
+    answer = answer_tpl.format(x=x)
+
+    turns: list[tuple[str, str]] = []
+    # Randomize fact position so the model can't lock onto "turn 1 = fact".
+    fact_position = rng.randint(0, max(0, n_distractors // 2))
+    inserted_fact = False
+    for j in range(n_distractors + 1):
+        if j == fact_position:
+            turns.append(("user", statement))
+            ack_options = [
+                "Got it, I will remember that.",
+                "Noted.",
+                "OK, I have that.",
+                "Alright, I will keep that in mind.",
+                "Understood.",
+            ]
+            turns.append(("assistant", rng.choice(ack_options)))
+            inserted_fact = True
+        else:
+            d = rng.choice(DISTRACTORS)
+            r = rng.choice(DISTRACTOR_REPLIES)
+            turns.append(("user", d))
+            turns.append(("assistant", r))
+    if not inserted_fact:
+        # Safety fallback: ensure fact is inserted somewhere.
+        turns.append(("user", statement))
+        turns.append(("assistant", "Got it, I will remember that."))
+    turns.append(("user", question))
+
+    prefix_parts = []
+    for role, content in turns:
+        prefix_parts.append(f"<|im_start|>{role}\n{content}<|im_end|>")
+    prefix_text = "\n".join(prefix_parts) + "\n<|im_start|>assistant\n"
+    answer_text = answer + ".<|im_end|>"
+    full_text = prefix_text + answer_text
+    return full_text, answer, prefix_text, answer_text
+
+
+def gen_negative_conversation(rng: random.Random, n_distractors: int) -> tuple[str, str, str, str]:
+    """No fact stated, recall question asked. Correct answer is 'I do not
+    know.' Teaches the model that ABSENCE of memory means refuse, not
+    confabulate a pool value.
+    """
+    template_idx = rng.randrange(len(FACT_TEMPLATES))
+    _, question, _ = FACT_TEMPLATES[template_idx]
+    turns: list[tuple[str, str]] = []
+    for _ in range(n_distractors):
+        d = rng.choice(DISTRACTORS)
+        r = rng.choice(DISTRACTOR_REPLIES)
+        turns.append(("user", d))
+        turns.append(("assistant", r))
+    turns.append(("user", question))
+    prefix_parts = []
+    for role, content in turns:
+        prefix_parts.append(f"<|im_start|>{role}\n{content}<|im_end|>")
+    prefix_text = "\n".join(prefix_parts) + "\n<|im_start|>assistant\n"
+    answer_text = "I do not know.<|im_end|>"
+    full_text = prefix_text + answer_text
+    return full_text, "I do not know", prefix_text, answer_text
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--n", type=int, default=5000)
@@ -196,32 +299,53 @@ def main():
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--min-distractors", type=int, default=4)
     p.add_argument("--max-distractors", type=int, default=14)
-    p.add_argument("--with-answer-span", action="store_true",
-                   help="emit prefix_text and answer_text so the trainer "
-                        "can mask non-answer tokens from the LM loss")
+    p.add_argument("--with-answer-span", action="store_true")
+    p.add_argument("--nonce", action="store_true",
+                   help="use nonce string values (defeats template-guessing).")
+    p.add_argument("--negative-frac", type=float, default=0.0,
+                   help="fraction of examples that are negative controls "
+                        "(no fact stated, recall -> 'I do not know').")
     args = p.parse_args()
 
     rng = random.Random(args.seed)
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     n_written = 0
+    n_neg = 0
     with open(args.out, "w") as f:
         for i in range(args.n):
             nd = rng.randint(args.min_distractors, args.max_distractors)
-            if args.with_answer_span:
+            is_negative = rng.random() < args.negative_frac
+            if is_negative:
+                full_text, answer, prefix_text, answer_text = \
+                    gen_negative_conversation(rng, nd)
+                rec = {
+                    "text": full_text, "answer": answer,
+                    "prefix_text": prefix_text, "answer_text": answer_text,
+                    "mode": "negative",
+                }
+                n_neg += 1
+            elif args.nonce:
+                full_text, answer, prefix_text, answer_text = \
+                    gen_nonce_conversation(rng, nd)
+                rec = {
+                    "text": full_text, "answer": answer,
+                    "prefix_text": prefix_text, "answer_text": answer_text,
+                    "mode": "nonce",
+                }
+            elif args.with_answer_span:
                 full_text, answer, prefix_text, answer_text = \
                     gen_conversation_with_answer_span(rng, nd)
                 rec = {
-                    "text": full_text,
-                    "answer": answer,
-                    "prefix_text": prefix_text,
-                    "answer_text": answer_text,
+                    "text": full_text, "answer": answer,
+                    "prefix_text": prefix_text, "answer_text": answer_text,
+                    "mode": "pool",
                 }
             else:
                 text, answer = gen_conversation(rng, nd)
-                rec = {"text": text, "answer": answer}
+                rec = {"text": text, "answer": answer, "mode": "pool"}
             f.write(json.dumps(rec) + "\n")
             n_written += 1
-    print(f"wrote {n_written} conversations -> {args.out}")
+    print(f"wrote {n_written} conversations -> {args.out} (negative: {n_neg})")
 
 
 if __name__ == "__main__":
