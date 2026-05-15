@@ -58,11 +58,16 @@ class QwenIPCNConfig:
     # Chronometric encoder (matches Track A's design)
     timescales: Tuple[int, ...] = (2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 4096, 16384, 65536)
 
-    # LoRA
-    lora_rank: int = 8
-    lora_layers: Tuple[int, ...] = (0, 1)                      # which Qwen layers to adapt
+    # LoRA. Default = ALL Qwen layers + lm_head. The memory mechanism needs
+    # the prefix tokens to propagate through every attention block (so a
+    # late-layer head can attend back to them), which requires more than
+    # the original (0, 1) config. (0, 1) tested: model learned the pool
+    # for each question template but ignored memory entirely -- with /
+    # without / shuffled produced identical outputs.
+    lora_rank: int = 16
+    lora_layers: Tuple[int, ...] = tuple(range(28))             # Qwen2.5-1.5B has 28 layers
     lora_targets: Tuple[str, ...] = ("q_proj", "k_proj", "v_proj", "o_proj")
-    lora_lm_head: bool = True                                  # also LoRA the language model head
+    lora_lm_head: bool = True
 
     # Memory write / read bias coefficients (mirror Track A defaults)
     beta_c: float = 0.5
