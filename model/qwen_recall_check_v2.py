@@ -146,9 +146,20 @@ def run_recall(model: QwenIPCNv2, tokenizer, n: int, chunk_length: int, device: 
         ans_shuffled = answer_with_model(model, tokenizer, recall_q, device=device)
 
         a = _normalize(answer)
-        with_correct += int(a in _normalize(ans_with))
-        without_correct += int(a in _normalize(ans_without))
-        shuffled_correct += int(a in _normalize(ans_shuffled))
+        # Strict match: first non-whitespace alphanumeric word of the
+        # response must equal the gold answer. Prevents substring false
+        # positives like 'A' matching 'As an AI...'.
+        def _first_word(s: str) -> str:
+            s = s.strip().lower().rstrip(".")
+            for tok in s.split():
+                # Strip surrounding punctuation
+                t = tok.strip(".,!?:;\"'()")
+                if t:
+                    return t
+            return s
+        with_correct += int(_first_word(ans_with) == a)
+        without_correct += int(_first_word(ans_without) == a)
+        shuffled_correct += int(_first_word(ans_shuffled) == a)
         total += 1
         if i < 5:
             print(f"  [{i}] gold={answer!r:25s} | with={ans_with!r:32s} | without={ans_without!r:32s} | shuf={ans_shuffled!r}")

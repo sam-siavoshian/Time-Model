@@ -1,0 +1,7 @@
+{
+  "n": 50,
+  "acc_with_memory": 0.06,
+  "acc_without_memory": 0.06,
+  "acc_shuffled_memory": 0.06,
+  "delta_with_minus_without": 0.0
+}
