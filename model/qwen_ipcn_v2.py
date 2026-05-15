@@ -275,6 +275,49 @@ class _CrossAttnMemory(nn.Module):
         return h + (gate * delta).to(h.dtype)
 
 
+class _ShortcutHead(nn.Module):
+    """Direct memory -> logit shortcut. Bypasses all 28 Qwen layers.
+
+    At each token position, query the memory bank, attend to slots, fetch
+    a weighted memory value vector. Project to vocab via the (LoRA-wrapped)
+    lm_head and ADD to the base logits, scaled by a global learnable gate.
+
+    Under Identity-V, memory.v[i] = lm_head.weight[target_token_i] so
+    `shortcut @ lm_head.weight.T` directly produces a logit boost at the
+    target token. The gate starts at sigmoid(2) = 0.88 so the shortcut
+    dominates from step 0; the model can scale it down via gradient if
+    memory ever points at the wrong slot.
+    """
+
+    def __init__(self, d_model: int, d_memory: int):
+        super().__init__()
+        self.scale = d_memory ** -0.5
+        self.W_q = nn.Linear(d_model, d_memory, bias=False)
+        self.gate_logit = nn.Parameter(torch.tensor(2.0))      # sigmoid(2)=0.88
+
+    def forward(
+        self,
+        last_h: torch.Tensor,                                  # (B, L, d_model)
+        mem_k: torch.Tensor,                                   # (N_m, d_memory)
+        mem_v: torch.Tensor,                                   # (N_m, d_memory)
+        lm_head: nn.Module,
+    ) -> torch.Tensor:                                         # (B, L, vocab)
+        h = last_h.float()
+        q = self.W_q(h)                                        # (B, L, d_memory)
+        mk = mem_k.float()
+        mv = mem_v.float()
+        attn = torch.softmax(q @ mk.t() * self.scale, dim=-1)  # (B, L, N_m)
+        shortcut = attn @ mv                                    # (B, L, d_memory)
+        # Run through lm_head (LoRA-wrapped) to get vocab-space logits.
+        # lm_head is _LoRALinear: base.weight is bf16, lora_A/B are fp32.
+        # The _LoRALinear forward handles internal dtype casting; we just
+        # need to feed in the base weight's dtype.
+        base_dtype = lm_head.base.weight.dtype if hasattr(lm_head, "base") else lm_head.weight.dtype
+        shortcut_logits = lm_head(shortcut.to(base_dtype))
+        gate = torch.sigmoid(self.gate_logit)
+        return gate * shortcut_logits.float()
+
+
 class QwenIPCNv2(nn.Module):
     """Cross-attention-injected IPCN around frozen Qwen 2.5.
 
@@ -313,6 +356,9 @@ class QwenIPCNv2(nn.Module):
 
         # Apply LoRA to selected layers + lm_head.
         self._apply_lora()
+
+        # Direct memory -> logit shortcut head (bypasses all 28 layers).
+        self.shortcut = _ShortcutHead(self.d_model, cfg.d_memory)
 
         # Register forward hooks on the chosen decoder layers.
         self._hook_handles = []
@@ -400,6 +446,17 @@ class QwenIPCNv2(nn.Module):
         )
         logits = out.logits                                    # (B, L, vocab)
         last_h = out.hidden_states[-1]                         # (B, L, d_model)
+
+        # Direct memory -> logit shortcut. Adds a memory-attention-weighted
+        # lm_head pass directly to the base's logits. Required because the
+        # cross-attn injection at layers 4/12/20 gets washed out in the
+        # 23-layer residual stream before reaching lm_head. v1-v7 all hit
+        # delta=0 because of this dilution. The shortcut head is the
+        # decisive fix: memory value -> lm_head -> output, no detour.
+        mem_k_now = self.memory.current_k()
+        mem_v_now = self.memory.current_v()
+        shortcut_logits = self.shortcut(last_h, mem_k_now, mem_v_now, self.base.lm_head)
+        logits = logits.float() + shortcut_logits
 
         # Write into memory using last hidden state (with grad).
         write_h = last_h[0].to(self.W_k_m_dtype())             # (L, d_model)
