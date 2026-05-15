@@ -144,6 +144,8 @@ def main():
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--answer-mask", action="store_true")
     p.add_argument("--bptt-detach-every", type=int, default=2)
+    p.add_argument("--unfreeze-base", action="store_true",
+                   help="train all of Qwen, not just LoRA + memory + cross-attn")
     args = p.parse_args()
 
     torch.manual_seed(args.seed)
@@ -152,6 +154,7 @@ def main():
 
     cfg = QwenIPCNv2Config()
     cfg.chunk_length = args.chunk_length
+    cfg.unfreeze_base = args.unfreeze_base
     print(f"Loading Qwen IPCN v2 ({cfg.base_model_name})...")
     t0 = time.time()
     model = build_qwen_ipcn_v2(cfg)

@@ -52,6 +52,11 @@ class QwenIPCNv2Config:
     lora_targets: Tuple[str, ...] = ("q_proj", "k_proj", "v_proj", "o_proj")
     lora_lm_head: bool = True
 
+    # If True, do NOT freeze the Qwen base. All ~1.5B params train via
+    # AdamW. v9 escalation when frozen-base ran out of capacity to learn
+    # memory routing. ~6 GB extra optimizer state; fits on GB10 130 GB.
+    unfreeze_base: bool = False
+
     # Write step
     n_write_candidates: int = 4
     write_eta: float = 0.5                                     # EMA mix rate
@@ -335,8 +340,13 @@ class QwenIPCNv2(nn.Module):
         self.base = AutoModelForCausalLM.from_pretrained(
             cfg.base_model_name, torch_dtype=torch.bfloat16, trust_remote_code=True
         )
-        for p in self.base.parameters():
-            p.requires_grad_(False)
+        if not cfg.unfreeze_base:
+            for p in self.base.parameters():
+                p.requires_grad_(False)
+        else:
+            print("[v9] base UNFROZEN. all ~1.5B params will receive gradient.")
+            for p in self.base.parameters():
+                p.requires_grad_(True)
         self.d_model = self.base.config.hidden_size
         if cfg.d_memory == 0:
             cfg.d_memory = self.d_model
