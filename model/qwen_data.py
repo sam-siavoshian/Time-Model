@@ -148,6 +148,47 @@ def gen_conversation(rng: random.Random, n_distractors: int) -> tuple[str, str]:
     return text, answer
 
 
+def gen_conversation_with_answer_span(
+    rng: random.Random, n_distractors: int,
+) -> tuple[str, str, str, str]:
+    """Same as gen_conversation but also returns the recall question and
+    the answer-only segment so the trainer can mask non-answer tokens.
+
+    Returns: (full_text, answer, prefix_text, answer_text)
+      full_text = prefix_text + answer_text
+      prefix_text ends right at "<|im_start|>assistant\n" of the FINAL turn
+      answer_text = "<answer>.<|im_end|>"
+
+    The trainer feeds full_text, computes loss only on tokens whose
+    position lies in answer_text. That way the LM loss focuses on
+    learning to PRODUCE the answer rather than mimicking distractors.
+    """
+    template_idx = rng.randrange(len(FACT_TEMPLATES))
+    statement, question, answer_tpl = FACT_TEMPLATES[template_idx]
+    pool = VALUE_POOLS[TEMPLATE_POOL_MAP[template_idx]]
+    x = rng.choice(pool)
+    statement = statement.format(x=x)
+    answer = answer_tpl.format(x=x)
+
+    turns: list[tuple[str, str]] = []
+    turns.append(("user", statement))
+    turns.append(("assistant", "Got it, I will remember that."))
+    for _ in range(n_distractors):
+        d = rng.choice(DISTRACTORS)
+        r = rng.choice(DISTRACTOR_REPLIES)
+        turns.append(("user", d))
+        turns.append(("assistant", r))
+    turns.append(("user", question))
+    # The final assistant turn is split for masking.
+    prefix_parts = []
+    for role, content in turns:
+        prefix_parts.append(f"<|im_start|>{role}\n{content}<|im_end|>")
+    prefix_text = "\n".join(prefix_parts) + "\n<|im_start|>assistant\n"
+    answer_text = answer + ".<|im_end|>"
+    full_text = prefix_text + answer_text
+    return full_text, answer, prefix_text, answer_text
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--n", type=int, default=5000)
@@ -155,6 +196,9 @@ def main():
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--min-distractors", type=int, default=4)
     p.add_argument("--max-distractors", type=int, default=14)
+    p.add_argument("--with-answer-span", action="store_true",
+                   help="emit prefix_text and answer_text so the trainer "
+                        "can mask non-answer tokens from the LM loss")
     args = p.parse_args()
 
     rng = random.Random(args.seed)
@@ -163,8 +207,19 @@ def main():
     with open(args.out, "w") as f:
         for i in range(args.n):
             nd = rng.randint(args.min_distractors, args.max_distractors)
-            text, answer = gen_conversation(rng, nd)
-            f.write(json.dumps({"text": text, "answer": answer}) + "\n")
+            if args.with_answer_span:
+                full_text, answer, prefix_text, answer_text = \
+                    gen_conversation_with_answer_span(rng, nd)
+                rec = {
+                    "text": full_text,
+                    "answer": answer,
+                    "prefix_text": prefix_text,
+                    "answer_text": answer_text,
+                }
+            else:
+                text, answer = gen_conversation(rng, nd)
+                rec = {"text": text, "answer": answer}
+            f.write(json.dumps(rec) + "\n")
             n_written += 1
     print(f"wrote {n_written} conversations -> {args.out}")
 

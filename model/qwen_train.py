@@ -45,12 +45,21 @@ def stream_chunks(
     chunk_length: int,
     shuffle: bool = True,
     seed: int = 0,
-) -> Iterator[tuple[torch.Tensor, bool, int]]:
-    """Yields (chunk_token_ids, is_first_chunk_of_conv, conv_idx) tuples.
+    answer_mask: bool = False,
+) -> Iterator[tuple[torch.Tensor, torch.Tensor, bool, int]]:
+    """Yields (chunk_token_ids, target_mask, is_first_chunk_of_conv, conv_idx).
 
-    Each conversation is tokenized, then split into non-overlapping chunks
-    of chunk_length tokens. The is_first_chunk flag tells the trainer
-    when to reset the memory bank.
+    target_mask is a bool tensor same shape as chunk_token_ids; True positions
+    contribute to the LM loss, False positions are ignored (target = -100).
+
+    If answer_mask=False: every position in the chunk contributes (legacy
+    behavior, masks nothing).
+
+    If answer_mask=True: the dataset MUST have prefix_text + answer_text
+    fields. We tokenize prefix and answer separately, mark only the
+    answer-region positions as True. This concentrates the LM gradient on
+    "produce the recall answer from memory" rather than "mimic the
+    distractor refusal pattern that fills 90% of the conversation".
     """
     with open(jsonl_path) as f:
         lines = f.readlines()
@@ -59,16 +68,25 @@ def stream_chunks(
         rng.shuffle(lines)
     for conv_idx, line in enumerate(lines):
         rec = json.loads(line)
-        ids = tokenizer.encode(rec["text"], return_tensors="pt").squeeze(0)
+        if answer_mask and "prefix_text" in rec and "answer_text" in rec:
+            prefix_ids = tokenizer.encode(rec["prefix_text"], return_tensors="pt").squeeze(0)
+            answer_ids = tokenizer.encode(rec["answer_text"], return_tensors="pt", add_special_tokens=False).squeeze(0)
+            ids = torch.cat([prefix_ids, answer_ids])
+            mask = torch.zeros(ids.shape[0], dtype=torch.bool)
+            mask[prefix_ids.shape[0]:] = True                  # only answer tokens count
+        else:
+            ids = tokenizer.encode(rec["text"], return_tensors="pt").squeeze(0)
+            mask = torch.ones(ids.shape[0], dtype=torch.bool)
         # Walk over chunks
         L = ids.shape[0]
         i = 0
         first = True
         while i < L:
             chunk = ids[i: i + chunk_length]
-            if chunk.shape[0] < 8:  # tiny tail chunk, skip
+            chunk_mask = mask[i: i + chunk_length]
+            if chunk.shape[0] < 8:
                 break
-            yield chunk, first, conv_idx
+            yield chunk, chunk_mask, first, conv_idx
             first = False
             i += chunk_length
 
@@ -77,6 +95,7 @@ def train_step(
     model: QwenIPCN,
     opt: torch.optim.Optimizer,
     chunk: torch.Tensor,
+    chunk_mask: torch.Tensor,
     is_first: bool,
     chunk_idx_in_conv: int,
     device: str,
@@ -84,11 +103,23 @@ def train_step(
     if is_first:
         model.reset_memory()
     chunk = chunk.to(device)
-    # tau_t roughly = chunk_idx, delta_tau = 1
+    chunk_mask = chunk_mask.to(device)
     out = model(chunk, tau_t=float(chunk_idx_in_conv), delta_tau=1.0)
     logits = out["logits"]                                     # (L, vocab)
-    # Next-token LM loss: predict ids[1:] from logits[:-1]
-    loss = F.cross_entropy(logits[:-1], chunk[1:], ignore_index=-100)
+    # Next-token LM loss masked to mask[1:] positions only. ignore_index=-100
+    # tokens skip the loss.
+    targets = chunk[1:].clone()
+    targets[~chunk_mask[1:]] = -100                            # mask non-answer positions
+    if (targets >= 0).sum().item() == 0:
+        # Whole chunk is masked-out (prefix only). Skip backward; still
+        # do a forward to keep memory bank progressing.
+        return {
+            "loss": float("nan"),
+            "grad_norm": 0.0,
+            "ppl": float("nan"),
+            "n_target": 0,
+        }
+    loss = F.cross_entropy(logits[:-1], targets, ignore_index=-100)
     opt.zero_grad(set_to_none=True)
     loss.backward()
     grad_norm = torch.nn.utils.clip_grad_norm_(
@@ -99,6 +130,7 @@ def train_step(
         "loss": float(loss.item()),
         "grad_norm": float(grad_norm.item()),
         "ppl": math.exp(min(float(loss.item()), 20)),
+        "n_target": int((targets >= 0).sum().item()),
     }
 
 
@@ -113,6 +145,8 @@ def main():
     p.add_argument("--out", type=str, default="checkpoints/qwen_ipcn.pt")
     p.add_argument("--chunk-length", type=int, default=256)
     p.add_argument("--seed", type=int, default=0)
+    p.add_argument("--answer-mask", action="store_true",
+                   help="mask non-answer positions from the LM loss")
     args = p.parse_args()
 
     torch.manual_seed(args.seed)
@@ -135,19 +169,21 @@ def main():
     print(f"Training {args.steps} steps. Logging -> {args.log_path}")
     print(f"  data: {args.data}")
     step = 0
-    iterator = stream_chunks(args.data, model.tokenizer, args.chunk_length, seed=args.seed)
+    iterator = stream_chunks(
+        args.data, model.tokenizer, args.chunk_length, seed=args.seed,
+        answer_mask=args.answer_mask,
+    )
     t_train = time.time()
-    for chunk, is_first, conv_idx in iterator:
+    for chunk, chunk_mask, is_first, conv_idx in iterator:
         if step >= args.steps:
             break
-        # chunk_idx_in_conv (rough): just use step modulo for tau; conv_idx for re-anchoring
-        rec = train_step(model, opt, chunk, is_first, step % 32, args.device)
+        rec = train_step(model, opt, chunk, chunk_mask, is_first, step % 32, args.device)
         rec.update({"step": step, "conv_idx": conv_idx, "is_first": is_first, "time": time.time()})
         log_f.write(json.dumps(rec) + "\n")
         if step % args.log_every == 0:
             print(
-                f"step={step:6d} | loss={rec['loss']:7.4f} ppl={rec['ppl']:8.1f} "
-                f"grad={rec['grad_norm']:6.3f} conv={conv_idx:5d}"
+                f"step={step:6d} | loss={rec['loss']:7.4f} ppl={rec.get('ppl', 0):8.1f} "
+                f"grad={rec['grad_norm']:6.3f} conv={conv_idx:5d} tgt={rec.get('n_target', 0):3d}"
             )
         step += 1
     log_f.write(json.dumps({"event": "training_complete", "step": step,
