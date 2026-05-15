@@ -269,6 +269,49 @@ def gen_nonce_conversation(rng: random.Random, n_distractors: int) -> tuple[str,
     return full_text, answer, prefix_text, answer_text
 
 
+SINGLE_TOKEN_LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H"]
+
+
+def gen_letter_conversation(rng: random.Random, n_distractors: int) -> tuple[str, str, str, str]:
+    """Memorize-recall with a single-token answer drawn from {A..H}.
+
+    Cleanest possible memory test: the model only needs the cross-attention
+    to nudge ONE token's logit by enough to win argmax against 7
+    competitors. Each letter is a single Qwen BPE token. Chance baseline =
+    12.5%; a working memory mechanism should hit >=50% recall delta.
+    """
+    x = rng.choice(SINGLE_TOKEN_LETTERS)
+    statement = f"My favorite letter is {x}."
+    question = "What is my favorite letter?"
+    answer = x
+
+    turns: list[tuple[str, str]] = []
+    fact_position = rng.randint(0, max(0, n_distractors // 2))
+    inserted = False
+    for j in range(n_distractors + 1):
+        if j == fact_position:
+            turns.append(("user", statement))
+            ack = rng.choice([
+                "Got it.", "Noted.", "OK.", "Understood.", "Alright.",
+            ])
+            turns.append(("assistant", ack))
+            inserted = True
+        else:
+            turns.append(("user", rng.choice(DISTRACTORS)))
+            turns.append(("assistant", rng.choice(DISTRACTOR_REPLIES)))
+    if not inserted:
+        turns.append(("user", statement))
+        turns.append(("assistant", "Got it."))
+    turns.append(("user", question))
+
+    prefix_parts = []
+    for role, content in turns:
+        prefix_parts.append(f"<|im_start|>{role}\n{content}<|im_end|>")
+    prefix_text = "\n".join(prefix_parts) + "\n<|im_start|>assistant\n"
+    answer_text = answer + ".<|im_end|>"
+    return prefix_text + answer_text, answer, prefix_text, answer_text
+
+
 def gen_negative_conversation(rng: random.Random, n_distractors: int) -> tuple[str, str, str, str]:
     """No fact stated, recall question asked. Correct answer is 'I do not
     know.' Teaches the model that ABSENCE of memory means refuse, not
@@ -302,6 +345,9 @@ def main():
     p.add_argument("--with-answer-span", action="store_true")
     p.add_argument("--nonce", action="store_true",
                    help="use nonce string values (defeats template-guessing).")
+    p.add_argument("--letter", action="store_true",
+                   help="use single-token letter answers {A..H}. Smallest "
+                        "possible memory-routing test; chance = 12.5%.")
     p.add_argument("--negative-frac", type=float, default=0.0,
                    help="fraction of examples that are negative controls "
                         "(no fact stated, recall -> 'I do not know').")
@@ -324,6 +370,14 @@ def main():
                     "mode": "negative",
                 }
                 n_neg += 1
+            elif args.letter:
+                full_text, answer, prefix_text, answer_text = \
+                    gen_letter_conversation(rng, nd)
+                rec = {
+                    "text": full_text, "answer": answer,
+                    "prefix_text": prefix_text, "answer_text": answer_text,
+                    "mode": "letter",
+                }
             elif args.nonce:
                 full_text, answer, prefix_text, answer_text = \
                     gen_nonce_conversation(rng, nd)

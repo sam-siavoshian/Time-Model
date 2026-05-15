@@ -17,7 +17,7 @@ import time
 import torch
 
 from model.qwen_ipcn_v2 import QwenIPCNv2, QwenIPCNv2Config, build_qwen_ipcn_v2
-from model.qwen_data import gen_nonce_conversation, gen_conversation_with_answer_span
+from model.qwen_data import gen_nonce_conversation, gen_conversation_with_answer_span, gen_letter_conversation
 
 
 def load_trainable_state(model: QwenIPCNv2, ckpt_path: str):
@@ -96,7 +96,8 @@ def _normalize(s: str) -> str:
 
 
 def run_recall(model: QwenIPCNv2, tokenizer, n: int, chunk_length: int, device: str,
-               seed: int = 1234, use_nonce: bool = True):
+               seed: int = 1234, mode: str = "nonce"):
+    """mode in {"nonce", "pool", "letter"}."""
     rng = random.Random(seed)
     with_correct = 0
     without_correct = 0
@@ -104,7 +105,9 @@ def run_recall(model: QwenIPCNv2, tokenizer, n: int, chunk_length: int, device: 
     total = 0
     for i in range(n):
         nd = rng.randint(8, 16)
-        if use_nonce:
+        if mode == "letter":
+            text, answer, _, _ = gen_letter_conversation(rng, nd)
+        elif mode == "nonce":
             text, answer, _, _ = gen_nonce_conversation(rng, nd)
         else:
             text, answer, _, _ = gen_conversation_with_answer_span(rng, nd)
@@ -131,7 +134,9 @@ def run_recall(model: QwenIPCNv2, tokenizer, n: int, chunk_length: int, device: 
 
         # SHUFFLED MEMORY
         rng2 = random.Random(seed + 10000 + i)
-        if use_nonce:
+        if mode == "letter":
+            other_text, _, _, _ = gen_letter_conversation(rng2, nd)
+        elif mode == "nonce":
             other_text, _, _, _ = gen_nonce_conversation(rng2, nd)
         else:
             other_text, _, _, _ = gen_conversation_with_answer_span(rng2, nd)
@@ -164,8 +169,9 @@ def main():
     p.add_argument("--device", type=str, default="cuda")
     p.add_argument("--out", type=str, default="reports/qwen_recall_v2.json")
     p.add_argument("--no-nonce", action="store_true",
-                   help="use legacy pool values instead of nonce; for "
-                        "comparing with old eval baselines.")
+                   help="use legacy pool values instead of nonce.")
+    p.add_argument("--letter", action="store_true",
+                   help="single-token letter answer test {A..H}, chance=12.5%%.")
     args = p.parse_args()
 
     cfg = QwenIPCNv2Config()
@@ -177,10 +183,15 @@ def main():
         print(f"Loading trainable state from {args.checkpoint}...")
         load_trainable_state(model, args.checkpoint)
     model.train(False)
-    print(f"Running recall check on {args.n} fresh conversations (nonce={not args.no_nonce})...")
+    if args.letter:
+        mode = "letter"
+    elif args.no_nonce:
+        mode = "pool"
+    else:
+        mode = "nonce"
+    print(f"Running recall check on {args.n} fresh conversations (mode={mode})...")
     t0 = time.time()
-    r = run_recall(model, model.tokenizer, args.n, args.chunk_length, args.device,
-                   use_nonce=not args.no_nonce)
+    r = run_recall(model, model.tokenizer, args.n, args.chunk_length, args.device, mode=mode)
     print(f"\nResults (n={r['n']}):")
     print(f"  acc WITH memory:      {r['acc_with_memory']:.3f}")
     print(f"  acc WITHOUT memory:   {r['acc_without_memory']:.3f}")
