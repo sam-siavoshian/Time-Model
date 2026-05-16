@@ -116,10 +116,20 @@ class _ChronoInjector(nn.Module):
         self.to_beta = nn.Linear(d_chrono, d_model, bias=True)
         # Per-channel residual gate, ZERO-init so injection is identity at step 0.
         self.alpha = nn.Parameter(torch.zeros(d_model))
-        # Init gamma and beta near zero so even after alpha grows the perturbation
-        # is gentle.
-        nn.init.zeros_(self.to_gamma.weight); nn.init.zeros_(self.to_gamma.bias)
-        nn.init.zeros_(self.to_beta.weight); nn.init.zeros_(self.to_beta.bias)
+        # CRITICAL init pattern from DiT (arxiv 2212.09748):
+        #   alpha = 0     (residual gate)
+        #   gamma = 1     (identity scale, BIAS not weight)
+        #   beta  = 0     (shift)
+        # At init: out = h + 0 * (1*h + 0) = h. PURE IDENTITY.
+        # But d_out/d_alpha = gamma*h + beta = 1*h + 0 = h (NONZERO).
+        # So alpha receives nonzero gradient and can grow.
+        # v10 incorrectly zeroed gamma too -> d_out/d_alpha = 0 -> alpha
+        # never moved off zero -> chrono signal never reached output ->
+        # T4=0.0 negative-control failure across all tests.
+        nn.init.zeros_(self.to_gamma.weight)
+        nn.init.constant_(self.to_gamma.bias, 1.0)             # gamma = 1 = identity scale
+        nn.init.zeros_(self.to_beta.weight)
+        nn.init.zeros_(self.to_beta.bias)
 
     def forward(self, h: torch.Tensor, chi_t: torch.Tensor) -> torch.Tensor:
         # h: (B, L, d_model). chi_t: (d_chrono,) for this chunk.
