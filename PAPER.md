@@ -1589,9 +1589,98 @@ Falsifiable: T1, T1b, T2, T4 thresholds declared before training. v11 hit all fo
 
 Status: **first positive empirical result in the project.** Three days of failure across Track A and nine versions of Track B. Track C v11 is the result.
 
+### 23.9 Pre-registered disproof battery (2026-05-18)
+
+Before claiming v11 is real, three additional experiments built to falsify it. Thresholds declared HERE, before running, so post-hoc rationalization is closed off. Files committed at `01cebc6`. To be executed on Spark against the v11 checkpoint as soon as Tailscale link is restored.
+
+#### 23.9.1 Linear probe of internal time axis (model/qwen_time_probe.py)
+
+**Question:** Is tau encoded as a continuous variable inside Qwen's residual stream, or only at the output token level?
+
+**Procedure:**
+1. Sample 400 tau values log-uniform in [1s, 7d].
+2. For each tau, run forward on neutral prompt with `output_hidden_states=True`. Capture last-token hidden state from each layer (n_layers + 1 vectors, including embedding output).
+3. OOD train/test split: train ridge regression `log10(tau) ~ W @ h_layer + b` on tau ≤ 10^5 s, evaluate R² on tau > 10^5 s (out-of-distribution).
+4. Run under three conditions:
+   - **A. Trained v11** (alphas intact)
+   - **B. alpha=0** (zero out all chrono-injector alphas → injection becomes identity → no chrono signal reaches hidden states)
+   - **C. Shuffled labels** (probe-fit sanity: regress against permuted log(tau))
+
+**Pre-registered prediction:**
+- Condition A: at least one layer with R² ≥ 0.6 on OOD tau.
+- Condition B: max R² across all layers < 0.2 (chrono off → no time axis).
+- Condition C: max R² across all layers < 0.2 (shuffled → chance).
+
+**PASS criterion (all three must hold):** `A_best - B_best > 0.4` AND `A_best - C_best > 0.4` AND `A_best > 0.6`.
+
+If all three hold: hidden states encode a continuous time variable, mechanistically. This is the strongest single figure for the paper. If any fails: tau lives only at the output side, behavior is conditional but not represented internally as a continuous axis.
+
+#### 23.9.2 Causal-intervention falsification (model/qwen_time_falsify.py)
+
+**Question:** Is the chrono signal causally driving T1 behavior, or is the v11 result an artifact of LoRA picking up prompt-text cues?
+
+**Procedure:** Re-run T1 clock test on the same 8 OOD tau values under 5 interventions:
+- **A. Normal v11** (baseline, replicates published r=0.94 / 0.86 OOD).
+- **B. alpha=0** (chrono injection identity).
+- **C. Random tau** (eval τ replaced by an independent random τ drawn log-uniform; prompt context unchanged).
+- **D. tau=0 pinned** (chrono encoder sees zero for every query).
+- **E. alpha sign flipped** (multiply all alphas by -1; chrono signal preserved magnitude, inverted direction).
+
+**Pre-registered thresholds:**
+- A: Pearson r ≥ 0.7 (causal claim survives the replication).
+- B: r < 0.3 (chrono off → behavior collapses).
+- C: r < 0.4 (mismatched tau → behavior is no better than chance).
+- D: r < 0.4.
+- E: r ≤ 0.0 or |E| << |A| (sign flip should at minimum scramble the slope).
+
+**PASS criterion (all four must hold):** A > 0.7 AND B < 0.3 AND C < 0.4 AND D < 0.4.
+
+If A holds but B-D survive at high r: result is not chrono-causal — chrono signal is decoration, model template-matches via LoRA. Paper claim dies.
+
+#### 23.9.3 Behavioral-pressure test (model/qwen_time_pressure.py)
+
+**Question (Gap 4, never trained on):** Does the chrono signal generalize beyond CLOCK / GAP / PHASE to a task family the model was NEVER shown — deadline-induced response-length modulation? An OOD generalization test in the deepest sense: a NEW behavioral axis, not just a new tau value.
+
+**Procedure:** Five neutral technical questions ("Explain photosynthesis", "How does a bicycle stay upright", etc.). Generate greedily, count output tokens until `<|im_end|>`. Three conditions:
+- **P1: Text + tau coherent.** Prompt prefixed with "You have only 30 seconds, be brief." and τ=30 vs "You have 1 hour, take your time." and τ=3600. Both signals push same direction.
+- **P2: tau-only ablation.** Same neutral text, NO deadline phrase. Only τ varies: τ=30 vs τ=3600. Isolates chrono contribution.
+- **P3: alpha=0 + deadline text.** Chrono off, deadline phrase only. Measures what the text-cue alone contributes.
+
+**Pre-registered thresholds:**
+- P1 delta (long − short in tokens) ≥ 5: combined signals produce a measurable length shift.
+- P2 delta ≥ 2: chrono alone contributes (even without text deadline).
+- P3 delta documented as baseline.
+- `(P1 − P3) ≥ 2`: chrono signal contributes BEYOND what text-deadline alone provides.
+
+**PASS criterion (all three must hold):** P1 ≥ 5 AND P2 ≥ 2 AND `P1 − P3 ≥ 2`.
+
+If P2 ≈ 0 but P1 strong: text deadline alone is doing the work, chrono signal does not transfer to OOD behaviors. Paper claim narrows from "time experience" to "trained-task time conditioning".
+If P2 ≥ 2 AND chrono adds beyond P3: paper claim survives a true OOD transfer test.
+
+#### 23.9.4 Runner
+
+`scripts/run_disproof.sh` executes all three in sequence inside tmux on Spark, writes per-experiment JSON to `reports/disproof_*` and a single sentinel for completion detection. Survives SSH disconnect.
+
+#### 23.9.5 Interpretation matrix (pre-committed)
+
+| Probe (23.9.1) | Falsify (23.9.2) | Pressure (23.9.3) | Verdict |
+|---|---|---|---|
+| PASS | PASS | PASS | Time-conditional architecture, mechanistically grounded, OOD-generalizing. Strongest paper. |
+| PASS | PASS | FAIL | Time encoded internally + causal at trained tasks, but does NOT transfer to deadline behavior. Claim narrows to "trained time conditioning." |
+| PASS | FAIL | * | Chrono signal correlated but not causal. Paper claim dies — interventions disprove causality. |
+| FAIL | PASS | * | Behavior is causal but tau lives only at output side. Paper claim narrows further, no mechanistic figure. |
+| FAIL | FAIL | * | v11's 4/5 was a template-matching artifact. Pivot to Track D. |
+
+This matrix is the falsification anchor. Results land against it, not against post-hoc rationalization.
+
+### 23.10 Naming note: IPCN → time architecture
+
+Throughout earlier sections, the architecture is called IPCN (Involuntary Prefix Consolidation Networks). That name described Tracks A and B where memory routing was the headline mechanism. Track C abandons memory-recall as a paper claim (§22.3). What we built and what passed v11 is no longer prefix-consolidation; it is **AdaLN-Zero chrono injection over a frozen LLM**. The IPCN scaffolding (memory bank, PFC, Identity-V, LoRA consolidation) exists in the repository but is not what the paper claim rests on. Memory tau-write timestamps may resurface for age-discount retrieval side experiments, but the paper's first-class architectural contribution is the chronometric encoder + per-layer FiLM injection. Section title "IPCN" is preserved for git/repo continuity; the architecture name in the manuscript should be **chronometric injection (CI)** or **time-conditional LLM (TC-LLM)**.
+
 ---
 
-*End of paper. Word count: ~14,500. Living document.*
+*End of paper. Word count: ~16,000. Living document.*
 *2026-05-12: §13.5 — deep-read findings on highest-risk priors.*
 *2026-05-13: §21 — Track A Phase 0/1 results; 13 production bugs.*
 *2026-05-16: §22 — Track B nine-version null result. §23 — Track C v11 four-of-five tests pass, time-conditional behavior with OOD generalization on Qwen 2.5 3B.*
+*2026-05-18: §23.9 — Pre-registered disproof battery (linear probe, causal-intervention falsification, behavioral pressure). §23.10 — naming clarification (IPCN → chronometric injection).*
