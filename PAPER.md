@@ -234,7 +234,9 @@ Token-rate fact injection: add `tokens_per_real_second` as a feature in χ_t. Mo
 
 ---
 
-## Section 9: Anatomy of IPCN (5 parts)
+> **Status note (2026-05-22):** Sections 9-12 describe the original IPCN spec (memory bank, prep cook PFC, LoRA consolidation, three storage tiers, multi-user safety). Nine versions of Track B (§22) attempted to make memory routing causally influence outputs and produced zero behavioral signal across all variants. Memory recall is no longer the paper claim. What v11 actually uses is described in §23.1 (Track C architecture): frozen Qwen 2.5 3B + per-layer AdaLN-Zero FiLM injection of a 27-dim chronometric encoding, plus rank-8 LoRA on all attention blocks and lm_head. Memory bank infrastructure remains in the repository for tau-write timestamp side experiments but contributes nothing to the empirical results in §23-24. Sections 9-12 preserved verbatim as paper trail.
+
+## Section 9: Anatomy of IPCN (5 parts) [HISTORICAL — see §23.1 for actual architecture]
 
 
 | Part                     | Job                                  | Size                                      |
