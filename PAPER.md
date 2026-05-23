@@ -1,10 +1,39 @@
-# IPCN: Involuntary Prefix Consolidation Network
-
-A neural network that mixes stored memories and real elapsed time into the start of every computation, and slowly turns frequently used memories into permanent parts of the network itself.
+# Chronometric Injection: Teaching a Frozen LLM to Experience Time
 
 Author: Saam Siavoshian
-Date: 2026-05-12
-Status: research spec, pre-implementation
+Original draft: 2026-05-12 (as IPCN spec)
+Empirical update: 2026-05-22
+Status: empirical results, ready for write-up
+
+---
+
+## Abstract
+
+Large language models perceive time only as token positions in their context window. They cannot tell that 30 seconds or 30 days passed between two messages, react to deadlines, or experience the passage of time during silent gaps. We introduce **chronometric injection (CI)**: a frozen pretrained LLM is augmented with a 27-dimensional sinusoidal + log encoding of real elapsed seconds τ, which is injected at every decoder layer via AdaLN-Zero FiLM modulation. The injection adds at most ~36 M trainable parameters (LoRA + per-layer projectors) on top of Qwen 2.5 3B.
+
+After 12 K steps of supervised training on 6 K conversations spanning clock readout, silent-gap acknowledgment, and weekly phase, we evaluate on five pre-registered falsifiable tests with thresholds declared in advance:
+
+| Test | Result | Threshold | Status |
+|---|---|---|---|
+| T1 clock consistency (in-distribution) | Pearson r = 0.94 | ≥ 0.8 | PASS |
+| T1b clock OOD (held-out τ) | r = 0.86, log-MAE = 0.20 | r ≥ 0.7, log-MAE < 0.5 | PASS |
+| T2 silent-gap acknowledgment | Δ ack-rate = 1.00 | ≥ 0.5 | PASS |
+| T3 weekday/weekend phase discrimination | signal = 0.00 | ≥ 0.3 | fail (data imbalance) |
+| T4 chrono signal reaches output (KL) | KL = 0.087 | ≥ 0.05 | PASS |
+
+We then attempt to falsify the result with three pre-registered experiments. The chrono injection survives every attack:
+
+1. **Causal-intervention falsification:** zeroing the per-layer α gates kills behavior (Pearson r 0.997 → 0.000); flipping the sign of every α yields **r = −0.9998**, a near-perfect anti-prediction. The chrono signal acts as a single coherent scalar dial.
+2. **Behavioral-pressure OOD transfer:** under a deadline-induced response-length task the model was **never trained on**, τ alone (no deadline text in prompt) shortens responses by ~9 tokens when τ goes from 30 s to 3 600 s, with chrono contributing **+16 tokens beyond text deadline alone**.
+3. **Linear probe of internal time axis:** an OOD linear probe on per-layer last-token hidden states finds tau encoded as a linear axis in layers L1–L3 (max R² = 0.43 at L1) with deeper layers transforming it nonlinearly; silencing α collapses the probe to R² = −143 at every layer.
+
+Together these results show that the v11 chronometric injection model develops **causally-driven, out-of-distribution-generalizing time-conditional behavior** that cannot be reduced to template matching or context-window cues. Memory recall, which was the original headline mechanism (IPCN), is abandoned as the paper claim after nine consecutive null results; chronometric injection alone is the load-bearing architectural contribution.
+
+**Contributions:**
+- The first frozen-LLM architecture (to our knowledge) that exposes real elapsed seconds as a first-class causal input distinct from text-based time references.
+- A pre-registered five-test evaluation suite for time-conditional behavior, with falsifiability thresholds declared in advance.
+- A three-experiment disproof battery (causal interventions, OOD task transfer, internal probe) that the architecture survives.
+- A reproducible recipe: ~36 M trainable parameters on Qwen 2.5 3B, ~3 GPU-hours on a Grace-Blackwell GB10, 6 K conversations of synthetic training data.
 
 ---
 
