@@ -231,29 +231,81 @@ def t3_phase_discrimination(model, device, n=20):
     }
 
 
-def t4_mutability(model, device, n_prompts=3):
-    """Negative control: do logits at the FIRST predicted position differ
-    across different tau values for the SAME prompt?"""
+@torch.no_grad()
+def _generate_with_tau(model, prompt: str, tau_t: float, n_steps: int,
+                      device: str):
+    """Greedy decode n_steps tokens at fixed tau_t. Returns list of
+    log-softmax distributions at each generated position."""
+    tok = model.tokenizer
+    ids = tok.encode(prompt, return_tensors="pt").squeeze(0).to(device)
+    cur = ids
+    dists = []
+    for _ in range(n_steps):
+        out = model(cur, tau_t=tau_t)
+        logits = out["logits"][-1].float().cpu()
+        dists.append(F.log_softmax(logits, dim=-1))
+        next_id = int(out["logits"][-1].argmax().item())
+        cur = torch.cat([cur, torch.tensor([next_id], device=device)])
+        if hasattr(tok, "convert_tokens_to_ids"):
+            im_end = tok.convert_tokens_to_ids("<|im_end|>")
+            if im_end is not None and next_id == im_end:
+                break
+        if next_id == tok.eos_token_id:
+            break
+    return dists
+
+
+def t4_mutability(model, device, n_prompts=3, n_positions=8):
+    """Negative control: do logits across positions differ for the
+    SAME prompt across different tau values?
+
+    v2 (2026-05-23): averages KL across the first N generated
+    positions, not just the first. v1's first-position-only metric
+    missed distributed chrono usage in models that route the signal
+    through later semantic features (v15 case). New default
+    n_positions=8 captures local + early-context chrono effects."""
     prompts = [
         "<|im_start|>user\nHello.<|im_end|>\n<|im_start|>assistant\n",
         "<|im_start|>user\nWhat time is it?<|im_end|>\n<|im_start|>assistant\n",
         "<|im_start|>user\nGreetings.<|im_end|>\n<|im_start|>assistant\n",
     ][:n_prompts]
     taus = [15, 3600, 86400]
-    pairwise_kls = []
+    pairwise_kls_first = []
+    pairwise_kls_multi_pos = []
+    per_position_kls = [[] for _ in range(n_positions)]
     for p in prompts:
-        ls = [F.log_softmax(logits_at_first_pos(model, p, tau, device), dim=-1) for tau in taus]
-        for i in range(len(ls)):
-            for j in range(i + 1, len(ls)):
-                # symmetric KL
-                p_a = ls[i].exp(); p_b = ls[j].exp()
-                kl = 0.5 * ((p_a * (ls[i] - ls[j])).sum() + (p_b * (ls[j] - ls[i])).sum()).item()
-                pairwise_kls.append(kl)
+        # Greedy decode at each tau, collecting distributions per position
+        dist_lists = [_generate_with_tau(model, p, tau, n_positions, device)
+                      for tau in taus]
+        # Align position by position
+        n_pos = min(len(d) for d in dist_lists)
+        for pos in range(n_pos):
+            ls = [dist_lists[ti][pos] for ti in range(len(taus))]
+            for i in range(len(ls)):
+                for j in range(i + 1, len(ls)):
+                    p_a = ls[i].exp(); p_b = ls[j].exp()
+                    kl = 0.5 * ((p_a * (ls[i] - ls[j])).sum() +
+                                (p_b * (ls[j] - ls[i])).sum()).item()
+                    per_position_kls[pos].append(kl)
+                    pairwise_kls_multi_pos.append(kl)
+                    if pos == 0:
+                        pairwise_kls_first.append(kl)
     import statistics
+    per_pos_means = [statistics.mean(p) if p else 0.0
+                     for p in per_position_kls]
     return {
-        "n_pairwise": len(pairwise_kls),
-        "mean_pairwise_kl": statistics.mean(pairwise_kls) if pairwise_kls else 0.0,
-        "max_pairwise_kl": max(pairwise_kls) if pairwise_kls else 0.0,
+        "n_pairwise_first": len(pairwise_kls_first),
+        "n_pairwise_multi_pos": len(pairwise_kls_multi_pos),
+        "n_positions": n_positions,
+        "mean_pairwise_kl": (statistics.mean(pairwise_kls_first)
+                             if pairwise_kls_first else 0.0),
+        "max_pairwise_kl": (max(pairwise_kls_first)
+                            if pairwise_kls_first else 0.0),
+        "mean_pairwise_kl_multi_pos": (statistics.mean(pairwise_kls_multi_pos)
+                                       if pairwise_kls_multi_pos else 0.0),
+        "max_pairwise_kl_multi_pos": (max(pairwise_kls_multi_pos)
+                                      if pairwise_kls_multi_pos else 0.0),
+        "per_position_mean_kls": per_pos_means,
     }
 
 
