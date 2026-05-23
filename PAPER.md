@@ -2000,6 +2000,47 @@ Original T1b drew test τ log-uniformly in [2 s, 14 d]. Training τ was log-unif
 
 **Verdict from the audit**: workshop-strong as-is, conference-strong if attacks 1-3 reruns survive. The architecture and falsification design are genuinely interesting; what is missing is uncertainty quantification, which the rigor reruns supply. None of these are research problems -- all are exposition + sample-size fixes.
 
+### 24.7.1 Rigor rerun outcomes against v14 (2026-05-23)
+
+The rigor reruns landed against v14's chronometric injection checkpoint. Results force two material changes to the paper's strongest claims, both honest losses that **make the paper more credible, not less**.
+
+**T1b genuinely OOD fails (attack 3 lands).** Re-evaluated on τ log-uniform in [7 d, 28 d], strictly above the training upper bound of 7 d:
+
+| Metric | Original T1b | Genuinely OOD |
+|---|---|---|
+| τ range | [2 s, 14 d] (94 % overlaps training) | [7 d, 28 d] (0 % overlaps) |
+| Pearson r | +0.86 | **−0.264, 95 % CI = [−0.43, −0.12]** |
+| log-MAE | 0.20 | 0.825 |
+| n | 24 | 30 |
+
+The OOD-extrapolation claim does not survive. The original T1b measured smooth interpolation across four orders of magnitude *inside* the training distribution; once truly held-out τ values are tested, the model's clock breaks. The paper's earlier "generalizes across four orders of magnitude" framing was too strong. Corrected framing: **the model interpolates accurately across the training τ range (4 orders of magnitude in [1 s, 7 d]) but does not extrapolate substantially beyond it.**
+
+This is a real limitation. It is also not a paper-killer. The chrono injection is doing real work in-distribution and the failure mode is clean and predictable (any sinusoidal positional encoding will fail to extrapolate once the test τ exceeds the largest training scale). For the paper, we replace "OOD" with "in-distribution interpolation" wherever T1b is discussed, add an extrapolation-limit figure to the Limitations section, and document the failure mode honestly. A reviewer who reads the original "OOD" claim and then runs the truly-OOD eval gets the same answer we are now reporting up front.
+
+**T3 multi-week partial (attack 3b half-lands).** Sat/Wed phase test at τ corresponding to week 1, 2, 3, 4:
+
+| Week | τ_sat (days) | Sat weekend-rate | Wed weekend-rate | signal |
+|---|---|---|---|---|
+| 1 | 5.5 (trained) | 1.00 | 0.00 | **+1.00** |
+| 2 | 12.5 (OOD) | 1.00 | 0.00 | **+1.00** |
+| 3 | 19.5 (OOD) | 1.00 | 1.00 | 0.00 |
+| 4 | 26.5 (OOD) | 0.00 | 0.00 | 0.00 |
+
+Phase encoding generalizes **one full week beyond training** and then degrades. Week 3 fails because the model overgenerates "weekend"; week 4 fails because the model defaults to a different class entirely. This is **not** clean τ-bin memorization (memorization would have collapsed at week 2) and it is **not** robust periodic phase encoding either. The 604 800-second timescale in the chrono encoder is computing the right sinusoidal value at every τ; the model's learned readout of it appears to have a finite generalization horizon of ~14 days under v14's training budget.
+
+Corrected framing: **the chrono encoder mathematically represents weekly phase periodically, and the v14 model uses that representation for at least one full week beyond the training distribution before the readout becomes unreliable.** This is more interesting than the original "T3 PASS" claim because it characterizes the generalization horizon rather than asserting binary success. Future work: longer training, larger phase data share, and v13's wider timescale spread might extend the horizon further.
+
+**Pressure v2 status.** The 30-prompt n=30 max_new=256 rerun completed generation but crashed in print formatting before saving the JSON. Per-prompt deltas observed live during the run (sample): P1 = [+250, ?, +0, +220, +0, +0, +0, +0, +39, +124, +196, +38, ...], P2 = [+26, ?, +0, +0, +0, +0, +45, +92, +63, +67, ...]. The qualitative picture: many large positive deltas with max_new=256 uncensored, far stronger than the n=5 max_new=80 v1 data. Numerical bootstrap CI deferred to a clean rerun after v15 completes. Crash patched in `model/qwen_time_pressure_v2.py:_fmt`.
+
+**Bottom line.** Of the three rigor attacks, attacks 1 and 3 land hits and attack 2 (effective n=8 on α-flip) has not yet been rerun. The paper's headline claims rebalance:
+
+- "Causal sign-flip yields r = −0.9998" — survives at face value; CI work still pending.
+- "OOD across four orders of magnitude" — softened to "in-distribution interpolation across four orders of magnitude; extrapolation to truly held-out τ fails, characterizing a generalization horizon."
+- "T3 multi-scale phase" — characterized as "phase encoding generalizes ~1 week beyond training."
+- "Behavioral pressure OOD transfer" — qualitative evidence stronger than v1 (large per-prompt deltas); quantitative CI pending v2 rerun.
+
+None of this kills the paper. It makes the empirical claims more precise. A reviewer reading this version cannot land attack 3 because the paper already concedes and characterizes it. That is exactly the polish §24.7 was supposed to deliver.
+
 ## Section 25: Conclusion
 
 This paper started as an architecture spec for **involuntary prefix consolidation networks (IPCN)**: a memory bank routed through a frozen LLM, augmented with chronometric encoding, with frequently-used memories migrating into LoRA weights. Three weeks of empirical work disproved most of that plan and proved one piece of it.

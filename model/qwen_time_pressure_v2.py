@@ -215,8 +215,16 @@ def main():
     print("\n=== VERDICT (bootstrap 95% CI on paired diffs) ===")
     for k, v in verdict.items():
         if isinstance(v, dict):
-            print(f"  {k}: mean={v.get('mean','-'):+.2f} CI=[{v.get('ci_low','-'):+.2f}, "
-                  f"{v.get('ci_high','-'):+.2f}] n={v.get('n','-')} pos_frac={v.get('fraction_positive','-')}")
+            m = v.get('mean', float('nan'))
+            lo = v.get('ci_low', float('nan'))
+            hi = v.get('ci_high', float('nan'))
+            n = v.get('n', '?')
+            pf = v.get('fraction_positive', '?')
+            def _fmt(x):
+                if isinstance(x, (int, float)) and x == x:
+                    return f"{x:+.2f}"
+                return str(x)
+            print(f"  {k}: mean={_fmt(m)} CI=[{_fmt(lo)}, {_fmt(hi)}] n={n} pos_frac={pf}")
         else:
             print(f"  {k}: {v}")
 

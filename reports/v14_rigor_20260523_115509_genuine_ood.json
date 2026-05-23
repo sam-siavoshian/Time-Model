@@ -1,0 +1,120 @@
+{
+  "T1b_genuine_OOD": {
+    "n": 30,
+    "pearson_r": -0.2638188785515181,
+    "pearson_ci_low": -0.4332212402523548,
+    "pearson_ci_high": -0.11791574419736166,
+    "log_mae": 0.82511437161394,
+    "tau_range_days": [
+      7,
+      28
+    ],
+    "examples": [
+      {
+        "true_tau_days": 21.727503362971966,
+        "resp": "It has been about 2 days.",
+        "parsed": 172800.0
+      },
+      {
+        "true_tau_days": 14.617880653773243,
+        "resp": "It has been about 2 days.",
+        "parsed": 172800.0
+      },
+      {
+        "true_tau_days": 13.370111467078445,
+        "resp": "It has been about 2 days.",
+        "parsed": 172800.0
+      },
+      {
+        "true_tau_days": 7.674819695204192,
+        "resp": "It has been about 2 days.",
+        "parsed": 172800.0
+      },
+      {
+        "true_tau_days": 12.561012559932871,
+        "resp": "It has been about 2 days.",
+        "parsed": 172800.0
+      },
+      {
+        "true_tau_days": 15.175094229592982,
+        "resp": "It has been about 2 days.",
+        "parsed": 172800.0
+      },
+      {
+        "true_tau_days": 23.26226258129723,
+        "resp": "It has been about 2 days.",
+        "parsed": 172800.0
+      },
+      {
+        "true_tau_days": 14.007763210420293,
+        "resp": "It has been about 2 days.",
+        "parsed": 172800.0
+      }
+    ]
+  },
+  "T3_multi_week": {
+    "week_1": {
+      "tau_sat_days": 5.5,
+      "tau_wed_days": 2.5,
+      "sat_weekend_rate": 1.0,
+      "wed_weekend_rate": 0.0,
+      "signal": 1.0,
+      "sat_examples": [
+        "Hope you are enjoying the weekend.",
+        "Hope you are enjoying the weekend."
+      ],
+      "wed_examples": [
+        "Good day. What can I help with?",
+        "Good day. What can I help with?"
+      ]
+    },
+    "week_2": {
+      "tau_sat_days": 12.5,
+      "tau_wed_days": 9.5,
+      "sat_weekend_rate": 1.0,
+      "wed_weekend_rate": 0.0,
+      "signal": 1.0,
+      "sat_examples": [
+        "Hope you are enjoying the weekend.",
+        "Hope you are enjoying the weekend."
+      ],
+      "wed_examples": [
+        "Weekday vibes. What is on your list?",
+        "Weekday vibes. What is on your list?"
+      ]
+    },
+    "week_3": {
+      "tau_sat_days": 19.5,
+      "tau_wed_days": 16.5,
+      "sat_weekend_rate": 1.0,
+      "wed_weekend_rate": 1.0,
+      "signal": 0.0,
+      "sat_examples": [
+        "Hope you are enjoying the weekend.",
+        "Hope you are enjoying the weekend."
+      ],
+      "wed_examples": [
+        "Hope you are enjoying the weekend.",
+        "Hope you are enjoying the weekend."
+      ]
+    },
+    "week_4": {
+      "tau_sat_days": 26.5,
+      "tau_wed_days": 23.5,
+      "sat_weekend_rate": 0.0,
+      "wed_weekend_rate": 0.0,
+      "signal": 0.0,
+      "sat_examples": [
+        "Good day. What can I help with?",
+        "Good day. What can I help with?"
+      ],
+      "wed_examples": [
+        "Weekday vibes. What is on your list?",
+        "Weekday vibes. What is on your list?"
+      ]
+    }
+  },
+  "PASS_T1b_genuine_OOD": false,
+  "PASS_T3_holds_all_weeks": false,
+  "T3_min_week_signal": 0.0
+}
