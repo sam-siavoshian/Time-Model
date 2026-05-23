@@ -24,10 +24,10 @@ We pre-register five falsifiable behavioral tests with thresholds set **before t
 We then attempt to falsify the result with three pre-registered experiments. The chrono injection survives every attack:
 
 1. **Causal-intervention falsification:** zeroing the per-layer α gates kills behavior (Pearson r 0.997 → 0.000); flipping the sign of every α yields **r = −0.9998**, a near-perfect anti-prediction. The chrono signal acts as a single coherent scalar dial.
-2. **Behavioral-pressure OOD transfer:** under a deadline-induced response-length task the model was **never trained on**, τ alone (no deadline text in prompt) shortens responses by ~9 tokens when τ goes from 30 s to 3 600 s, with chrono contributing **+16 tokens beyond text deadline alone**.
+2. **Behavioral-pressure OOD transfer (negative result, n=5):** an underpowered initial test reported ~+9 tokens of chrono-only length shift on deadline prompts. The rigor rerun (n = 30 prompts, uncensored generation, bootstrap 95 % CI; see §24.7.3) found chrono-only delta = +3.4 tokens with CI [−16, +22] crossing zero, and chrono actually **attenuates** the text-deadline length shift by 45 tokens (P1 − P3 = −45 CI [−80, −9]). The OOD-task-transfer claim is therefore retracted; the paper's surviving claims are in-distribution time-conditional behavior under the four other tests.
 3. **Linear probe of internal time axis:** an OOD linear probe on per-layer last-token hidden states finds tau encoded as a linear axis in layers L1–L3 (max R² = 0.43 at L1) with deeper layers transforming it nonlinearly; silencing α collapses the probe to R² = −143 at every layer.
 
-Together these results show that the v11 chronometric injection model develops **causally-driven, out-of-distribution-generalizing time-conditional behavior** that cannot be reduced to template matching or context-window cues. Memory recall, which was the original headline mechanism (IPCN), is abandoned as the paper claim after nine consecutive null results; chronometric injection alone is the load-bearing architectural contribution.
+Together these results show that the chronometric injection model develops **causally-driven, in-distribution time-conditional behavior** (bidirectional phase discrimination, accurate duration readout across four orders of magnitude inside the training range, silent-gap awareness) that cannot be reduced to template matching or context-window cues. The strongest single piece of evidence is the α-sign-flip Pearson r = −0.9998. Extrapolation beyond the largest training timescale (7 d) and out-of-distribution behavioral transfer to deadline-length modulation do **not** survive rigor reruns (§24.7.1, §24.7.3) -- they are now reported as architectural limits and as a retracted claim respectively. Memory recall, which was the original headline mechanism (IPCN), is abandoned as the paper claim after nine consecutive null results; chronometric injection alone is the load-bearing architectural contribution.
 
 **Contributions:**
 - To our knowledge, the first **per-layer AdaLN-Zero FiLM** injection of a continuous wall-clock scalar into a frozen autoregressive LLM, distinct from token-level scaling of test-time budgets (Timely Machine, 2601.16486) and from additive residual injection of other continuous signals (GazeQwen, 2603.25841).
@@ -2099,7 +2099,32 @@ Identical to v14. Phase generalizes one full week beyond training, then degrades
 
 v15 is the cleanest checkpoint to anchor the paper around. The cross-version table at §24.0 should now include v15 as the "Best" row. Future work to extend the generalization horizon is in §25.1.
 
-(Bootstrap CI on pressure v2 against v15 ckpt was running when Spark's Tailscale relay went offline; will fold into §24.7.1 once Spark is reachable again.)
+### 24.7.3 Pressure v2 on v15 (2026-05-23): the OOD-transfer claim does not survive
+
+The full pressure v2 rerun completed against the v15 checkpoint. n = 30 neutral prompts, max_new = 256 (uncensored), bootstrap 95 % CI on paired diffs (long τ − short τ in tokens). This is the most rigorous version of the deadline-OOD-transfer test the paper has run.
+
+| Condition | mean delta (tokens) | 95 % CI | fraction positive | PASS (CI excludes 0) |
+|---|---|---|---|---|
+| P1 (text deadline + matching τ) | **+76.5** | [+51, +104] | 0.97 | yes |
+| **P2 (chrono only, neutral text)** | **+3.4** | **[−16, +22]** | **0.50** | **no, CI crosses zero** |
+| P3 (α = 0 + text deadline) | **+121.4** | [+89, +151] | 0.97 | yes |
+| Chrono contribution (P1 − P3) | **−44.8** | [−80, −9] | 0.33 | yes on the **negative** side |
+
+**This kills the OOD-behavioral-transfer claim.**
+
+The v14 evidence for P2 = +9 tokens was the artifact of n = 5 + right-censoring (the original max_new = 80 capped 3 of 5 short-τ responses; the residual variation came from one outlier prompt). With n = 30 uncensored prompts and a clean bootstrap CI, the chrono-only effect on response length under a neutral (non-deadline) prompt is +3.4 tokens with 95 % CI [−16, +22], i.e. statistically indistinguishable from zero, with only 50 % of prompts showing a positive shift.
+
+**Worse.** The paired chrono contribution P1 − P3 is **negative** (mean −44.8, 95 % CI excludes zero on the negative side). The α = 0 + text-deadline condition produces a **larger** long-minus-short length difference than the α-on + text-deadline condition. Concretely: when the model has only the text deadline to act on, it shifts response length by ~121 tokens between "30 sec" and "1 hour"; when both the text deadline AND the chrono signal point in the same direction, the shift is only ~77 tokens. The chrono signal in v15 actively **attenuates** the text-deadline response. This is the opposite of constructive OOD transfer.
+
+**What this means for the paper:**
+
+- **Remove the "OOD task transfer" claim from the abstract, contributions list, and §24.2.** It is not supported by the rigor-quality data.
+- **Replace with**: "The chrono signal trained on clock readout, silent-gap acknowledgment, and weekly phase produces measurable in-distribution behavioral effects (T1, T1b within training range, T2, T3 bidirectional) but does **not** transfer constructively to deadline-induced response-length modulation; on the contrary, in v15 the chrono signal slightly attenuates the response a text deadline would otherwise produce."
+- The headline is now narrower but defensible: **bidirectional time-conditional behavior in distribution, with sinusoidal extrapolation limits beyond the largest training scale, and no positive transfer to behavioral axes outside the trained-tasks set.**
+
+This is a real loss for the paper's strongest selling point. It is also what the rigor reruns were designed to find. A reviewer who runs this exact experiment gets the same answer; we are reporting it ourselves before submission. The architecture and the falsification battery are still novel and defensible; the headline narrows from "OOD-transferring" to "in-distribution behavioral conditioning under causal-intervention falsification."
+
+**Updated bottom line for §25 conclusion:** v15 lands T1 (0.9997), T1b in-distribution (r = 0.996, log_mae = 0.075), T2 (Δ = 1.00), and T3 bidirectional (1.00 / 1.00). It fails T4 (KL = 0.016, possibly metric-induced; see §24.7.2), genuine OOD extrapolation beyond 7 days (r = −0.20, sinusoidal limit), phase generalization past week 2 (architectural limit), and deadline behavioral OOD transfer (P2 = +3.4 tokens, 95 % CI crosses zero; P1 − P3 = −45 tokens, chrono actively attenuating). What remains is the strongest in-distribution time-conditional LLM result we know of, with a falsification protocol the model survives. Workshop-strong; conference work requires either (a) replicating P2 with a much larger sample and a different prompt-language structure, or (b) honestly removing the OOD-transfer claim and reframing the paper around in-distribution conditioning + falsification rigor.
 
 ## Section 25: Conclusion
 
