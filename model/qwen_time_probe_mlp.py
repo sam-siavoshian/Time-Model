@@ -68,12 +68,19 @@ def collect_dataset(model: QwenTime, taus: list, device: str) -> torch.Tensor:
 
 
 class MLPProbe(nn.Module):
-    def __init__(self, d_in: int, d_hidden: int = 256):
+    """Heavily-regularized small MLP: bottleneck projects 2048->d_bottle
+    BEFORE the nonlinearity, then d_hidden=32 ReLU. Far fewer parameters
+    than a vanilla 2048->256 MLP; survives n_train ~ 500."""
+
+    def __init__(self, d_in: int, d_bottle: int = 64, d_hidden: int = 32):
         super().__init__()
         self.net = nn.Sequential(
-            nn.Linear(d_in, d_hidden),
+            nn.Linear(d_in, d_bottle),
+            nn.LayerNorm(d_bottle),
+            nn.Dropout(0.3),
+            nn.Linear(d_bottle, d_hidden),
             nn.ReLU(),
-            nn.Dropout(0.1),
+            nn.Dropout(0.3),
             nn.Linear(d_hidden, 1),
         )
 
@@ -83,9 +90,9 @@ class MLPProbe(nn.Module):
 
 def fit_mlp_probe(X_tr: torch.Tensor, y_tr: torch.Tensor,
                   X_te: torch.Tensor, y_te: torch.Tensor,
-                  device: str, epochs: int = 200,
-                  hidden: int = 256, lr: float = 1e-3,
-                  weight_decay: float = 1e-4) -> tuple:
+                  device: str, epochs: int = 400,
+                  d_bottle: int = 64, d_hidden: int = 32,
+                  lr: float = 1e-3, weight_decay: float = 1e-2) -> tuple:
     """Train MLP probe. Returns (best_test_r2, best_epoch)."""
     d_in = X_tr.shape[1]
     x_mean = X_tr.mean(0, keepdim=True)
@@ -116,10 +123,10 @@ def fit_mlp_probe(X_tr: torch.Tensor, y_tr: torch.Tensor,
     best_val_r2 = -1e18
     best_test_r2 = float("nan")
     best_epoch = -1
-    patience = 30
+    patience = 60
     bad = 0
 
-    probe = MLPProbe(d_in, hidden).to(device)
+    probe = MLPProbe(d_in, d_bottle=d_bottle, d_hidden=d_hidden).to(device)
     opt = torch.optim.AdamW(probe.parameters(), lr=lr, weight_decay=weight_decay)
 
     bs = 128
