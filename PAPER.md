@@ -1951,6 +1951,22 @@ The full set of operational time properties from §1 now has at least one model 
 
 No single model passes all five tests at once. The two strongest candidates are v13 (best T1, T1b, T2, T4 but fails T3) and v14 (passes T3 but T1 in-distribution dips). The architecture supports all five properties; the trade-off between in-distribution clock precision and phase class separation is a training-data balance problem, not an architectural blocker.
 
+### 24.6.6b Reviewer-rigor reruns (2026-05-23, in progress)
+
+A skeptical-referee audit (see §24.7 below) identified three statistical weaknesses in the §24 disproof battery that need addressing before submission. All three have rigor reruns committed and currently executing on Spark against the v14 checkpoint:
+
+1. **Pressure v2** (`model/qwen_time_pressure_v2.py`): 30 neutral-prompt set (vs v1's 5), max_new=256 tokens (vs v1's 80 -- v1 right-censored 3 of 5 short-tau responses), bootstrap 95 % CI on P1, P2, P3 paired deltas, and a chrono-contribution paired-diff CI (P1 − P3). The reviewer's concern: v1's P2 mean = +9 tokens was driven entirely by one outlier prompt (`[0, 0, 40, 5, 0]`), with three of five short-tau responses censored at max_new. Bootstrap CI on the v1 data confirmed the issue: P2 95 % CI = `[0, 25]`, including zero. The OOD-transfer claim cannot rest on n=5 with right-censoring; the v2 rerun resolves both at once.
+2. **Genuinely OOD T1b** (`model/qwen_time_check_genuine_ood.py`): re-evaluates the clock-readout OOD test on τ drawn log-uniformly in [7 d, 28 d] -- strictly above the v11/v13/v14 training upper bound of 7 d. The original T1b range was [2 s, 14 d], 94 % of which overlaps training; only the [7 d, 14 d] tail was truly held out. The new range is uncontaminated.
+3. **T3 multi-week** (same script): evaluates the Saturday phase response at weeks 2, 3, and 4 (τ = 12 × 86 400 s, 19 × 86 400 s, 26 × 86 400 s) in addition to week 1. If the weekend signal holds at week 4 (τ ≈ 28 d, never seen in any training data), phase encoding is truly periodic in the chronometric features. If it collapses past week 1, v14's T3 = 1.0 was tau-bin memorization.
+
+Bootstrap CIs on the existing v11 falsify and pressure JSON outputs are saved to `reports/bootstrap_CIs.json` for editorial use. Key finding (already actionable):
+
+- **A_normal Pearson r = 1.000, 95 % CI = [0.00, 1.00], effective n = 6** (the JSON only saved 6 example pairs out of 32 logged trials; bootstrap is limited).
+- **E α-flipped Pearson r = −0.9998, n = 2** (only 2 examples saved). The −0.9998 number is true on the full 32 trials, but the CI cannot be computed from the saved JSON. We will re-derive from raw logs or rerun with full example dumping before final submission.
+- **P2 (chrono-only) bootstrap mean = +9, 95 % CI = [0, +25]**, confirming the reviewer's attack. The v2 rerun (n = 30, uncensored) replaces this.
+
+These CIs and the v2 rerun outputs will be folded back into §24.1-§24.3 once the run completes. Pre-registered thresholds remain unchanged; what changes is the **statistical evidence supporting whether the thresholds were met**.
+
 ### 24.6.7 What this means for the paper
 
 The §24 disproof verdict (chrono signal is causal and OOD-generalizing) is unchanged. The §24.6 follow-ups add three pieces of evidence:
@@ -1958,6 +1974,31 @@ The §24 disproof verdict (chrono signal is causal and OOD-generalizing) is unch
 1. **T3 is solvable.** Root-caused (encoder bandwidth + within-phase sampling) and fixed. v14 demonstrates.
 2. **Architecture scales.** 7B passes T1b OOD and T4 with stronger signal than 3B.
 3. **The pre-registered five-test gate is achievable.** Combine v14's phase fix with v13's duration precision in a single training run: 6 K conversations with 50/50 phase, balanced 33/33/33 mix, 15-scale encoder, 24 K steps (double the budget to recover T1). This is the v15 spec, deferred for future work.
+
+## Section 24.7: Reviewer-rigor audit (2026-05-23)
+
+A skeptical NeurIPS-style reviewer pass on §24 identified three claims that a hostile reviewer would attack. They are documented here in advance of the formal write-up so the LaTeX version can address them in the methodology rather than getting blindsided in peer review.
+
+**Attack 1: Pressure P2 = +9 tokens is one outlier carrying four near-zero observations.**
+Per-prompt deltas from `reports/disproof_20260522_224016_pressure.json` are `[0, 0, +40, +5, 0]`. The headline +9 mean is the +40 outlier (transformer-attention prompt) averaged with four prompts at ≤+5. Three of five short-tau responses hit `max_new = 80` (the generator cap in `qwen_time_pressure.py`), meaning the data is right-censored: we cannot observe a longer "long-tau" response than 80 tokens. Bootstrap 95 % CI on the five paired diffs = [0, +25], including zero. The pre-registered "≥ 2 tokens" threshold is technically met by the mean but is not statistically defended by the data. **Remediation**: `pressure_v2` rerun, n = 30 prompts, max_new = 256, bootstrap CI reported alongside the mean. If the new CI excludes zero, claim survives; otherwise the claim is reframed as directionally consistent but underpowered, and moved to the Limitations section.
+
+**Attack 2: α-sign-flip r = −0.9998 effective n = 8.**
+The falsify JSON reports Pearson r over 32 trials (8 unique τ × 4 greedy-decoding replicates per τ). Replicate outputs are identical, so the **effective n is 8**, not 32. At n = 8 with a monotone-in-τ predictor, a sign flip producing r ≈ −1 is mathematically expected of any odd transformation of the chrono channel; it is not, by itself, evidence of a "single coherent scalar axis." A coherent axis would predict r ≈ −1 under multiple sign-flip variants (random half-layers, only odd layers, etc.) -- only the all-layer flip was tested. **Remediation**: report effective n = 8 explicitly, add bootstrap CI on the 8 unique-τ pairs, add at least one half-layer-flip control. The −0.9998 number stands; the rhetorical "smoking gun" framing softens to "consistent with a monotone, sign-symmetric chrono channel; coherent-axis claim requires the half-layer-flip control."
+
+**Attack 3: T1b range mostly overlaps training.**
+Original T1b drew test τ log-uniformly in [2 s, 14 d]. Training τ was log-uniform in [1 s, 7 d]. About 94 % of the test interval is inside the training distribution; only the [7 d, 14 d] tail is genuinely held out, and only one of 24 saved test samples (τ ≈ 29 h) sits even near the boundary. This is closer to dense interpolation than to extrapolation. **Remediation**: re-evaluate on τ ∈ [7 d, 28 d] using `qwen_time_check_genuine_ood.py`. If the genuine-OOD r and log-MAE stay within ~10 % of the original, the OOD claim materially strengthens; if they degrade, the language softens to "smooth interpolation across four orders of magnitude with mild extrapolation in the [7 d, 14 d] tail."
+
+**Plus**: T3 v14 weekend signal = 1.0 was evaluated only at τ corresponding to week 1 Saturday. To distinguish phase encoding from τ-bin memorization, the same script tests week 2, 3, 4 Saturday (`tau = 12 d, 19 d, 26 d` -- all strictly outside the 7-day training window). A genuine phase representation should hold; a memorized bin should collapse.
+
+**Other items moved to Limitations** (cannot fix in a one-day sprint):
+
+- Single training seed; no cross-seed variance bars on T1, T1b, T2, T3, T4.
+- 7B in-distribution T1 = 0.747 below the 0.8 threshold; full scaling story incomplete (likely under-trained at 12 K steps for the larger model, would need 24 K).
+- Linear-probe analysis is shallow-layer only (L1-L3); deep-layer mechanism unproven (MLP probe overfits on n = 500 OOD-split).
+- All evaluations use greedy decoding; no robustness under temperature/sampling sweeps.
+- T2 silent-gap Δ = 1.00 on 30 trials with binary keyword detection -- perfect separation is suspicious without a confusion-matrix-with-borderline-gaps experiment.
+
+**Verdict from the audit**: workshop-strong as-is, conference-strong if attacks 1-3 reruns survive. The architecture and falsification design are genuinely interesting; what is missing is uncertainty quantification, which the rigor reruns supply. None of these are research problems -- all are exposition + sample-size fixes.
 
 ## Section 25: Conclusion
 
