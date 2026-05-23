@@ -1,0 +1,31 @@
+cff-version: 1.2.0
+message: "If you use this work, please cite the preprint below."
+title: "Chronometric Injection: Teaching a Frozen LLM to Experience Time"
+authors:
+  - family-names: "Siavoshian"
+    given-names: "Saam"
+    # TODO: add ORCID once registered: https://orcid.org/####-####-####-####
+date-released: 2026-05-22
+version: "v11"
+repository-code: "https://github.com/sam-siavoshian/Time-Model"
+license: MIT
+keywords:
+  - large-language-models
+  - temporal-reasoning
+  - chronometric-injection
+  - frozen-llm
+  - film-modulation
+  - adaln-zero
+  - mechanistic-interpretability
+  - qwen
+preferred-citation:
+  type: article
+  title: "Chronometric Injection: Teaching a Frozen LLM to Experience Time"
+  authors:
+    - family-names: "Siavoshian"
+      given-names: "Saam"
+  year: 2026
+  # TODO: arXiv ID once posted, e.g. "2606.XXXXX"
+  # arxiv: "https://arxiv.org/abs/2606.XXXXX"
+  url: "https://github.com/sam-siavoshian/Time-Model"
+  notes: "Preprint. Pre-registration locked 2026-05-12; empirical update 2026-05-22."
