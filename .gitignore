@@ -1,11 +1,76 @@
-.venv/
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.so
+.Python
 .python-version
+
+# Virtual envs
+.venv/
+venv/
+env/
+ENV/
+
+# Build / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+pip-wheel-metadata/
+
+# uv
+.uv-cache/
+
+# Tests / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.mypy_cache/
+.ruff_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS noise
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ML artifacts (regenerate from seeds, never commit)
+*.bin
+*.pt
+*.pth
+*.safetensors
+*.ckpt
+checkpoints/
+logs/
+wandb/
+mlruns/
+runs/
+
+# Generated data (regenerate via data_gen/)
 data/latent_world/smoke_test.jsonl
 data/**/*.jsonl
 data/tokenized/
-*.bin
-logs/
-checkpoints/
+
+# Pre-flight / scratch reports
 reports/preflight.md
+
+# Local Claude / Cursor workspace
+.claude/
+.cursor/
+
+# Secrets
+.env
+.env.*
+!.env.example
