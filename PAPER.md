@@ -1815,10 +1815,55 @@ Two of three pre-registered tests passed strict thresholds (falsify, pressure). 
 
 ### 24.5 What's left
 
-1. Nonlinear MLP probe across all layers (predicted: deeper layers R² > 0.6 with MLP, completing the mechanistic story).
-2. v12 retraining with rebalanced 33/33/33 mix to recover T3 (phase discrimination).
-3. Scale test on Qwen 2.5 7B / 14B.
-4. Final write-up + figures (probe R²-by-layer plot, T1 OOD scatter, P2 pressure histogram, alpha-sign-flip scatter).
+1. ~~Nonlinear MLP probe~~ — DONE 2026-05-22. Two MLP variants overfit; linear probe remains the mechanistic figure (§24.3 update). See `model/qwen_time_probe_mlp.py`.
+2. v12 retraining with rebalanced 33/33/33 mix to recover T3 (phase discrimination) — RUNNING.
+3. Scale test on Qwen 2.5 7B / 14B — pending v12 completion.
+4. ~~Final write-up + figures~~ — DONE 2026-05-22. figures/fig{1..4}_*.png committed (`fd2ca33`).
+
+---
+
+## Section 25: Conclusion
+
+This paper started as an architecture spec for **involuntary prefix consolidation networks (IPCN)**: a memory bank routed through a frozen LLM, augmented with chronometric encoding, with frequently-used memories migrating into LoRA weights. Three weeks of empirical work disproved most of that plan and proved one piece of it.
+
+**What did not work:**
+
+- Memory routing as a behavioral signal. Nine versions of Track B (§22) trained Qwen 2.5 1.5B with prefix injection, cross-attention slots, identity-V value tying, and finally fully unfrozen base weights. Across all nine, `with_memory` vs `without_memory` vs `shuffled_memory` produced **identical outputs sample-by-sample**. Memory contents had no observable effect on generation. This is consistent with Petrov & Liang (2310.19698) on rank-bounded prefix tuning and with the 0.02 % prefix-recall benchmark for frozen bases (2603.16413).
+- The original 82-dim chronometric vector. We simplified to 27 dims (13 sin + 13 cos + log1p(τ)) without behavior loss after AdaLN-Zero injection was in place.
+
+**What did work:**
+
+- AdaLN-Zero FiLM injection of a 27-dim chronometric encoding at every decoder layer of a frozen Qwen 2.5 3B, with rank-8 LoRA on all attention blocks and lm_head. ~36 M trainable parameters on a 3 B base.
+- The DiT init pattern: `α = 0, γ-bias = 1, β = 0`. One-line fix from v10 (γ-bias = 0, dead) to v11 (γ-bias = 1, working).
+- A pre-registered five-test eval (T1 in-distribution clock, T1b OOD clock, T2 silent-gap ack, T3 phase, T4 chrono-reaches-output) with thresholds declared before training. v11 passes 4/5; T3 fails due to 40/40/20 training mix imbalance, expected to recover with v12 33/33/33.
+- A pre-registered three-experiment disproof battery (causal interventions, behavioral-pressure OOD transfer, linear probe). v11 survives all three.
+
+**The signature result:** the α-sign-flip Pearson r = **-0.9998** on the T1 clock test. The model has a single coherent scalar dial for time. Reversing that dial reverses every prediction near-perfectly. A template-matching artifact cannot do this. The chrono signal acts as a causal scalar axis, not a decorative feature.
+
+**The mechanistic finding:** the chrono encoding enters at the input side via the chrono injector at L0 and is linearly decodable from the residual stream for the first ~3 layers (L1 R² = 0.43 on OOD τ). Past L3 the linear probe collapses, but the alpha-off intervention destroys the linear axis at every layer (R² = -143), so the chrono signal is *present* throughout the network — just not in a form a small linear or MLP probe can recover from 500 OOD samples.
+
+**The OOD finding:** the chrono signal trained on clock-readout, silent-gap, and weekday-vs-weekend phase tasks transfers to deadline-induced response-length modulation — a behavioral axis **never trained on**. Switching τ between 30 s and 3600 s with a neutral prompt (no deadline text) yields a +9-token mean-length shift, with chrono contributing **+16 tokens beyond a text deadline alone**.
+
+**The naming pivot:** what we built and what passes the disproof battery is no longer "involuntary prefix consolidation" because nothing in the empirical results depends on a prefix or on consolidation. The architecture is **chronometric injection (CI)** — AdaLN-Zero FiLM of real elapsed seconds at every layer. The IPCN scaffolding (memory bank, PFC, LoRA consolidation) is preserved in the repository but does not contribute to the published claim. See §22.3 and §23.10 for the migration story.
+
+### 25.1 Open questions and future work
+
+1. **Scale.** Does CI work on Qwen 2.5 7 B, 14 B, 32 B? Same chrono injector design, same ~36 M trainable count (LoRA scales mildly). Expected yes; needs running.
+2. **Mechanism past L3.** With 5-10 k samples or a within-distribution probe split, can we recover tau decoding at deep layers? If yes, the linear-then-nonlinear pattern is real. If no, deep-layer features may be entangled with content.
+3. **Subjective time vs objective time.** This paper claims behavioral time conditioning, not subjective experience. Whether time-conditional behavior implies anything about experience is out of scope (Berg et al 2510.24797 is the relevant adjacent work).
+4. **Persistence under no-input.** A forward pass is instantaneous. To have state genuinely evolve during a wall-clock gap requires continuous-time recurrence (Neural ODE) between forwards. T2 silent-gap ack is a *behavioral* test of gap awareness, not state evolution. The deeper version of Property 4 (Section 1) is unproven.
+5. **Other modalities.** Audio and video models could plausibly use the same chronometric injection over their existing positional encodings. Untested.
+
+### 25.2 Reproducibility
+
+- Code: github.com/sam-siavoshian/Time-Model
+- Trained checkpoint: ~/ipcn/checkpoints/qwen_time_v10_20260516_032348.pt on the GB10 dev kit
+- Training data generator: `model/qwen_time_data.py` (seeded with `--seed 0` for the 6 K conversation set)
+- Evaluation: `model/qwen_time_check.py`, `model/qwen_time_falsify.py`, `model/qwen_time_pressure.py`, `model/qwen_time_probe.py`
+- All JSON reports and figures: `reports/`, `figures/`
+- Hardware: one Nvidia Grace-Blackwell GB10 developer kit, ~128 GB unified memory, ~3 GPU-hours total for training, ~30 minutes for the full disproof battery.
+
+This is the strongest empirical position the project has reached. Three weeks of failure across Track A and nine versions of Track B; one positive result that survives the toughest interventions we can design.
 
 ---
 
