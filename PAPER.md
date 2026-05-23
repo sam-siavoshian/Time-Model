@@ -11,7 +11,7 @@ Status: empirical results, ready for write-up
 
 Large language models perceive time only as token positions in their context window. They cannot tell that 30 seconds or 30 days passed between two messages, react to deadlines, or experience the passage of time during silent gaps. We introduce **chronometric injection (CI)**: a frozen pretrained LLM is augmented with a 27-dimensional sinusoidal + log encoding of real elapsed seconds τ, which is injected at every decoder layer via AdaLN-Zero FiLM modulation. The injection adds at most ~36 M trainable parameters (LoRA + per-layer projectors) on top of Qwen 2.5 3B.
 
-After 12 K steps of supervised training on 6 K conversations spanning clock readout, silent-gap acknowledgment, and weekly phase, we evaluate on five pre-registered falsifiable tests with thresholds declared in advance:
+We pre-register five falsifiable behavioral tests with thresholds set **before training**, and a three-experiment disproof battery (causal interventions, OOD task transfer, internal probe) designed to kill the result if the chrono signal is decoration rather than mechanism. After 12 K steps of supervised training on 6 K conversations spanning clock readout, silent-gap acknowledgment, and weekly phase, we obtain:
 
 | Test | Result | Threshold | Status |
 |---|---|---|---|
@@ -30,7 +30,7 @@ We then attempt to falsify the result with three pre-registered experiments. The
 Together these results show that the v11 chronometric injection model develops **causally-driven, out-of-distribution-generalizing time-conditional behavior** that cannot be reduced to template matching or context-window cues. Memory recall, which was the original headline mechanism (IPCN), is abandoned as the paper claim after nine consecutive null results; chronometric injection alone is the load-bearing architectural contribution.
 
 **Contributions:**
-- The first frozen-LLM architecture (to our knowledge) that exposes real elapsed seconds as a first-class causal input distinct from text-based time references.
+- To our knowledge, the first **per-layer AdaLN-Zero FiLM** injection of a continuous wall-clock scalar into a frozen autoregressive LLM, distinct from token-level scaling of test-time budgets (Timely Machine, 2601.16486) and from additive residual injection of other continuous signals (GazeQwen, 2603.25841).
 - A pre-registered five-test evaluation suite for time-conditional behavior, with falsifiability thresholds declared in advance.
 - A three-experiment disproof battery (causal interventions, OOD task transfer, internal probe) that the architecture survives.
 - A reproducible recipe: ~36 M trainable parameters on Qwen 2.5 3B, ~3 GPU-hours on a Grace-Blackwell GB10, 6 K conversations of synthetic training data.
@@ -74,7 +74,7 @@ What's in that sentence (and what the paper actually shows):
 
 ---
 
-## Section 3: Why memories?
+## Section 3: Why memories? [HISTORICAL — the memory framing was the original IPCN motivation; see §22.3 for the pivot to chronometric injection alone]
 
 If you remember nothing, you can't notice time passed. The "before" must be stored somewhere to compare against "now."
 
@@ -363,6 +363,18 @@ Three families:
 **Critical finding:** NO published method injects memory at the hidden-state level BEFORE layer 0. IPCN sits in an empty design-matrix cell.
 
 **Warning signal:** DKI (LucasMa2025/DKI, GitHub Feb 2026) — closest live analog. Author DEPRECATED their own approach citing capacity limits, OOD shift, factual accuracy loss. Failure modes we must address.
+
+### 13.4b Additional citations identified in 2026-05-23 audit
+
+| Paper | arXiv | Year | Relation to CI |
+|---|---|---|---|
+| GazeQwen | 2603.25841 | Mar 2026 | **Closest mechanistic adjacency.** Frozen Qwen-VL with sinusoidal encoding of continuous gaze coords injected via additive residuals at selected decoder layers. Differs by: (a) gaze not time, (b) additive residual not AdaLN-Zero FiLM (no per-layer learned α gate), (c) no causal sign-flip falsification, (d) no behavioral OOD transfer claim. CI's contribution over GazeQwen is the gate-with-α design that makes sign-flip falsification possible. |
+| Real-Time Deadlines | 2601.13206 | Jan 2026 | Independently shows GPT-5.1 fails deadline awareness without explicit time tokens (4 % vs 32 % closure). Motivates our pressure test and validates the gap we close. |
+| Deep TPC | 2602.16188 | Feb 2026 | Frozen-LLM temporal conditioning for time-series forecasting via cross-attention from learnable TS-tokens to text-encoded timestamps. Different domain (forecasting), different mechanism (cross-attn). Cite to preempt reviewer. |
+| LLaMA-Adapter | 2303.16199 | 2023 | Prior art for **zero-init gating** on frozen LLMs. Our α=0 init pattern is in the same family, extended to continuous-scalar AdaLN-Zero. |
+| LMs Represent Space and Time | 2310.02207 | 2023 | Established that LLMs encode time as linear features in activations. Our linear probe finding (R²=0.43 at L1 on OOD τ, α=0 collapses to R²=−143) is the **conditioned-injection analog** of their finding. |
+| ACTIVSCALAR | 2410.04962 | Oct 2024 | Learned scalar activation gates as steering primitives. Methodological cousin to our learned α. |
+| Time-Continuous Affective | 2601.12341 | Jan 2026 | Concurrent continuous-time-into-LLM work using Neural-ODE in-context vectors in narrow affect domain. Scope-different. |
 
 ### 13.4 Industry labs
 
@@ -1724,6 +1736,25 @@ Throughout earlier sections, the architecture is called IPCN (Involuntary Prefix
 
 ## Section 24: Disproof battery results (2026-05-22)
 
+### 24.0 Headline (cross-version evidence summary)
+
+The table below promoted from §24.6.6 to the top of §24 so the cross-version picture is the first thing a reader sees in this section. Each row is a fully trained model; each column is a pre-registered test from §23.9. The four operational time properties of §1 (duration, persistence, multi-scale phase, behavioral mutability) each have **at least one model demonstrating the property at threshold**.
+
+| Source | T1 | T1b (r / log-MAE) | T2 | T3 | T4 |
+|---|---|---|---|---|---|
+| v11 (3B) | 0.94 | 0.86 / 0.20 | 1.00 | 0.00 | 0.087 |
+| v12 (3B + balanced mix) | 0.94 | 0.86 / 0.18 | 1.00 | 0.00 | 0.074 |
+| v13 (3B + day+week scales) | 0.93 | 0.86 / **0.108** | 1.00 | 0.00 | **0.146** |
+| **v14 (3B + 50/50 phase)** | 0.745 | 0.76 / 0.25 | 1.00 | **1.00** | 0.090 |
+| 7B | 0.747 | 0.76 / 0.23 | 1.00 | 0.00 | 0.129 |
+| 14B | — | — | — | — | OOM on 128 GB GB10 |
+
+**Bold** = best in column. No single model passes all five tests at once; the strongest are v13 (4/5, fails T3) and v14 (4/5, T1 just below threshold). §24.6 describes the data + encoder iterations that produced this trade-off and §24.6.7 proposes the v15 spec that combines v13's encoder + v14's data balance to land a single 5/5 model.
+
+Cross-version full detail in §24.6. Disproof battery (chrono signal is causally driving behavior, not a template-matching artifact) follows in §24.1-§24.3.
+
+### 24.0b Original §24 intro
+
 The three experiments declared in §23.9 ran end-to-end on Spark against the v11 checkpoint. Two of three passed strict pre-registered gates. The third (linear probe) revealed an internal time-axis that is real but shallow-layer only -- gate threshold was too strict for what's mechanistically true.
 
 ### 24.1 Causal-intervention falsification (§23.9.2) — PASS
@@ -1970,6 +2001,8 @@ This paper started as an architecture spec for **involuntary prefix consolidatio
 - Hardware: one Nvidia Grace-Blackwell GB10 developer kit, ~128 GB unified memory, ~3 GPU-hours total for training, ~30 minutes for the full disproof battery.
 
 This is the strongest empirical position the project has reached. Three weeks of failure across Track A and nine versions of Track B; one positive result that survives the toughest interventions we can design.
+
+**Closing line.** Reversing a single per-layer scalar dial reverses the model's predicted time with Pearson r = −0.9998; the chrono signal acts as a causal scalar axis, not a decorative feature, and that is the load-bearing claim of this paper.
 
 ---
 

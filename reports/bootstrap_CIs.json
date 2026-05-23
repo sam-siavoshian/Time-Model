@@ -1,0 +1,83 @@
+{
+  "falsify_bootstrap_pearson_CIs": {
+    "A_normal": {
+      "r": 1.0000000000000002,
+      "ci_low": 0.0,
+      "ci_high": 1.0000000000000002,
+      "n_samples": 6,
+      "n_boot": 5000
+    },
+    "B_alpha_off": {
+      "r": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.0,
+      "n_samples": 6,
+      "n_boot": 5000
+    },
+    "C_random_tau": {
+      "r": 0.3088445461431562,
+      "ci_low": -0.9881337477963752,
+      "ci_high": 0.9113632258744464,
+      "n_samples": 6,
+      "n_boot": 5000
+    },
+    "D_tau_zero": {
+      "r": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.0,
+      "n_samples": 6,
+      "n_boot": 5000
+    },
+    "E_alpha_flipped": {
+      "r": -0.9997951941423971,
+      "ci_low": null,
+      "ci_high": null,
+      "n_samples": 2,
+      "note": "examples truncated in original JSON"
+    }
+  },
+  "pressure_bootstrap_CIs": {
+    "P1": {
+      "mean": 65,
+      "ci_low": 61,
+      "ci_high": 68,
+      "n": 5,
+      "n_boot": 5000,
+      "per_prompt_diffs": [
+        68,
+        68,
+        58,
+        63,
+        68
+      ]
+    },
+    "P2": {
+      "mean": 9,
+      "ci_low": 0,
+      "ci_high": 25,
+      "n": 5,
+      "n_boot": 5000,
+      "per_prompt_diffs": [
+        0,
+        0,
+        40,
+        5,
+        0
+      ]
+    },
+    "P3": {
+      "mean": NaN,
+      "ci_low": NaN,
+      "ci_high": NaN,
+      "n": 0,
+      "per_prompt_diffs": []
+    }
+  },
+  "v11_T1b_OOD_bootstrap": {
+    "r": 0.9999634914310795,
+    "ci_low": 0.9197386332348475,
+    "ci_high": 0.9999999652845458,
+    "n_samples": 6,
+    "n_boot": 5000
+  }
+}
