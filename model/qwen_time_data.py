@@ -131,12 +131,26 @@ def gen_silent_gap_conversation(rng: random.Random) -> dict:
     }
 
 
-def gen_phase_conversation(rng: random.Random) -> dict:
+def gen_phase_conversation(rng: random.Random, balance_weekend: bool = True) -> dict:
     """Multi-scale phase test. tau drawn UNIFORMLY across the 7-day cycle
     with fractional hours, so phase signal lives in the chi sin/cos
     components at the 604800s scale, not in an integer-day lookup.
+
+    balance_weekend=True forces 50/50 weekday/weekend sampling. Natural
+    uniform over 7 days gives 5/7 weekday vs 2/7 weekend, which makes
+    the model learn 'always weekday' as a prior (T3 fail mode in
+    v11/v12/v13). v14 default flips a fair coin first, then picks tau
+    within the corresponding day window.
     """
-    tau = rng.uniform(0, 7 * 86400)
+    if balance_weekend:
+        is_weekend_target = rng.random() < 0.5
+        if is_weekend_target:
+            day = rng.choice([5, 6])
+        else:
+            day = rng.choice([0, 1, 2, 3, 4])
+        tau = day * 86400.0 + rng.uniform(0, 86400.0)
+    else:
+        tau = rng.uniform(0, 7 * 86400)
     day_of_week = int(tau // 86400) % 7
     is_weekend = day_of_week in (5, 6)
     user = rng.choice([
