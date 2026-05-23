@@ -1,0 +1,119 @@
+{
+  "per_seed": {
+    "0": {
+      "T1_clock_pearson_r": 0.9495907610914625,
+      "T1_pass": true,
+      "T1b_ood_pearson_r": 0.9944431798318883,
+      "T1b_ood_log_mae": 0.03201308555379923,
+      "T1b_pass": true,
+      "T2_ack_delta": 1.0,
+      "T2_pass": true,
+      "T3_weekend_signal": 1.0,
+      "T3_weekday_signal": 0.0,
+      "T3_pass": true,
+      "T4_mean_pairwise_kl": 0.2723651692275467,
+      "T4_pass": true
+    },
+    "1": {
+      "T1_clock_pearson_r": 0.9996650565143902,
+      "T1_pass": true,
+      "T1b_ood_pearson_r": 0.9891553017518797,
+      "T1b_ood_log_mae": 0.04675796069198892,
+      "T1b_pass": true,
+      "T2_ack_delta": 1.0,
+      "T2_pass": true,
+      "T3_weekend_signal": 0.0,
+      "T3_weekday_signal": 0.0,
+      "T3_pass": false,
+      "T4_mean_pairwise_kl": 0.14108299234536995,
+      "T4_pass": true
+    },
+    "2": {
+      "T1_clock_pearson_r": 0.9323941823022904,
+      "T1_pass": true,
+      "T1b_ood_pearson_r": 0.9944594518124475,
+      "T1b_ood_log_mae": 0.05211283716219071,
+      "T1b_pass": true,
+      "T2_ack_delta": 1.0,
+      "T2_pass": true,
+      "T3_weekend_signal": 1.0,
+      "T3_weekday_signal": 1.0,
+      "T3_pass": true,
+      "T4_mean_pairwise_kl": 0.12132476961162159,
+      "T4_pass": true
+    }
+  },
+  "aggregate": {
+    "T1_clock_pearson_r": {
+      "mean": 0.9605499999693811,
+      "std": 0.03494883856299803,
+      "n": 3,
+      "vals": [
+        0.9495907610914625,
+        0.9996650565143902,
+        0.9323941823022904
+      ]
+    },
+    "T1b_ood_pearson_r": {
+      "mean": 0.9926859777987386,
+      "std": 0.003057665973456685,
+      "n": 3,
+      "vals": [
+        0.9944431798318883,
+        0.9891553017518797,
+        0.9944594518124475
+      ]
+    },
+    "T1b_ood_log_mae": {
+      "mean": 0.04362796113599295,
+      "std": 0.01040901900253622,
+      "n": 3,
+      "vals": [
+        0.03201308555379923,
+        0.04675796069198892,
+        0.05211283716219071
+      ]
+    },
+    "T2_ack_delta": {
+      "mean": 1.0,
+      "std": 0.0,
+      "n": 3,
+      "vals": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    "T3_weekend_signal": {
+      "mean": 0.6666666666666666,
+      "std": 0.5773502691896257,
+      "n": 3,
+      "vals": [
+        1.0,
+        0.0,
+        1.0
+      ]
+    },
+    "T3_weekday_signal": {
+      "mean": 0.3333333333333333,
+      "std": 0.5773502691896257,
+      "n": 3,
+      "vals": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "T4_mean_pairwise_kl": {
+      "mean": 0.17825764372817943,
+      "std": 0.08209608156367545,
+      "n": 3,
+      "vals": [
+        0.2723651692275467,
+        0.14108299234536995,
+        0.12132476961162159
+      ]
+    }
+  },
+  "n_seeds": 3
+}
