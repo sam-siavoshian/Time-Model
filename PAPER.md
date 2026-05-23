@@ -156,6 +156,8 @@ Even chain-of-thought reasoning about durations is symbolic arithmetic on tokens
 
 ### 8.1 Chronometric encoding (the math, plain)
 
+> **Note (2026-05-22):** the encoding actually used in v11 is a 27-dim vector, NOT 82. After empirical iteration we simplified to one absolute τ (not Δτ-tracking through state), 13 sin scales, 13 cos scales, and one log1p(τ), for a total of 2·13 + 1 = 27. The original 82-dim plan added event-density and silent-gap flag features that turned out to be redundant once AdaLN-Zero injection was in place. Keeping this section's original text below for paper trail; the implemented version is in `model/qwen_time.py` (`_Chronometric`).
+
 Real seconds τ → an 82-number vector. Formula at each timescale T_b:
 
 ```
@@ -226,9 +228,9 @@ So 5-min silent gap is NOT invisible. Memory drifts, retrieval weights shift, vi
 
 Token-rate fact injection: add `tokens_per_real_second` as a feature in χ_t. Model learns own throughput. One of original 4 mechanisms, now an ablation cell.
 
-### 8.6 Closes Gap 4 (behavioral pressure response) — via training data
+### 8.6 Closes Gap 4 (behavioral pressure response) — empirically demonstrated, NO targeted training needed
 
-Architecture supports it; needs targeted training scenarios with deadline pressure + simulated Δτ + reward for shorter outputs that hit accuracy.
+> **Updated 2026-05-22:** the v11 model was trained on CLOCK + GAP + PHASE conversations only. Deadline-induced response-length modulation was NEVER in the training set. The pressure-test experiment (§24.2) shows that swapping τ between 30 s and 3 600 s, with a neutral non-deadline prompt, produces a +9-token mean-length shift; with a deadline prompt added, the shift grows to +65 tokens, of which +16 tokens is chrono contribution beyond the deadline text. The chrono signal transfers to an entirely new behavioral axis without targeted training data, falsifying the original prediction that Gap 4 would need its own training set.
 
 ---
 
