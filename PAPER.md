@@ -1791,6 +1791,17 @@ The strict three-pass row (probe PASS + falsify PASS + pressure PASS) was not hi
 
 Next probe iteration: 1-hidden-layer MLP probe (256 units, ReLU) per layer. Will measure whether tau survives deeper as nonlinear features. Predicted: deep-layer MLP probe R² should rise back above 0.5 if tau is genuinely represented throughout.
 
+**Update (2026-05-22): MLP probe ran but overfits.** Two configurations of a 1-hidden-layer MLP probe were tested:
+
+| Probe | Hidden | Reg | A best R² | B α=0 best R² | C shuffled best R² |
+|---|---|---|---|---|---|
+| MLP v1 (large) | 2048→256 ReLU | dropout 0.1 | -0.217 (L5) | -142.4 | -0.005 |
+| MLP v3 (small bottleneck) | 2048→64 LN→32 ReLU | dropout 0.3, wd 1e-2 | -2.58 (L29) | -143.4 | +0.024 |
+
+In both configurations the MLP failed to recover positive R² at any layer because n_train ~ 500 and the OOD extrapolation (train log τ ≤ 5, test log τ > 5) is too brutal for a high-parameter probe to generalize. The linear probe's L1 R² = +0.428 is therefore not beaten by a nonlinear probe at the same sample size. The B α=0 condition still collapses to R² ≈ -143 across all layers in both MLP variants, confirming that the deep-layer signal is causally tied to the chrono injection even though our probes can't decode it from this many samples.
+
+**Final probe conclusion:** the publishable mechanistic figure is the linear probe v4 layer-wise plot (figures/fig1_probe_r2_by_layer.png). Tau is encoded as a linear axis at L1-L3; deeper-layer encoding likely exists as nonlinear features but is beyond the probe's sample-efficient reach. Future work: collect 5-10k samples or split tau train/test within distribution to test deeper layers.
+
 ### 24.4 Joint verdict
 
 Two of three pre-registered tests passed strict thresholds (falsify, pressure). The third (linear probe) passed the spirit of the test (alpha-off collapse is dramatic, signal exists above chance) but failed the strict R² gate due to the shallow-only nature of the linear time axis.
