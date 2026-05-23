@@ -70,27 +70,40 @@ def hidden_states_for_tau(model: QwenTime, prompt: str, tau_t: float,
 
 def ridge_fit_predict(X_tr: torch.Tensor, y_tr: torch.Tensor,
                       X_te: torch.Tensor,
-                      lams=(1e-1, 1.0, 1e1, 1e2, 1e3, 1e4)) -> torch.Tensor:
-    """Closed-form ridge with feature standardization and CV-picked lambda.
+                      lams=(1e-2, 1e-1, 1.0, 1e1, 1e2, 1e3, 1e4)) -> torch.Tensor:
+    """SVD-based ridge with CV-picked lambda, float64 for stability.
 
-    Critical: d_model=2048 features and ~few-hundred train samples is
-    severely underdetermined. Without proper scaling + regularization,
-    ridge degenerates to OLS and test R^2 explodes to large negatives.
-    Fix: standardize each feature to unit variance, then sweep lam on a
-    held-out 20% sub-validation split, refit on full train with winner.
+    d_model=2048 hidden-state features with n_train ~ 516 is
+    severely underdetermined. Naive `(X^T X + lam I)^-1 X^T y` in
+    float32 produces NaN due to numerical singularities. Fix:
+    one SVD of standardized X in float64; ridge then becomes
+        w(lam) = V * (S / (S^2 + lam)) * U^T y
+    Sweep lam, pick on a 20% val split, refit on full train.
     """
-    d = X_tr.shape[1]
-    x_mean = X_tr.mean(dim=0, keepdim=True)
-    x_std = X_tr.std(dim=0, keepdim=True).clamp(min=1e-6)
-    Xc = (X_tr - x_mean) / x_std
-    Xt = (X_te - x_mean) / x_std
-    y_mean = y_tr.mean()
-    yc = y_tr - y_mean
+    Xtr = X_tr.double()
+    Xte = X_te.double()
+    ytr = y_tr.double()
+
+    x_mean = Xtr.mean(dim=0, keepdim=True)
+    x_std = Xtr.std(dim=0, keepdim=True).clamp(min=1e-6)
+    Xc = (Xtr - x_mean) / x_std
+    Xt = (Xte - x_mean) / x_std
+    y_mean = ytr.mean()
+    yc = ytr - y_mean
 
     n = Xc.shape[0]
+
+    def _ridge_via_svd(X, y, lam):
+        # X: (n, d). For underdetermined (n < d), use reduced SVD.
+        U, S, Vh = torch.linalg.svd(X, full_matrices=False)
+        # w = V * (S / (S^2 + lam)) * U^T y
+        UTy = U.T @ y
+        coeff = S / (S * S + lam)
+        return Vh.T @ (coeff * UTy)
+
+    # Pick lam via held-out 20% val
     if n < 8:
-        # Too few samples for CV; use the largest lam
-        best_lam = lams[-1]
+        best_lam = 1.0
     else:
         g = torch.Generator(); g.manual_seed(0)
         perm = torch.randperm(n, generator=g)
@@ -99,28 +112,26 @@ def ridge_fit_predict(X_tr: torch.Tensor, y_tr: torch.Tensor,
         tr_idx = perm[n_val:]
         Xv_tr, Xv_va = Xc[tr_idx], Xc[val_idx]
         yv_tr, yv_va = yc[tr_idx], yc[val_idx]
-        I = torch.eye(d, dtype=Xc.dtype)
+        # SVD once on val-train subset
+        U, S, Vh = torch.linalg.svd(Xv_tr, full_matrices=False)
+        UTy = U.T @ yv_tr
+        ss_tot_va = ((yv_va - yv_va.mean()) ** 2).sum().item() + 1e-12
         best_r2 = -1e18
-        best_lam = lams[-1]
+        best_lam = 1.0
         for lam in lams:
-            try:
-                A = Xv_tr.T @ Xv_tr + lam * I
-                w = torch.linalg.solve(A, Xv_tr.T @ yv_tr)
-                pred = Xv_va @ w
-                ss_res = ((yv_va - pred) ** 2).sum().item()
-                ss_tot = ((yv_va - yv_va.mean()) ** 2).sum().item() + 1e-12
-                r2 = 1.0 - ss_res / ss_tot
-                if r2 > best_r2:
-                    best_r2 = r2
-                    best_lam = lam
-            except Exception:
-                continue
+            coeff = S / (S * S + lam)
+            w = Vh.T @ (coeff * UTy)
+            pred = Xv_va @ w
+            ss_res = ((yv_va - pred) ** 2).sum().item()
+            r2 = 1.0 - ss_res / ss_tot_va
+            if r2 == r2 and r2 > best_r2:
+                best_r2 = r2
+                best_lam = lam
 
-    # Refit on full standardized train with best lambda
-    I = torch.eye(d, dtype=Xc.dtype)
-    A = Xc.T @ Xc + best_lam * I
-    w = torch.linalg.solve(A, Xc.T @ yc)
-    return Xt @ w + y_mean
+    # Refit on full train with best lam
+    w = _ridge_via_svd(Xc, yc, best_lam)
+    pred = Xt @ w + y_mean
+    return pred.float()
 
 
 def r2_score(y_true: torch.Tensor, y_pred: torch.Tensor) -> float:
@@ -143,8 +154,7 @@ def collect_dataset(model: QwenTime, taus: list, device: str) -> torch.Tensor:
 
 
 def probe_per_layer(X: torch.Tensor, y: torch.Tensor,
-                    train_mask: torch.Tensor, test_mask: torch.Tensor,
-                    lam: float = 1e-2) -> dict:
+                    train_mask: torch.Tensor, test_mask: torch.Tensor) -> dict:
     """X: (N, L, d). y: (N,). Returns {layer: r2}."""
     n_layers = X.shape[1]
     out = {}
@@ -154,9 +164,10 @@ def probe_per_layer(X: torch.Tensor, y: torch.Tensor,
         y_tr = y[train_mask]
         y_te = y[test_mask]
         try:
-            y_pred = ridge_fit_predict(X_tr, y_tr, X_te, lam=lam)
+            y_pred = ridge_fit_predict(X_tr, y_tr, X_te)
             out[li] = r2_score(y_te, y_pred)
         except Exception as e:
+            print(f"    L{li}: solver error: {type(e).__name__}: {e}")
             out[li] = float("nan")
     return out
 
@@ -212,9 +223,15 @@ def main():
     r2_A = probe_per_layer(X_A, y, train_mask, test_mask)
     print(f"  per-layer OOD R^2 (trained):")
     for li, r in sorted(r2_A.items()):
-        bar = "#" * max(0, int(r * 40))
+        if r != r:  # NaN
+            print(f"    L{li:3d}: R^2=NaN")
+            continue
+        bar = "#" * max(0, min(60, int(r * 40)))
         print(f"    L{li:3d}: R^2={r:+.3f}  {bar}")
-    best_layer_A = max(r2_A.items(), key=lambda kv: kv[1])
+    def _key(kv):
+        v = kv[1]
+        return v if v == v else -1e18
+    best_layer_A = max(r2_A.items(), key=_key)
     print(f"  BEST: L{best_layer_A[0]} R^2={best_layer_A[1]:.3f}")
 
     # Condition B: zero alpha (chrono off)
@@ -226,7 +243,7 @@ def main():
     for li, r in sorted(r2_B.items()):
         if li % 4 == 0 or r > 0.1:
             print(f"    L{li:3d}: R^2={r:+.3f}")
-    best_layer_B = max(r2_B.items(), key=lambda kv: kv[1])
+    best_layer_B = max(r2_B.items(), key=_key)
     print(f"  BEST: L{best_layer_B[0]} R^2={best_layer_B[1]:.3f}")
 
     # Condition C: shuffled labels (sanity / negative ctrl on the probe)
@@ -238,7 +255,7 @@ def main():
     for li, r in sorted(r2_C.items()):
         if li % 8 == 0 or r > 0.1:
             print(f"    L{li:3d}: R^2={r:+.3f}")
-    best_layer_C = max(r2_C.items(), key=lambda kv: kv[1])
+    best_layer_C = max(r2_C.items(), key=_key)
     print(f"  BEST: L{best_layer_C[0]} R^2={best_layer_C[1]:.3f}")
 
     # Verdict
