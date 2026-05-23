@@ -56,15 +56,21 @@ Sidesteps qualia. Captures what cognition needs.
 
 ## Section 2: What is this paper?
 
-**One-sentence thesis:**
+**Updated thesis (post-empirical):**
 
-> A neural network architecture where persistent memory and real elapsed time are injected into the hidden state before the first layer runs, and where heavily-used memories migrate from external slots into the model's weights which will lead the model to develop a temporal understanding.
+> Real elapsed wall-clock seconds are injected into a frozen pretrained LLM at every decoder layer via AdaLN-Zero FiLM modulation. After ~3 GPU-hours of training on 6 K synthetic conversations, the resulting model develops time-conditional behavior that generalizes to held-out τ values across four orders of magnitude AND to behavioral axes (deadline-induced response-length) that were never in the training set. The chrono signal is causally driven (α-sign-flip yields Pearson r = -0.9998) and the time axis is mechanistically present in shallow residual-stream layers.
 
-Three things in that sentence:
+What's in that sentence (and what the paper actually shows):
 
-1. **Pre-computational memory** — memory enters BEFORE the model thinks, not after
-2. **Real elapsed time as substrate** — actual seconds wired into the architecture, not just words like "yesterday"
-3. **Consolidation** — used memories migrate from scratchpad to network weights
+1. **Real elapsed time as substrate** — actual seconds wired into the architecture via a 27-dim sinusoidal+log encoding, not just words like "yesterday". **Demonstrated** (T1, T1b, T2, T4).
+2. **At every layer, not just at the input** — FiLM (AdaLN-Zero) modulation per layer. Linear probe shows τ enters at L1 and gets transformed at each subsequent block.
+3. **Causal, not correlative** — five interventions confirm the chrono signal drives behavior (α=0 → flat, α-flip → inversion).
+
+**What the paper does NOT claim** (changed mid-project, see §22-23.10):
+
+- ~~Persistent memory bank with retrieval-routing~~. Nine variants produced zero behavioral signal (§22).
+- ~~Consolidation of slots into weights~~. Memory routing failed structurally; consolidation became moot.
+- Memory is preserved in the repository as a tau-write timestamp side-experiment, but is not the paper claim. The original IPCN architecture name is replaced by **chronometric injection (CI)** or **time-conditional LLM (TC-LLM)** — see §23.10.
 
 ---
 
