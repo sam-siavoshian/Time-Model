@@ -263,10 +263,15 @@ def main():
     p.add_argument("--device", type=str, default="cuda")
     p.add_argument("--out", type=str, default="reports/qwen_time_check.json")
     p.add_argument("--base", type=str, default="Qwen/Qwen2.5-3B-Instruct")
+    p.add_argument("--timescales", type=str, default="",
+                   help="Comma-separated chrono timescales in seconds.")
     args = p.parse_args()
 
     cfg = QwenTimeConfig()
     cfg.base_model_name = args.base
+    if args.timescales:
+        cfg.timescales = tuple(int(x) for x in args.timescales.split(","))
+        print(f"  Override timescales: {cfg.timescales}")
     print(f"Loading QwenTime ({cfg.base_model_name})...")
     model = build_qwen_time(cfg)
     model = model.to(args.device)

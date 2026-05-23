@@ -90,6 +90,8 @@ def main():
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--base", type=str, default="Qwen/Qwen2.5-3B-Instruct")
     p.add_argument("--unfreeze-base", action="store_true")
+    p.add_argument("--timescales", type=str, default="",
+                   help="Comma-separated chrono timescales in seconds. Empty = use QwenTimeConfig default.")
     args = p.parse_args()
 
     torch.manual_seed(args.seed)
@@ -100,6 +102,9 @@ def main():
     cfg.base_model_name = args.base
     cfg.chunk_length = args.chunk_length
     cfg.unfreeze_base = args.unfreeze_base
+    if args.timescales:
+        cfg.timescales = tuple(int(x) for x in args.timescales.split(","))
+        print(f"  Override timescales: {cfg.timescales}")
     print(f"Loading QwenTime ({cfg.base_model_name})...")
     t0 = time.time()
     model = build_qwen_time(cfg)
