@@ -319,6 +319,8 @@ Universal patterns only enter base weights via OFFLINE aggregated training. Sepa
 
 ## Section 13: Prior work scan (done 2026-05-12)
 
+> **Status note (2026-05-22):** This section was written for the IPCN framing. The arXiv citations and "must-cite" verdicts remain valid; the "Relation to IPCN" columns should be read as "Relation to chronometric injection (CI)" for the implemented architecture. The most direct concurrent risk is now Ma et al "Timely Machine" (2601.16486) — same wall-clock-as-first-class insight, but their scope is single-decode test-time budget while CI is persistent training-time injection through every layer. We claim novelty over Timely Machine by virtue of: (a) per-layer AdaLN-Zero FiLM injection rather than token-level scaling, (b) demonstrated OOD generalization to τ values and to behavioral axes never in training, (c) causal-intervention falsification via α-sign-flip yielding Pearson r = -0.9998.
+
 **4 Nia scans run. All findings verified, real arXiv IDs.**
 
 ### 13.1 Direct LLM time-experience work (5 must-cite)
