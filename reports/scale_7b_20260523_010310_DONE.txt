@@ -1,0 +1,1 @@
+{"status":"done","base":"Qwen/Qwen2.5-7B-Instruct","train_rc":0,"eval_rc":0,"time":"2026-05-23T01:30:53-04:00","report":"reports/scale_7b_20260523_010310_recall.json"}
