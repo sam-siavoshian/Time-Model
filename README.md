@@ -6,7 +6,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Citation](https://img.shields.io/badge/Cite-CITATION.cff-yellow.svg)](CITATION.cff)
-[![Status: empirical results](https://img.shields.io/badge/status-empirical_results-green.svg)](COMPLETION.md)
+[![Status: empirical results](https://img.shields.io/badge/status-empirical_results-green.svg)](PAPER.md)
 
 <p align="center">
   <img src="figures/fig4_alpha_flip_scatter.png" alt="alpha-flip falsification: chronometric injection acts as a single coherent scalar dial" width="640">
@@ -30,17 +30,27 @@ Large language models perceive time only as token positions in their context win
 
 ---
 
-## Headline results (pre-registered, see [PREREGISTRATION.md](PREREGISTRATION.md))
+## Headline results — v15 cross-seed (n=3), pre-registered
 
-| Test | Metric | Threshold | Result | Status |
+Mean ± std across 3 independent training seeds (0, 1, 2). Full table + per-seed values in [PAPER.md §24.7.5](PAPER.md). Thresholds locked before training (see [PREREGISTRATION.md](PREREGISTRATION.md) + [PAPER.md §23.9](PAPER.md)).
+
+| Test | Metric | Threshold | v15 cross-seed result | Status |
 |---|---|---|---|---|
-| T1 clock consistency, in-distribution | Pearson r | ≥ 0.80 | **0.94** | PASS |
-| T1b clock OOD, held-out τ | r, log-MAE | r ≥ 0.70, log-MAE < 0.5 | **r = 0.86, log-MAE = 0.20** | PASS |
-| T2 silent-gap acknowledgment | Δ ack-rate | ≥ 0.50 | **1.00** | PASS |
-| T3 weekday/weekend phase | signal | ≥ 0.30 | 0.00 | FAIL (data imbalance, see [reports/](reports/)) |
-| T4 chrono signal reaches output | KL | ≥ 0.05 | **0.087** | PASS |
+| T1 clock consistency, in-distribution | Pearson r | ≥ 0.80 | **0.961 ± 0.035** | 3/3 PASS |
+| T1b clock interpolation across 4 OOM in [1s, 7d] | r, log-MAE | r ≥ 0.70, log-MAE < 0.5 | **r = 0.993 ± 0.003, log-MAE = 0.044 ± 0.010** | 3/3 PASS |
+| T2 silent-gap acknowledgment | Δ ack-rate | ≥ 0.50 | **1.00 ± 0.00** | 3/3 PASS |
+| T3 weekday/weekend phase | weekend signal | ≥ 0.30 | **0.667 ± 0.577** | 2/3 (fragile) |
+| T4 chrono signal reaches output (first-pos KL) | KL | ≥ 0.05 | **0.178 ± 0.082** | 3/3 PASS |
+| T4 multi-position KL (NEW) | KL | ≥ 0.05 | **14.14 ± 1.15** | 3/3 PASS (~280× threshold) |
 
-Three additional falsification batteries (causal intervention, behavioral pressure OOD transfer, linear probe of internal time axis) all confirm the result. See [Reproduce the paper](#reproduce-the-paper).
+**Causal sign-flip:** flipping every per-layer α reverses every prediction (Pearson r = **−0.9998** on n=3 unique τ — half-layer-flip control pending; see [PAPER.md §24.7.5](PAPER.md)).
+
+**What does NOT survive rigor reruns** (see [PAPER.md §24.7.1, §24.7.3](PAPER.md), reported honestly):
+- Genuine OOD on τ ∈ [7d, 28d] **fails** (r = −0.20) — sinusoidal encoder architectural limit
+- Phase encoding generalizes ~1 week past training, then degrades
+- Behavioral OOD transfer to deadline-induced response length was retracted (n=5 original was a one-outlier artifact; n=30 bootstrap CI [−16, +22] crosses zero)
+- No external-benchmark validation (BombRush / Timely-Eval not yet run; future work)
+- No non-chrono baseline (LoRA-only) yet trained for direct comparison; in progress
 
 ---
 
@@ -64,14 +74,17 @@ Each headline result maps to one command. Seeds are pinned, data generation is d
 
 | Result | Command | Hardware | Wall time |
 |---|---|---|---|
-| Generate synthetic conversations | `uv run python -m model.qwen_time_data --n 6000 --seed 14 --out data/qwen_time/train.jsonl` | CPU | ~5 min |
-| Train v14 (T3 fix, latest) | `bash scripts/run_v14.sh` | 1× GB10 / A100 80 GB | ~3 GPU-hours |
-| Eval T1, T1b, T2, T3, T4 | `uv run python -m model.qwen_time_check --checkpoint checkpoints/qwen_time_v14.pt --base Qwen/Qwen2.5-3B-Instruct --out reports/qwen_time_v14_recall.json` | 1 GPU | ~20 min |
-| Disproof: causal α-flip falsification | `uv run python -m model.qwen_time_falsify --checkpoint checkpoints/qwen_time_v11.pt` | 1 GPU | ~10 min |
-| Disproof: behavioral pressure OOD | `uv run python -m model.qwen_time_pressure --checkpoint checkpoints/qwen_time_v11.pt` | 1 GPU | ~15 min |
-| Disproof: linear probe of τ axis | `uv run python -m model.qwen_time_probe --checkpoint checkpoints/qwen_time_v11.pt --n-samples 400` | 1 GPU | ~30 min |
-| Full disproof suite | `bash scripts/run_disproof.sh checkpoints/qwen_time_v11.pt` | 1 GPU | ~1 hour |
-| Generate paper figures | `uv run python scripts/make_figures.py` | CPU | < 1 min |
+| **Paper headline: v15 cross-seed (n=3)** | `bash scripts/run_v15_seeds.sh && uv run python scripts/aggregate_seeds.py` | 1× GB10 / A100 80 GB | ~2.25 GPU-hours |
+| v15 single anchor seed | `bash scripts/run_v15.sh` | 1 GPU | ~45 min |
+| Pressure v2 (n=30, max=256, bootstrap CI) | `uv run python -m model.qwen_time_pressure_v2 --checkpoint <ckpt> --base Qwen/Qwen2.5-3B-Instruct --timescales 2,4,8,16,32,64,128,256,512,1024,4096,16384,65536,86400,604800` | 1 GPU | ~15 min |
+| Genuine OOD + T3 multi-week | `uv run python -m model.qwen_time_check_genuine_ood --checkpoint <ckpt> ...` | 1 GPU | ~10 min |
+| Causal α-flip falsification (v11 anchor) | `uv run python -m model.qwen_time_falsify --checkpoint <ckpt>` | 1 GPU | ~10 min |
+| Linear probe of τ axis | `uv run python -m model.qwen_time_probe --checkpoint <ckpt> --n-samples 600` | 1 GPU | ~30 min |
+| Full disproof suite on v11 anchor | `bash scripts/run_disproof.sh checkpoints/qwen_time_v10_20260516_032348.pt` | 1 GPU | ~1 hour |
+| Rigor reruns on v14 ckpt | `bash scripts/run_rigor_v14.sh <ckpt>` | 1 GPU | ~30 min |
+| Cross-seed aggregator | `uv run python scripts/aggregate_seeds.py` | CPU | < 1 min |
+| Generate paper figures (incl. cross-version heatmap) | `uv run python scripts/make_figures.py && uv run python scripts/make_fig5.py` | CPU | < 1 min |
+| Generate training data only | `uv run python -m model.qwen_time_data --n 18000 --seed 0 --mix 0.40,0.30,0.30 --out data/qwen_time/train.jsonl` | CPU | ~5 min |
 
 Numbers in the result table will match the paper within ±0.02 on Pearson r, accounting for CUDA / driver / hardware noise.
 
@@ -83,7 +96,7 @@ If a paper result has no command above, file an issue. That is a reproducibility
 bash scripts/e2e_smoke.sh
 ```
 
-Runs Phase 0 + Phase 1 + eval on CPU at small step counts (~10 min). Sanity-checks the full pipeline without needing CUDA.
+Generates 200 conversations, trains for 20 steps on CPU, runs the full 5-test eval. Verifies the v15 pipeline works (~10 min on M-series). Numbers will be terrible — this is a pipeline smoke, not a result.
 
 ---
 
@@ -97,9 +110,9 @@ Runs Phase 0 + Phase 1 + eval on CPU at small step counts (~10 min). Sanity-chec
 | α set to 0 at every layer | 0.000 | chrono signal removed; output collapses to baseline |
 | α sign-flipped at every layer | **−0.9998** | near-perfect anti-prediction; one coherent scalar dial |
 
-**Behavioral-pressure OOD transfer.** Under a deadline-induced response-length task the model was never trained on, varying τ alone (no deadline text in prompt) shortens responses by ~9 tokens going from τ = 30 s to τ = 3 600 s. Chrono contributes **+16 tokens beyond text-only deadline cues**. See `model/qwen_time_pressure.py` + `reports/disproof_*_pressure.json`.
+**Behavioral-pressure OOD transfer (RETRACTED 2026-05-23).** An initial n=5 underpowered test reported +9 tokens chrono-alone deadline transfer. The rigor rerun (n=30 prompts, max_new=256, bootstrap 95% CI; `model/qwen_time_pressure_v2.py`) found chrono-only P2 = +3.4 tokens, 95% CI [−16, +22] crosses zero. Chrono actually attenuates text-deadline length shift by ~45 tokens (P1−P3 95% CI [−80, −9]). Claim retracted. See [PAPER.md §24.7.3](PAPER.md).
 
-**Linear probe of internal τ axis.** A held-out linear probe on per-layer last-token hidden states finds τ encoded as a linear axis at layers L1–L3 (max R² = 0.43 at L1). Deeper layers transform it nonlinearly. Silencing α collapses the probe to R² = −143 at every layer. See `model/qwen_time_probe.py` + `figures/fig1_probe_r2_by_layer.png`.
+**Linear probe of internal τ axis.** A held-out linear probe on per-layer last-token hidden states finds τ encoded as a linear axis at layers L1–L3 (max R² = 0.43 at L1). Deeper layers transform it nonlinearly (linear probe fails; MLP probe overfits). The α=0 condition collapses to R² = −143 — but this is partially a constant-prediction floor of the ridge solver on standardized features with degenerate variance, not a clean "signal destroyed" measurement (see [PAPER.md §24.3 update](PAPER.md)). The probe now clamps predictions to the train-y support to mitigate. Caveat applies to all "L0 also collapses" interpretations.
 
 Honest take. T3 (weekday vs weekend phase) is flat at 0.00 because the v11 training mix was 5:2 weekday:weekend. v14 fixes this with 50/50 within-phase balancing but is not the v11 checkpoint used for the falsification batteries. We report this openly rather than swap checkpoints mid-evaluation. Memory routing on a frozen base failed across all seven variants we tried (see [reports/EXPERIMENTS.md](reports/EXPERIMENTS.md), [PAPER.md](PAPER.md) §22); chronometric injection is the surviving load-bearing contribution.
 
@@ -172,27 +185,33 @@ The original IPCN (Involuntary Prefix Consolidation Networks) architecture name 
 
 ```
 Time-Model/
-├── model/                     # Architecture, training, eval, probes
-│   ├── qwen_time.py           #   FiLM injection on frozen Qwen + chronometric encoder
-│   ├── qwen_time_train.py     #   Training loop (12K steps, ~3 GPU-hours on GB10)
-│   ├── qwen_time_check.py     #   T1, T1b, T2, T3, T4 eval harness
-│   ├── qwen_time_falsify.py   #   alpha=0, alpha-flip causal interventions
-│   ├── qwen_time_pressure.py  #   OOD behavioral pressure test
-│   ├── qwen_time_probe.py     #   Linear probe of tau axis at each layer
-│   ├── ipcn.py, memory.py     #   IPCN scaffolding (kept for traceability, not paper claim)
-│   └── ...
-├── data_gen/                  # Synthetic data generators (deterministic)
-├── data/                      # Generated datasets (gitignored, regen from seed)
-├── scripts/                   # Train / eval / disproof / figure scripts
-├── reports/                   # JSON eval results per run + EXPERIMENTS.md log
-├── figures/                   # Paper figures (fig1–fig4 PNGs)
-├── logs/                      # Training logs (gitignored)
-├── checkpoints/               # Checkpoints (gitignored, ~6 GB each)
-├── PAPER.md                   # Full preprint, ~10.5K words
-├── PREREGISTRATION.md         # 7 hypotheses + 4 outcome narratives, locked 2026-05-12
-├── ARCHITECTURE_LOCKED.md     # Locked design decisions
-├── SPEC.tex                   # LaTeX research spec
-├── COMPLETION.md              # Spec-to-code mapping
+├── model/                                  # Architecture, training, eval, probes
+│   ├── qwen_time.py                        #   FiLM injection on frozen Qwen + chronometric encoder
+│   ├── qwen_time_data.py                   #   Synthetic clock + silent-gap + phase data generator
+│   ├── qwen_time_train.py                  #   Training loop (18K steps, ~45 min on GB10)
+│   ├── qwen_time_check.py                  #   T1, T1b, T2, T3, T4 eval harness (T4 multi-position)
+│   ├── qwen_time_check_genuine_ood.py      #   Truly held-out T1b + multi-week T3
+│   ├── qwen_time_falsify.py                #   5 causal interventions on T1 (alpha=0, alpha-flip, etc)
+│   ├── qwen_time_pressure.py               #   Legacy n=5 pressure test (kept for reproducibility)
+│   ├── qwen_time_pressure_v2.py            #   n=30 max=256 bootstrap CI -- the rigor version
+│   └── qwen_time_probe.py                  #   SVD-ridge probe with prediction clamp
+├── scripts/
+│   ├── run_v15.sh, run_v15_seeds.sh        #   v15 single-anchor and cross-seed training
+│   ├── run_v14.sh                          #   v14 (T3 first-pass) training launcher
+│   ├── run_disproof.sh, run_rigor_v14.sh   #   Disproof + rigor batteries
+│   ├── run_scale.sh                        #   Generic scale launcher (7B used; 14B OOMs on GB10)
+│   ├── make_figures.py, make_fig5.py       #   Paper figures + per-version heatmap
+│   ├── aggregate_seeds.py                  #   Cross-seed mean ± std
+│   ├── bootstrap_existing.py               #   Bootstrap CIs on existing JSON
+│   └── e2e_smoke.sh                        #   CPU pipeline smoke (~10 min on M-series)
+├── reports/                                # JSON eval results per run
+├── figures/                                # fig1-fig5 PNGs
+├── logs/                                   # Training logs (gitignored)
+├── checkpoints/                            # Checkpoints (gitignored, ~140 MB each LoRA+chrono)
+├── PAPER.md                                # Full preprint, ~22 K words
+├── PREREGISTRATION.md                      # Locked hypotheses (2026-05-12)
+├── CITATION.cff
+├── LICENSE                                 # MIT
 └── pyproject.toml
 ```
 

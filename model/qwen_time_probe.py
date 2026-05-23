@@ -131,6 +131,11 @@ def ridge_fit_predict(X_tr: torch.Tensor, y_tr: torch.Tensor,
     # Refit on full train with best lam
     w = _ridge_via_svd(Xc, yc, best_lam)
     pred = Xt @ w + y_mean
+    # Clamp predictions to the y_train support to prevent ridge
+    # underdetermined solutions from producing wild constants on
+    # OOD test (the -143 R^2 floor in probe_v4 was such a constant).
+    y_min, y_max = ytr.min(), ytr.max()
+    pred = pred.clamp(min=y_min, max=y_max)
     return pred.float()
 
 

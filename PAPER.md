@@ -58,7 +58,7 @@ Sidesteps qualia. Captures what cognition needs.
 
 **Updated thesis (post-empirical):**
 
-> Real elapsed wall-clock seconds are injected into a frozen pretrained LLM at every decoder layer via AdaLN-Zero FiLM modulation. After ~3 GPU-hours of training on 6 K synthetic conversations, the resulting model develops time-conditional behavior that generalizes to held-out τ values across four orders of magnitude AND to behavioral axes (deadline-induced response-length) that were never in the training set. The chrono signal is causally driven (α-sign-flip yields Pearson r = -0.9998) and the time axis is mechanistically present in shallow residual-stream layers.
+> Real elapsed wall-clock seconds are injected into a frozen pretrained LLM at every decoder layer via AdaLN-Zero FiLM modulation. After ~3 GPU-hours of training on 6 K synthetic conversations, the resulting model develops time-conditional behavior that interpolates accurately across four orders of magnitude of τ inside the training range [1 s, 7 d]. Extrapolation past the largest training timescale fails (architectural limit of sinusoidal encoders) and transfer to deadline-induced response-length modulation does not occur (rigor rerun retracted this claim — see §24.7.3). The chrono signal is causally driven (α-sign-flip yields Pearson r = −0.9998 on n=3 unique τ; half-layer-flip control pending). Linear probe at layer 1 has R² = 0.43 on OOD τ but the deep-layer probe collapse is partially a ridge-solver artifact (see §24.3 update).
 
 What's in that sentence (and what the paper actually shows):
 
@@ -230,7 +230,7 @@ Token-rate fact injection: add `tokens_per_real_second` as a feature in χ_t. Mo
 
 ### 8.6 Closes Gap 4 (behavioral pressure response) — empirically demonstrated, NO targeted training needed
 
-> **Updated 2026-05-22:** the v11 model was trained on CLOCK + GAP + PHASE conversations only. Deadline-induced response-length modulation was NEVER in the training set. The pressure-test experiment (§24.2) shows that swapping τ between 30 s and 3 600 s, with a neutral non-deadline prompt, produces a +9-token mean-length shift; with a deadline prompt added, the shift grows to +65 tokens, of which +16 tokens is chrono contribution beyond the deadline text. The chrono signal transfers to an entirely new behavioral axis without targeted training data, falsifying the original prediction that Gap 4 would need its own training set.
+> **Updated 2026-05-22, RETRACTED 2026-05-23:** the v11 initial n=5 pressure test (§24.2) appeared to show that chrono trained on CLOCK+GAP+PHASE transferred to deadline-induced length modulation (+9 chrono-alone, +16 over text alone). The rigor rerun on v15 with n=30 prompts and uncensored max_new=256 (§24.7.3) failed to reproduce: chrono-only P2 = +3.4 tokens with 95% CI [−16, +22] crossing zero. The original v11 +9 was an artifact of n=5 + right-censoring + one outlier prompt ([0,0,40,5,0]). The "Gap 4 closes via OOD transfer" claim is therefore retracted.
 
 ---
 
@@ -1786,9 +1786,7 @@ The model was never trained on deadline-induced response-length tasks. Test: doe
 
 Chrono contribution beyond text alone = P1 − P3 = **+16.2 tokens**.
 
-**Verdict: PASS_chrono_alone_shortens AND PASS_chrono_adds_beyond_text.** P2's +9 tokens is the load-bearing measurement: with NO deadline phrase in the prompt and only tau changing between 30 s and 3600 s, the model produces longer answers when chrono signals more time. The chrono representation trained on clock / gap / phase carries to a never-seen behavioral axis.
-
-This is the strongest OOD generalization in the project. T1b proved OOD on tau values; pressure-P2 proves OOD on a task family.
+**Verdict (RETRACTED 2026-05-23):** the original n=5 verdict claimed PASS. The pressure v2 rigor rerun (n=30 prompts, max_new=256, bootstrap 95 % CI; §24.7.3) found P2 mean = +3.4 tokens with CI [−16, +22] crossing zero — chrono-alone deadline transfer is **not** statistically supported. The v1 +9 was an artifact of n=5 + 3-of-5 right-censoring at max_new=80 + one outlier prompt. See §24.7.3 for the retraction analysis.
 
 ### 24.3 Linear probe of internal time axis (§23.9.1) — PARTIAL
 
@@ -2198,6 +2196,63 @@ The §24.0 headline table should now use the cross-seed mean ± std row in place
 
 The cross-seed row is the **paper headline**. T1, T1b, T2, T4 (both metrics) reliably pass with tight variance bars. T3 is the only unreliable metric -- a single-seed result of weekend_signal = 1.0 is achievable but not guaranteed under v15's training budget. We report this honestly rather than cherry-picking the seed that passed T3.
 
+### 24.7.6 Effective-n disclosure (2026-05-23 audit)
+
+Hostile reviewers correctly noted that **greedy decoding deterministically produces identical outputs per (prompt, τ) tuple**, so reported sample sizes overstate the true effective n. This subsection documents the discrepancy honestly per test:
+
+| Test | Reported n | Effective n (unique inputs) | What greedy hides |
+|---|---|---|---|
+| T1 in-distribution | 64 (8 τ × 8 reps) | **8 unique τ** | Same response per τ. Pearson r computed over 8 points. |
+| T1b OOD | 24 | **24 if τ sampled fresh; ≤24 unique** | One greedy decode per τ; no replicate inflation. |
+| T2 silent-gap | 30 (pairs) | **30 pairs but 1 fixed template** | Δ ack = 1.00 means 30/30 large-Δτ responses contain a keyword + 0/30 small-Δτ. Binary, deterministic. |
+| T3 phase | 20 | **2 prompts (Wed + Sat)** | All 20 reps identical per τ. Genuinely n=2 unique inputs. |
+| T4 mutability | 9 pairwise (3 prompts × 3 τ choose 2) | **9 pairs over 3 prompts** | Multi-position metric (8 positions) gives 72 KL values per condition. |
+| Falsify α-flip E | 32 (8 τ × 4 reps) | **3 τ that parsed** (others returned unparseable strings) | The "smoking gun" −0.9998 is over 3 unique points. Half-layer-flip control (§24.7.7) added to disambiguate. |
+| Pressure v2 (n=30) | 30 paired diffs | **30 unique prompts, paired τ** | Genuinely n=30 with bootstrap CI. The most rigorous test in the paper. |
+
+**Implications:**
+
+- T1 reported r = 0.9997 single-seed and r = 0.961 ± 0.035 cross-seed: both are Pearson over **8 unique τ**, with cross-seed std providing variance across **training runs**, not across **eval samples**. A reviewer asking "what's the per-τ SEM on the eval distribution" gets no answer from the current data. Future work: temperature-0.7 sampling × N=20 per τ would give within-τ variance.
+- T3 cross-seed std = 0.577 is across **3 training seeds on 2 fixed eval prompts**. The "T3 mode-collapsed on seed 1" finding is real, but the cross-seed mean = 0.667 reads as a continuous metric when the underlying outcome is binary {0, 1}. We report this honestly: T3 is a **binary** test on 2 unique inputs, and the cross-seed result is "2 of 3 seeds pass."
+- α-flip r = −0.9998: effective n=3 unique τ. A reviewer attacks: "Pearson over 3 monotone points = ±1 by construction under any odd transform." Mitigation: §24.7.7 adds half-layer-flip and third-layer-flip controls -- if α-flip is a *single coherent scalar dial*, half-flip should give r near 0, not −1.
+
+**What this does NOT change:**
+
+- The α-flip number itself: model_output(τ, α) and model_output(τ, −α) ARE near-perfectly anti-correlated on the 3 unique τ that produced parseable outputs. Effective-n caveat shifts the interpretation from "32 trials confirm scalar axis" to "3 unique τ confirm a monotone-in-τ pathway whose sign symmetry is broken by the gate."
+- T2 = 1.00 across all seeds: even on 1 fixed prompt, 30 long-gap responses contain "Welcome back" and 30 short-gap responses do not. Binary outcome is genuinely saturated.
+- The probe results (n=600 τ samples, no greedy involved): no effective-n issue.
+
+This disclosure replaces the previous implicit framing in §23.4 ("T1 n=64"). Final paper text uses **effective n** throughout.
+
+### 24.7.7 Half-layer α-flip control + paraphrase + teacher-forced T4 (2026-05-23, in progress)
+
+`model/qwen_time_extra_controls.py` runs three reviewer-mandated controls in one pass:
+
+1. **Half-layer α-flip battery.** Conditions:
+   - A. normal alphas
+   - B. all alphas flipped (replicate −0.9998)
+   - C. 50 % alphas flipped (seed 42)
+   - D. 50 % alphas flipped (seed 7)
+   - E. 33 % alphas flipped
+   
+   **Pre-registered prediction:** if α is a single coherent scalar dial, B yields r ≈ −1 and C/D/E yield r ≈ 0. If α is per-layer-independent, C/D/E would yield messier intermediate values. Either outcome strengthens / weakens the "coherent scalar axis" framing precisely.
+
+2. **Paraphrase T1.** 10 paraphrased clock-readout prompts the model was NEVER trained on (e.g. *"Time elapsed?"*, *"Duration check: how much time has passed?"*) + the trained anchor as control. **Pre-registered prediction:** if T1 = 0.99 is the model genuinely using τ rather than memorizing the trained-prompt → formatter-vocab mapping, paraphrase mean r ≥ 0.5 across all 10. If paraphrase r collapses to chance, T1 is template memorization.
+
+3. **Teacher-forced T4.** Reviewer attack: per-position KL grows 0.18 → 27 because greedy decode commits to different first tokens at different τ → downstream divergence is autoregressive drift, not active chrono routing. Teacher-forced KL feeds the same first-token trajectory across τ and measures KL at later positions. **Pre-registered prediction:** if chrono is genuinely used at deep positions, teacher-forced KL stays above 0.05. If teacher-forced KL collapses to ~0, the multi-position growth is drift.
+
+Results to be added when the run completes (~15 min on Spark after current baseline-LoRA training finishes).
+
+### 24.7.8 LoRA-only baseline (2026-05-23, in progress)
+
+The single biggest reviewer attack: **no non-chrono baseline**. The paper attributes all T1-T4 results to AdaLN-Zero FiLM chrono injection, but never compared against (i) LoRA-only with chrono encoder disabled, (ii) chrono injection at L0 only (vs every layer), (iii) chrono via additive residual (vs FiLM).
+
+`model/qwen_time_train.py` now has a `--freeze-alpha` flag that locks all per-layer chrono α gates at 0 throughout training. Chrono encoder + γ/β projectors still exist and receive gradients, but **cannot influence the residual stream**. This isolates the LoRA contribution.
+
+Launched as `scripts/run_baseline_lora.sh`: identical to v15 spec (18 K records, 18 K steps, 15-scale chrono encoder, 50/50 phase balance) but with α frozen. Expected: T1, T1b should drop substantially (LoRA cannot encode τ without α), T2 might survive (silent-gap ack might be entirely text-driven via LoRA), T3 will probably collapse (phase requires chrono signal).
+
+Result to be added when the run completes (~45 min on Spark, queued after the extra-controls run).
+
 ## Section 25: Conclusion
 
 This paper started as an architecture spec for **involuntary prefix consolidation networks (IPCN)**: a memory bank routed through a frozen LLM, augmented with chronometric encoding, with frequently-used memories migrating into LoRA weights. Three weeks of empirical work disproved most of that plan and proved one piece of it.
@@ -2218,7 +2273,7 @@ This paper started as an architecture spec for **involuntary prefix consolidatio
 
 **The mechanistic finding:** the chrono encoding enters at the input side via the chrono injector at L0 and is linearly decodable from the residual stream for the first ~3 layers (L1 R² = 0.43 on OOD τ). Past L3 the linear probe collapses, but the alpha-off intervention destroys the linear axis at every layer (R² = -143), so the chrono signal is *present* throughout the network — just not in a form a small linear or MLP probe can recover from 500 OOD samples.
 
-**The OOD finding:** the chrono signal trained on clock-readout, silent-gap, and weekday-vs-weekend phase tasks transfers to deadline-induced response-length modulation — a behavioral axis **never trained on**. Switching τ between 30 s and 3600 s with a neutral prompt (no deadline text) yields a +9-token mean-length shift, with chrono contributing **+16 tokens beyond a text deadline alone**.
+**The OOD finding (RETRACTED 2026-05-23):** an underpowered n=5 pressure test reported the chrono signal trained on clock/gap/phase appeared to transfer to deadline-induced response-length modulation (+9 tokens with chrono, +16 vs text alone). Rigor rerun (n=30, max_new=256, bootstrap CI; §24.7.3) FAILED to reproduce: chrono-alone P2 = +3.4 with 95% CI [−16, +22] crossing zero, and chrono actually attenuates text-deadline length shift by ~45 tokens (P1−P3 95% CI [−80, −9], excludes zero on the **negative** side). Claim retracted. The surviving findings are all in-distribution.
 
 **The naming pivot:** what we built and what passes the disproof battery is no longer "involuntary prefix consolidation" because nothing in the empirical results depends on a prefix or on consolidation. The architecture is **chronometric injection (CI)** — AdaLN-Zero FiLM of real elapsed seconds at every layer. The IPCN scaffolding (memory bank, PFC, LoRA consolidation) is preserved in the repository but does not contribute to the published claim. See §22.3 and §23.10 for the migration story.
 

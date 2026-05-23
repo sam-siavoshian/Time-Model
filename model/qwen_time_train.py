@@ -92,6 +92,12 @@ def main():
     p.add_argument("--unfreeze-base", action="store_true")
     p.add_argument("--timescales", type=str, default="",
                    help="Comma-separated chrono timescales in seconds. Empty = use QwenTimeConfig default.")
+    p.add_argument("--freeze-alpha", action="store_true",
+                   help="Lock per-layer chrono alpha gates at 0 throughout training. "
+                        "This is the LoRA-only ablation: chrono encoder + projectors "
+                        "still exist and receive gradients but cannot influence the "
+                        "residual stream. Used to falsify the architectural claim by "
+                        "comparing v15 (alpha learns) vs alpha=0-frozen.")
     args = p.parse_args()
 
     torch.manual_seed(args.seed)
@@ -115,6 +121,16 @@ def main():
     print(f"  trainable: {n_train:,} / {n_total:,} ({100*n_train/n_total:.3f}%)")
     print(f"  chrono injectors: {len(model.chrono_injectors)}")
     print(f"  LoRA modules: {model._n_lora_modules}")
+
+    if args.freeze_alpha:
+        # LoRA-only ablation: lock all per-layer alpha gates at 0 and
+        # remove them from the optimizer. Chrono encoder + projectors
+        # still exist but cannot affect the residual stream.
+        for inj in model.chrono_injectors.values():
+            with torch.no_grad():
+                inj.alpha.zero_()
+            inj.alpha.requires_grad_(False)
+        print(f"  FROZE all {len(model.chrono_injectors)} chrono alpha gates at 0 (LoRA-only ablation)")
 
     if args.unfreeze_base:
         # Split LR: LoRA + injectors at args.lr, base params at 1/100th
