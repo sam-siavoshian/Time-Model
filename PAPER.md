@@ -493,7 +493,9 @@ All from concurrent test-time-scaling literature. IPCN's substrate-vs-budget axi
 
 ---
 
-## Section 14: Novelty bets (what survives)
+> **Status note (2026-05-22):** Sections 14-20 below contain the pre-empirical IPCN plan (novelty bets, defenses, the seven falsifiable predictions, the build plan, failure modes, the chronological next-steps list, the risk map). They are preserved as a paper trail showing what we predicted vs. what we found. The actual empirical results, including which §16 predictions held up, are in §21 (Track A), §22 (Track B null), §23 (Track C v11 positive), §24 (disproof battery), and §25 (conclusion). When citing the paper outside this repository, cite §23-25 for the architecture and results; cite §13-13.5 for prior-work positioning; cite §14-20 only as historical record of pre-registration discipline.
+
+## Section 14: Novelty bets (what survives) [PRE-EMPIRICAL — see §23-25 for what actually survives]
 
 After 4 scans, 5 distinct claims survive:
 
