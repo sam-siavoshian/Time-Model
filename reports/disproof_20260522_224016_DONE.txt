@@ -1,0 +1,1 @@
+{"status":"done","tag":"disproof_20260522_224016","probe_rc":0,"falsify_rc":0,"pressure_rc":0,"time":"2026-05-22T22:45:41-04:00"}

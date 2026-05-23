@@ -69,17 +69,58 @@ def hidden_states_for_tau(model: QwenTime, prompt: str, tau_t: float,
 
 
 def ridge_fit_predict(X_tr: torch.Tensor, y_tr: torch.Tensor,
-                      X_te: torch.Tensor, lam: float = 1e-2) -> torch.Tensor:
-    """Closed-form ridge. X: (N, d), y: (N,). Returns y_pred on X_te."""
+                      X_te: torch.Tensor,
+                      lams=(1e-1, 1.0, 1e1, 1e2, 1e3, 1e4)) -> torch.Tensor:
+    """Closed-form ridge with feature standardization and CV-picked lambda.
+
+    Critical: d_model=2048 features and ~few-hundred train samples is
+    severely underdetermined. Without proper scaling + regularization,
+    ridge degenerates to OLS and test R^2 explodes to large negatives.
+    Fix: standardize each feature to unit variance, then sweep lam on a
+    held-out 20% sub-validation split, refit on full train with winner.
+    """
     d = X_tr.shape[1]
-    # Center
     x_mean = X_tr.mean(dim=0, keepdim=True)
+    x_std = X_tr.std(dim=0, keepdim=True).clamp(min=1e-6)
+    Xc = (X_tr - x_mean) / x_std
+    Xt = (X_te - x_mean) / x_std
     y_mean = y_tr.mean()
-    Xc = X_tr - x_mean
     yc = y_tr - y_mean
-    A = Xc.T @ Xc + lam * torch.eye(d, dtype=Xc.dtype)
+
+    n = Xc.shape[0]
+    if n < 8:
+        # Too few samples for CV; use the largest lam
+        best_lam = lams[-1]
+    else:
+        g = torch.Generator(); g.manual_seed(0)
+        perm = torch.randperm(n, generator=g)
+        n_val = max(2, n // 5)
+        val_idx = perm[:n_val]
+        tr_idx = perm[n_val:]
+        Xv_tr, Xv_va = Xc[tr_idx], Xc[val_idx]
+        yv_tr, yv_va = yc[tr_idx], yc[val_idx]
+        I = torch.eye(d, dtype=Xc.dtype)
+        best_r2 = -1e18
+        best_lam = lams[-1]
+        for lam in lams:
+            try:
+                A = Xv_tr.T @ Xv_tr + lam * I
+                w = torch.linalg.solve(A, Xv_tr.T @ yv_tr)
+                pred = Xv_va @ w
+                ss_res = ((yv_va - pred) ** 2).sum().item()
+                ss_tot = ((yv_va - yv_va.mean()) ** 2).sum().item() + 1e-12
+                r2 = 1.0 - ss_res / ss_tot
+                if r2 > best_r2:
+                    best_r2 = r2
+                    best_lam = lam
+            except Exception:
+                continue
+
+    # Refit on full standardized train with best lambda
+    I = torch.eye(d, dtype=Xc.dtype)
+    A = Xc.T @ Xc + best_lam * I
     w = torch.linalg.solve(A, Xc.T @ yc)
-    return (X_te - x_mean) @ w + y_mean
+    return Xt @ w + y_mean
 
 
 def r2_score(y_true: torch.Tensor, y_pred: torch.Tensor) -> float:

@@ -1,0 +1,81 @@
+{
+  "verdict": {
+    "P1_delta_text_plus_chrono": 65,
+    "P2_delta_chrono_only": 9,
+    "P3_delta_text_only_chrono_off": 48.800000000000004,
+    "chrono_contribution": 16.199999999999996,
+    "PASS_P1_text_plus_chrono": true,
+    "PASS_P2_chrono_alone_shortens": true,
+    "PASS_chrono_adds_beyond_text": true
+  },
+  "P1": {
+    "mean_short": 13,
+    "mean_long": 78,
+    "delta": 65,
+    "pct_short_of_long": 0.16666666666666666,
+    "examples": [
+      {
+        "q": "Explain how photosynthesis works.",
+        "short_tokens": 12,
+        "long_tokens": 80
+      },
+      {
+        "q": "What is the difference between RAM and disk?",
+        "short_tokens": 12,
+        "long_tokens": 80
+      },
+      {
+        "q": "How does a transformer language model attend to tokens?",
+        "short_tokens": 12,
+        "long_tokens": 70
+      },
+      {
+        "q": "What causes thunderstorms?",
+        "short_tokens": 17,
+        "long_tokens": 80
+      },
+      {
+        "q": "Describe how a bicycle stays upright.",
+        "short_tokens": 12,
+        "long_tokens": 80
+      }
+    ]
+  },
+  "P2": {
+    "mean_short": 69,
+    "mean_long": 78,
+    "delta": 9,
+    "examples": [
+      {
+        "q": "Explain how photosynthesis works.",
+        "short_tokens": 80,
+        "long_tokens": 80
+      },
+      {
+        "q": "What is the difference between RAM and disk?",
+        "short_tokens": 80,
+        "long_tokens": 80
+      },
+      {
+        "q": "How does a transformer language model attend to tokens?",
+        "short_tokens": 30,
+        "long_tokens": 70
+      },
+      {
+        "q": "What causes thunderstorms?",
+        "short_tokens": 75,
+        "long_tokens": 80
+      },
+      {
+        "q": "Describe how a bicycle stays upright.",
+        "short_tokens": 80,
+        "long_tokens": 80
+      }
+    ]
+  },
+  "P3": {
+    "mean_short": 19.6,
+    "mean_long": 68.4,
+    "delta": 48.800000000000004
+  }
+}

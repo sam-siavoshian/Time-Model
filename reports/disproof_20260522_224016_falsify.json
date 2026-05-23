@@ -1,0 +1,237 @@
+{
+  "verdict": {
+    "A_normal_r": 0.9969588858036568,
+    "B_alpha_off_r": 0.0,
+    "C_random_tau_r": -0.16945207358301,
+    "D_tau_zero_r": 0.0,
+    "E_alpha_flipped_r": -0.9997951941423971,
+    "A_normal_log_mae": 0.22565944457047038,
+    "B_alpha_off_log_mae": 0.9776500565143968,
+    "PASS_chrono_causal": true
+  },
+  "A_normal": {
+    "n": 32,
+    "pearson_r": 0.9969588858036568,
+    "log_mae": 0.22565944457047038,
+    "examples": [
+      {
+        "true_tau": 433.1859813195701,
+        "eval_tau": 433.1859813195701,
+        "resp": "It has been 8 minutes.",
+        "parsed": 480.0
+      },
+      {
+        "true_tau": 433.1859813195701,
+        "eval_tau": 433.1859813195701,
+        "resp": "It has been 8 minutes.",
+        "parsed": 480.0
+      },
+      {
+        "true_tau": 433.1859813195701,
+        "eval_tau": 433.1859813195701,
+        "resp": "It has been 8 minutes.",
+        "parsed": 480.0
+      },
+      {
+        "true_tau": 433.1859813195701,
+        "eval_tau": 433.1859813195701,
+        "resp": "It has been 8 minutes.",
+        "parsed": 480.0
+      },
+      {
+        "true_tau": 28.693831483733362,
+        "eval_tau": 28.693831483733362,
+        "resp": "It has been 11 seconds.",
+        "parsed": 11.0
+      },
+      {
+        "true_tau": 28.693831483733362,
+        "eval_tau": 28.693831483733362,
+        "resp": "It has been 11 seconds.",
+        "parsed": 11.0
+      }
+    ]
+  },
+  "B_alpha_off": {
+    "n": 32,
+    "pearson_r": 0.0,
+    "log_mae": 0.9776500565143968,
+    "examples": [
+      {
+        "true_tau": 433.1859813195701,
+        "eval_tau": 433.1859813195701,
+        "resp": "It has been 1 minute.",
+        "parsed": 60.0
+      },
+      {
+        "true_tau": 433.1859813195701,
+        "eval_tau": 433.1859813195701,
+        "resp": "It has been 1 minute.",
+        "parsed": 60.0
+      },
+      {
+        "true_tau": 433.1859813195701,
+        "eval_tau": 433.1859813195701,
+        "resp": "It has been 1 minute.",
+        "parsed": 60.0
+      },
+      {
+        "true_tau": 433.1859813195701,
+        "eval_tau": 433.1859813195701,
+        "resp": "It has been 1 minute.",
+        "parsed": 60.0
+      },
+      {
+        "true_tau": 28.693831483733362,
+        "eval_tau": 28.693831483733362,
+        "resp": "It has been 1 minute.",
+        "parsed": 60.0
+      },
+      {
+        "true_tau": 28.693831483733362,
+        "eval_tau": 28.693831483733362,
+        "resp": "It has been 1 minute.",
+        "parsed": 60.0
+      }
+    ]
+  },
+  "C_random_tau": {
+    "n": 32,
+    "pearson_r": -0.16945207358301,
+    "log_mae": 1.7558867344649265,
+    "examples": [
+      {
+        "true_tau": 433.1859813195701,
+        "eval_tau": 1300.6023235531459,
+        "resp": "It has been 18 minutes.",
+        "parsed": 1080.0
+      },
+      {
+        "true_tau": 433.1859813195701,
+        "eval_tau": 266275.1801814836,
+        "resp": "It has been about 2 days.",
+        "parsed": 172800.0
+      },
+      {
+        "true_tau": 433.1859813195701,
+        "eval_tau": 674.2141464957832,
+        "resp": "It has been 12 minutes.",
+        "parsed": 720.0
+      },
+      {
+        "true_tau": 433.1859813195701,
+        "eval_tau": 274.00260697855884,
+        "resp": "It has been 5 minutes.",
+        "parsed": 300.0
+      },
+      {
+        "true_tau": 28.693831483733362,
+        "eval_tau": 3510.5665317792655,
+        "resp": "It has been about 1 hour.",
+        "parsed": 3600.0
+      },
+      {
+        "true_tau": 28.693831483733362,
+        "eval_tau": 17.89908474574157,
+        "resp": "It has been 11 seconds.",
+        "parsed": 11.0
+      }
+    ]
+  },
+  "D_tau_zero": {
+    "n": 32,
+    "pearson_r": 0.0,
+    "log_mae": 1.9463488654942789,
+    "examples": [
+      {
+        "true_tau": 433.1859813195701,
+        "eval_tau": 0.0,
+        "resp": "It has been 4 seconds.",
+        "parsed": 4.0
+      },
+      {
+        "true_tau": 433.1859813195701,
+        "eval_tau": 0.0,
+        "resp": "It has been 4 seconds.",
+        "parsed": 4.0
+      },
+      {
+        "true_tau": 433.1859813195701,
+        "eval_tau": 0.0,
+        "resp": "It has been 4 seconds.",
+        "parsed": 4.0
+      },
+      {
+        "true_tau": 433.1859813195701,
+        "eval_tau": 0.0,
+        "resp": "It has been 4 seconds.",
+        "parsed": 4.0
+      },
+      {
+        "true_tau": 28.693831483733362,
+        "eval_tau": 0.0,
+        "resp": "It has been 4 seconds.",
+        "parsed": 4.0
+      },
+      {
+        "true_tau": 28.693831483733362,
+        "eval_tau": 0.0,
+        "resp": "It has been 4 seconds.",
+        "parsed": 4.0
+      }
+    ]
+  },
+  "E_alpha_flipped": {
+    "n": 12,
+    "pearson_r": -0.9997951941423971,
+    "log_mae": 1.6119329668187539,
+    "examples": [
+      {
+        "true_tau": 433.1859813195701,
+        "eval_tau": 433.1859813195701,
+        "resp": "It seems like you've been silent for a moment. What would you like to know?",
+        "parsed": NaN
+      },
+      {
+        "true_tau": 433.1859813195701,
+        "eval_tau": 433.1859813195701,
+        "resp": "It seems like you've been silent for a moment. What would you like to know?",
+        "parsed": NaN
+      },
+      {
+        "true_tau": 433.1859813195701,
+        "eval_tau": 433.1859813195701,
+        "resp": "It seems like you've been silent for a moment. What would you like to know?",
+        "parsed": NaN
+      },
+      {
+        "true_tau": 433.1859813195701,
+        "eval_tau": 433.1859813195701,
+        "resp": "It seems like you've been silent for a moment. What would you like to know?",
+        "parsed": NaN
+      },
+      {
+        "true_tau": 28.693831483733362,
+        "eval_tau": 28.693831483733362,
+        "resp": "It has been about 1 hour since we last communicated.",
+        "parsed": 3600.0
+      },
+      {
+        "true_tau": 28.693831483733362,
+        "eval_tau": 28.693831483733362,
+        "resp": "It has been about 1 hour since we last communicated.",
+        "parsed": 3600.0
+      }
+    ]
+  },
+  "taus": [
+    433.1859813195701,
+    28.693831483733362,
+    21.617008787669445,
+    54.62147628107495,
+    49470.504102417755,
+    56.635354711103155,
+    327.9276535085959,
+    18089.929838427022
+  ]
+}
