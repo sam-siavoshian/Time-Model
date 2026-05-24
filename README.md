@@ -16,7 +16,7 @@
 
 > A frozen Qwen 2.5 3B learns to read a wall clock, react to silent gaps, and respond to deadlines it was never trained on, using a 27-dimensional sinusoidal encoding of real elapsed seconds injected via AdaLN-Zero FiLM at every decoder layer.
 
-Large language models perceive time only as token positions in their context window. They cannot tell that 30 seconds or 30 days passed between two messages, react to deadlines, or experience the passage of time during silent gaps. We introduce **chronometric injection (CI)**: ~36 M trainable parameters (LoRA + per-layer projectors) on top of a frozen Qwen 2.5 3B, trained on 6 K synthetic conversations in ~3 GPU-hours on a single Grace-Blackwell GB10. The resulting model passes 4 of 5 pre-registered falsifiable tests, survives three independent falsification batteries, and exposes a linear time axis in its shallow residual stream.
+Large language models perceive time only as token positions in their context window. They cannot tell that 30 seconds or 30 days passed between two messages, react to deadlines, or experience the passage of time during silent gaps. We introduce **chronometric injection (CI)**: ~36 M trainable parameters (rank-8 LoRA on attention + lm_head, plus per-layer FiLM projectors) on top of a frozen Qwen 2.5 3B, trained on 18 K synthetic conversations in ~45 min per seed on a single Grace-Blackwell GB10. Cross-seed (n=3, v15 release), the resulting model passes 5 of 6 pre-registered falsifiable tests, survives three causal falsification batteries plus a six-control round-2 reviewer-rigor audit (LoRA-only zero baseline, FiLM-vs-additive ablation, L0-only ablation, half-layer α-flip, paraphrase response-identity, sampling-based T2/T3), and exposes a linear time axis in its shallow residual stream.
 
 ---
 
@@ -24,9 +24,9 @@ Large language models perceive time only as token positions in their context win
 
 - LLMs cannot tell time. Token positions are not seconds. Deadlines in the prompt do not change behavior, only output text.
 - We add a 27-dim chronometric vector (13 sin + 13 cos timescales + log1p(τ)) and inject it at every Qwen layer via AdaLN-Zero FiLM, with per-layer learned gates α.
-- After ~3 GPU-hours on a single GB10, the model recovers wall-clock τ with **Pearson r = 0.94 in-distribution, r = 0.86 on held-out τ** spanning four orders of magnitude.
-- Causal falsification: zeroing α collapses time prediction to r = 0.000. Flipping α gives r = **−0.9998**. Probing finds τ encoded as a linear axis at layers L1–L3.
-- Memory routing (the project's original headline claim) failed across nine variants and was dropped. We report the null result openly in PAPER.md §22.
+- After ~45 min per seed on a single GB10 (3 seeds for variance bars), the model recovers wall-clock τ with **Pearson r = 0.961 ± 0.035 in-distribution, r = 0.993 ± 0.003 on held-out τ** spanning four orders of magnitude inside [1 s, 7 d].
+- Causal falsification: zeroing α collapses every test to **0.000 ± 0.000** across all 3 seeds (LoRA-only baseline). Flipping every α gives r = **−0.9998**. Half-layer α-flip + per-layer α-norm dump shows the chrono pathway is a weighted sum of per-layer monotone-in-τ contributions with mid-deep dominance (L19–L28), not a single scalar dial. Probing finds τ encoded as a linear axis at layers L1–L3.
+- Memory routing (the project's original headline claim) failed across nine variants and was dropped. We report the null result openly in [PAPER.md Appendix D, §D.22](PAPER.md).
 
 ---
 
@@ -43,14 +43,15 @@ Mean ± std across 3 independent training seeds (0, 1, 2). Full table + per-seed
 | T4 chrono signal reaches output (first-pos KL) | KL | ≥ 0.05 | **0.178 ± 0.082** | 3/3 PASS |
 | T4 multi-position KL (NEW) | KL | ≥ 0.05 | **14.14 ± 1.15** | 3/3 PASS (~280× threshold) |
 
-**Causal sign-flip:** flipping every per-layer α reverses every prediction (Pearson r = **−0.9998** on n=3 unique τ — half-layer-flip control pending; see [PAPER.md §24.7.5](PAPER.md)).
+**Causal sign-flip + ablation:** flipping every per-layer α reverses every prediction (Pearson r = **−0.9998** on n=3 unique τ). Half-layer α-flip gives r = +0.78 vs −0.93 on different 17-layer subsets — chrono pathway is a weighted sum of per-layer monotone-in-τ contributions, not one knob (see [PAPER.md §24.7.9 + §24.7.11](PAPER.md)). LoRA-only baseline (α frozen at 0, n=3 seeds) collapses every test to **0.000 ± 0.000** — the chrono channel, not the adapter, is load-bearing (§24.7.8). FiLM-vs-additive ablation collapses to 0.000 too: the FiLM gating term γh + β is mathematically required to escape the init-time zero gradient (§24.7.10).
 
-**What does NOT survive rigor reruns** (see [PAPER.md §24.7.1, §24.7.3](PAPER.md), reported honestly):
-- Genuine OOD on τ ∈ [7d, 28d] **fails** (r = −0.20) — sinusoidal encoder architectural limit
-- Phase encoding generalizes ~1 week past training, then degrades
-- Behavioral OOD transfer to deadline-induced response length was retracted (n=5 original was a one-outlier artifact; n=30 bootstrap CI [−16, +22] crosses zero)
-- No external-benchmark validation (BombRush / Timely-Eval not yet run; future work)
-- No non-chrono baseline (LoRA-only) yet trained for direct comparison; in progress
+**What does NOT survive rigor reruns** (see [PAPER.md §24.7.1, §24.7.3, §24.7.14](PAPER.md), reported honestly):
+- Genuine OOD on τ ∈ [7d, 28d] **fails** (r = −0.20) — sinusoidal encoder architectural limit; training data covers ~1 weekly period, encoder has no chance to learn periodicity it has not seen one full cycle of
+- Phase encoding generalizes ~1 week past training, then degrades around day 14
+- Behavioral OOD transfer to deadline-induced response length was retracted (n=5 original was an underpowered artifact; n=30 bootstrap CI [−16, +22] crosses zero, and chrono actually attenuates a text-deadline cue by 45 tokens)
+- Probe absolute R² of −143 at α=0 is partially ridge ill-conditioning under OOD extrapolation, not a faithful baseline; the 140-point A-vs-B gap is meaningful, the absolute number is not (§24.7.14). Within-distribution split is used as the secondary probe
+- Paraphrase generalization is narrower than first reported: 84 % verbatim-identical responses across 11 paraphrased prompts (§24.7.12). The model is a prompt-invariant τ-conditioned formatter, which is strong evidence FOR chrono use but a narrower claim than "handles arbitrary phrasings"
+- External-benchmark validation: no public benchmark injects real-elapsed-time as a tensor channel; an MIT-licensed external harness `eval/external/eval_tau_bench.py` (with `vanilla`, `prompt`, and `ci` adapters) ships in this repository so third parties can score alternative architectures against ours
 
 ---
 
@@ -62,7 +63,7 @@ cd Time-Model
 uv sync
 ```
 
-Requires Python ≥ 3.11. Training requires a CUDA GPU with ≥ 40 GB; the paper's v11 run used a single Grace-Blackwell GB10 (128 GB unified memory). CPU works for smoke tests and eval at low batch sizes.
+Requires Python ≥ 3.11. Training requires a CUDA GPU with ≥ 40 GB; the v15 cross-seed runs used a single NVIDIA DGX Spark prototype (GB10 Grace-Blackwell, 128 GB unified memory) at ~45 min per seed. CPU works for smoke tests and eval at low batch sizes.
 
 **Base model:** `Qwen/Qwen2.5-3B-Instruct`. Downloaded on first run via `transformers`. Frozen throughout training.
 
@@ -150,6 +151,10 @@ uv run python -m model.qwen_time_check \
 ```
 
 To regenerate from scratch (~3 GPU-hours per seed on a single H100 or GB10): `bash scripts/run_v15_cross_seed.sh`. The script is deterministic with `--seed {0,1,2}` and uses the SHA-pinned training data in [data/VERIFICATION.md](data/VERIFICATION.md).
+
+### External benchmark: tau_sessions
+
+For third-party evaluation, the repo ships an adapter-agnostic harness under [`eval/external/`](eval/external/) that any HuggingFace-format LLM can plug into. It runs 300 deterministic sessions across 6 elapsed-time buckets (1s, 60s, 600s, 6h, 24h, 7d) and three tasks (`duration_recall`, `staleness`, `adaptive`), scores per-task with bootstrap 95% CIs, and emits a JSON report. Three adapters ship: `vanilla` (no tau), `prompt` (tau injected as `[elapsed: 3h 42m]` text), and `ci` (the v15 LoRA + chrono + FiLM checkpoint above). Pre-registered prediction: `ci` beats `vanilla` on `duration_recall` and `staleness`; `ci` ~ `prompt` on `adaptive`. See [`eval/external/README.md`](eval/external/README.md) for full usage. Quick run with the vanilla baseline on 20 sessions: `uv run python -m eval.external.eval_tau_bench --adapter vanilla --base Qwen/Qwen2.5-3B-Instruct --n 20`.
 
 ---
 

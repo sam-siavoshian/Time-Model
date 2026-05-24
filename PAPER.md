@@ -1076,7 +1076,9 @@ The minimum-injection architecture is "1 layer × FiLM × γ-init=1 × continuou
 
 **Interpretation:** flipping just 8 dominant mid-deep layers (out of 35 total) drops T1 r from +1.0 to ~0 — the chrono signal collapses. Flipping the 8 shallowest layers leaves r=+0.9998 untouched. Random-8 control falls in between (+0.95). **The dominant subset is necessary for the chrono pathway, but flipping it ZEROS the signal rather than INVERTING it (which only all-layer flip achieves).** Honest mech-interp: the chrono pathway is a weighted layer vote where mid-deep layers carry most of the weight; total inversion requires all layers to flip together.
 
-`reports/alpha_norms_v15s_seed0.json` saved.
+`reports/alpha_norms_v15s_seed0.json` saved. Visualized in **Figure 6** (`figures/fig6_alpha_norm_per_layer.png`): per-layer mean |α| with the top-8 dominant subset in red and the bottom-8 in grey.
+
+![Figure 6: per-layer chrono gate magnitude on v15 seed 0. Red = top-8 dominant (L19-L28), grey = bottom-8, dark = middle. The chrono signal is concentrated in mid-deep layers; inverting only the red bars collapses the alpha-flip correlation while inverting only the grey bars preserves it.](figures/fig6_alpha_norm_per_layer.png)
 
 ### 24.7.12 Paraphrase T1 with response logging (2026-05-24)
 
@@ -1141,6 +1143,19 @@ Reviewer attack on probe -143 floor: ridge-solver pathology on standardized feat
 The clamp narrowed condition A's worst-case predictions (was wild constants of ~−5 to −10 per layer; now −2.4 uniformly) but did NOT change condition B's −143 — the chrono-off hidden states produce uniformly degenerate ridge fits. **Honest limitation:** the probe cannot linearly extrapolate τ beyond training range, on either model. The v11 +0.43 result was within-distribution interpolation luck, not OOD extrapolation. **The 140-point R² gap between trained (A) and chrono-off (B)** is still meaningful: chrono-off representations are catastrophically worse-conditioned than trained ones. But the absolute R² number on OOD extrapolation should not be reported as evidence for "tau lives in residual stream." A within-distribution probe split + a Spearman rank-correlation metric would be more defensible. Future work.
 
 `reports/probe_v5_clamped_v15s_seed0.json` saved.
+
+### 24.7.15 External benchmark release: `tau_sessions` (2026-05-24)
+
+To make the CI claim falsifiable by anyone, this release ships an MIT-licensed external benchmark harness in `eval/external/`:
+
+- **Dataset.** 300 deterministically-generated sessions across six elapsed-time buckets (1 s, 60 s, 600 s, 6 h, 24 h, 7 d) and three task types (`duration_recall`, `staleness`, `adaptive`), regenerable byte-for-byte from `eval/external/generate_tau_sessions.py --seed 42`. SHA256 of the shipped dataset matches a fresh generation (verified at release time).
+- **Three reference adapters.** `vanilla` (no τ injection, baseline), `prompt` (τ injected as `[elapsed: 3h 42m]` text in the prompt, the standard non-architectural alternative), and `ci` (the released v15.0 checkpoint with chrono channel active).
+- **Scoring.** `duration_recall` uses log10-MAE on parsed seconds, `staleness` uses exact-match yes/no, `adaptive` uses Pearson r between log(τ) and log(response length). All metrics report bootstrap 95% CIs.
+- **Pre-registered prediction.** `ci` beats `vanilla` on `duration_recall` and `staleness`; `ci` is comparable to or beats `prompt` on `adaptive`. We deliberately do **not** assert dominance over `prompt` everywhere, because §24.7.3 already showed that for the deadline-pressure task, chrono attenuates rather than amplifies a textual deadline cue.
+- **Rationale.** Section 24.7's earlier note that "no public time-reasoning benchmark injects real elapsed time as a tensor channel" was verified against TimeBench, TempReason, TimeQA, MenatQA, TRAM, TEMPO, Timely-Eval, and BombRush during the round-2 audit. All are text-encoded time. Releasing our own benchmark is a public-good move and turns the CI claim from "internally validated" into "third-party-reproducible."
+- **Reproduction.** `uv run python -m eval.external.eval_tau_bench --adapter ci --base Qwen/Qwen2.5-3B-Instruct --checkpoint <release_v15_seed0.pt>`. Full docs in [`eval/external/README.md`](eval/external/README.md).
+
+Numerical scores from running the harness against v15 cross-seed checkpoints will land in a follow-up commit once the dispatched runs complete on Spark. This section reserves space for that table.
 
 ### 24.7.9 Extra controls on v15 cross-seed (2026-05-23)
 
