@@ -131,9 +131,25 @@ Baselines compared. Prompt-only "you have N seconds" is a verbal cue that does n
 
 ## checkpoints
 
-Model checkpoints are **not** currently released. The v11 paper checkpoint is ~6 GB and lives on the training rig only. To reproduce, run `bash scripts/run_v14.sh` end to end (~3 GPU-hours, deterministic with `--seed 14`).
+The three v15 cross-seed Chronometric Injection checkpoints are released on GitHub Releases [`v15.0`](https://github.com/sam-siavoshian/Time-Model/releases/tag/v15.0). Each is ~38 MB and contains only the trainable parameters (LoRA + chrono encoder + per-layer FiLM projectors); load them on top of the frozen `Qwen/Qwen2.5-3B-Instruct` base.
 
-If you want the v11 weights for downstream work, [open an issue](https://github.com/sam-siavoshian/Time-Model/issues). A HuggingFace release is planned but not yet scheduled.
+| Seed | File | SHA256 |
+|---|---|---|
+| 0 | [`qwen_time_v15s_20260523_141410_seed0.pt`](https://github.com/sam-siavoshian/Time-Model/releases/download/v15.0/qwen_time_v15s_20260523_141410_seed0.pt) | `2ab64f3f837f58ca726297bad61e1c606fac03d7567884775bc6601cc429ecef` |
+| 1 | [`qwen_time_v15s_20260523_141410_seed1.pt`](https://github.com/sam-siavoshian/Time-Model/releases/download/v15.0/qwen_time_v15s_20260523_141410_seed1.pt) | `51bc2425cd406ed0ec433405bfef745f7e13a7ca1ae4e154eddc5b997980ef58` |
+| 2 | [`qwen_time_v15s_20260523_141410_seed2.pt`](https://github.com/sam-siavoshian/Time-Model/releases/download/v15.0/qwen_time_v15s_20260523_141410_seed2.pt) | `d718baf88b509d76c371602f27fec8d703b5a556888a9ceea613ffdfe41ce7c0` |
+
+```bash
+# example: pull seed 0, verify, run T1 clock recall
+curl -L -o ckpt.pt https://github.com/sam-siavoshian/Time-Model/releases/download/v15.0/qwen_time_v15s_20260523_141410_seed0.pt
+sha256sum ckpt.pt  # must match table above
+uv run python -m model.qwen_time_check \
+  --checkpoint ckpt.pt --base Qwen/Qwen2.5-3B-Instruct \
+  --timescales 2,4,8,16,32,64,128,256,512,1024,4096,16384,65536,86400,604800 \
+  --out reports/recall.json
+```
+
+To regenerate from scratch (~3 GPU-hours per seed on a single H100 or GB10): `bash scripts/run_v15_cross_seed.sh`. The script is deterministic with `--seed {0,1,2}` and uses the SHA-pinned training data in [data/VERIFICATION.md](data/VERIFICATION.md).
 
 ---
 
@@ -162,7 +178,7 @@ The architecture is a frozen Qwen 2.5 3B-Instruct base with three additions:
 2. **Per-layer FiLM injection.** AdaLN-Zero modulation. Each Qwen decoder layer gets a projection of χ to `(scale, shift)` parameters that pre-multiply the residual stream. Init at zero so the base model is unchanged at step 0.
 3. **Per-layer gate α.** One learnable scalar per layer that multiplies the FiLM signal. Lets the model decide where chrono enters. Linear probe shows τ enters at L1 and gets transformed at every subsequent block (max R² = 0.43 at L1).
 
-Trainable: LoRA rank 16 on attention and MLP projections, plus the chronometric encoder, plus per-layer FiLM projectors, plus per-layer α scalars. Total ~36 M parameters out of 3 B base. Base weights are never touched.
+Trainable: LoRA rank 8 (`lora_rank=8` default in `model/qwen_time.py:49`) with α=16 on attention projections and lm_head, plus the chronometric encoder, plus per-layer FiLM projectors, plus per-layer α scalars. Total ~36 M parameters out of 3 B base. Base weights are never touched.
 
 Training loss is supervised next-token prediction on synthetic conversations of three types:
 

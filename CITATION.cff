@@ -1,12 +1,12 @@
 cff-version: 1.2.0
 message: "If you use this work, please cite the preprint below."
-title: "Chronometric Injection: Teaching a Frozen LLM to Experience Time"
+title: "Chronometric Injection: Time-Conditional Behavior in a Frozen LLM via Per-Layer FiLM of Real Elapsed Seconds"
 authors:
   - family-names: "Siavoshian"
     given-names: "Saam"
     # TODO: add ORCID once registered: https://orcid.org/####-####-####-####
-date-released: 2026-05-22
-version: "v11"
+date-released: 2026-05-24
+version: "v15.0"
 repository-code: "https://github.com/sam-siavoshian/Time-Model"
 license: MIT
 keywords:
@@ -20,7 +20,7 @@ keywords:
   - qwen
 preferred-citation:
   type: article
-  title: "Chronometric Injection: Teaching a Frozen LLM to Experience Time"
+  title: "Chronometric Injection: Time-Conditional Behavior in a Frozen LLM via Per-Layer FiLM of Real Elapsed Seconds"
   authors:
     - family-names: "Siavoshian"
       given-names: "Saam"
@@ -28,4 +28,4 @@ preferred-citation:
   # TODO: arXiv ID once posted, e.g. "2606.XXXXX"
   # arxiv: "https://arxiv.org/abs/2606.XXXXX"
   url: "https://github.com/sam-siavoshian/Time-Model"
-  notes: "Preprint. Pre-registration locked 2026-05-12; empirical update 2026-05-22."
+  notes: "Preprint. Pre-registration locked 2026-05-12; round-1 empirical 2026-05-22; round-2 reviewer-rigor pass 2026-05-23; cross-seed n=3 + checkpoint release v15.0 on 2026-05-24."
