@@ -1,4 +1,4 @@
-# Chronometric Injection: Teaching a Frozen LLM to Experience Time
+# Chronometric Injection: Time-Conditional Behavior in a Frozen LLM via Per-Layer FiLM of Real Elapsed Seconds
 
 Author: Saam Siavoshian
 Original draft: 2026-05-12 (as IPCN spec)
@@ -23,7 +23,7 @@ We pre-register five falsifiable behavioral tests with thresholds set **before t
 
 We then attempt to falsify the result with three pre-registered experiments. The chrono injection survives every attack:
 
-1. **Causal-intervention falsification:** zeroing the per-layer α gates kills behavior (Pearson r 0.997 → 0.000); flipping the sign of every α yields **r = −0.9998**, a near-perfect anti-prediction. The chrono signal acts as a single coherent scalar dial.
+1. **Causal-intervention falsification:** zeroing the per-layer α gates kills behavior (Pearson r 0.997 → 0.000); flipping the sign of every α yields **r = −0.9998** (effective n = 3 unique τ that parsed), a near-perfect anti-prediction. Half-layer α-flip controls (§24.7.9) reveal layer-subset asymmetry — different 17-layer subsets give r = +0.78 vs −0.93 — so the chrono pathway is **a weighted sum of per-layer monotone-in-τ contributions**, not a single scalar dial.
 2. **Behavioral-pressure OOD transfer (negative result, n=5):** an underpowered initial test reported ~+9 tokens of chrono-only length shift on deadline prompts. The rigor rerun (n = 30 prompts, uncensored generation, bootstrap 95 % CI; see §24.7.3) found chrono-only delta = +3.4 tokens with CI [−16, +22] crossing zero, and chrono actually **attenuates** the text-deadline length shift by 45 tokens (P1 − P3 = −45 CI [−80, −9]). The OOD-task-transfer claim is therefore retracted; the paper's surviving claims are in-distribution time-conditional behavior under the four other tests.
 3. **Linear probe of internal time axis:** an OOD linear probe on per-layer last-token hidden states finds tau encoded as a linear axis in layers L1–L3 (max R² = 0.43 at L1) with deeper layers transforming it nonlinearly; silencing α collapses the probe to R² = −143 at every layer.
 
@@ -34,6 +34,24 @@ Together these results show that the chronometric injection model develops **cau
 - A pre-registered five-test evaluation suite for time-conditional behavior, with falsifiability thresholds declared in advance.
 - A three-experiment disproof battery (causal interventions, OOD task transfer, internal probe) that the architecture survives.
 - A reproducible recipe: ~36 M trainable parameters on Qwen 2.5 3B, ~3 GPU-hours on a Grace-Blackwell GB10, 6 K conversations of synthetic training data.
+
+---
+
+---
+
+## Reader's guide (added 2026-05-24)
+
+This document is both a paper and a project log. **For a clean reviewer / submission read, the load-bearing sections are:**
+
+| Read | What you get |
+|---|---|
+| Abstract (top) + §23 (architecture) | What the architecture is and why |
+| §24.0 (headline) + §24.7.5 (cross-seed) + §24.7.8 (LoRA-only baseline) + §24.7.9 (extra controls) | What the empirical results are, with variance bars and the load-bearing baseline |
+| §26 (final wrap) | One-paragraph headline + claims-that-survive table |
+
+**§1-22 are the project trail** (original IPCN memory architecture → Track A from-scratch null → Track B 9-variant Qwen+memory null → §22.3 pivot to chronometric injection). These exist for honesty about how the work evolved, NOT as the contribution. A submission-mode LaTeX export will move §1-22 to **Appendix A: Project History** in full.
+
+**§24.7.1-§24.7.9** are the post-rigor-audit reruns that retract earlier claims (OOD transfer in §24.7.3) and strengthen surviving ones (LoRA-only baseline §24.7.8, paraphrase eval §24.7.9, half-layer α-flip §24.7.9 reframe).
 
 ---
 
@@ -1770,7 +1788,7 @@ Five interventions on T1 clock test, 8 OOD tau values per condition. Pre-registe
 | D. tau = 0 pinned | **0.000** | -- | r < 0.4 | PASS (collapse) |
 | E. alpha sign flipped | **-0.9998** | -- | strongly negative | PASS (perfect inversion) |
 
-Condition E (alpha sign flipped, Pearson **-0.9998**) is the strongest single empirical result in the project. Multiplying every per-layer alpha by -1 produces an output whose log-tau predictions are linearly anti-correlated with the true tau at near-perfect strength. A template-matching artifact cannot do this; the chrono signal acts as a single coherent scalar axis whose direction reverses cleanly under sign flip.
+Condition E (alpha sign flipped, Pearson **-0.9998** on effective n=3 unique τ that parsed) is one of the stronger empirical results in the project. Multiplying every per-layer alpha by -1 produces an output whose log-tau predictions are linearly anti-correlated with the true tau at near-perfect strength. A template-matching artifact cannot do this. **Caveat (added 2026-05-23 after half-layer-flip control):** the per-layer α pathway is NOT a single coherent scalar axis -- §24.7.9 shows different random-half-layer subsets give r = +0.78 vs −0.93 on the same v15 ckpt, implying a weighted layer-vote with dominant layers determining sign. The all-layer-flip r = −0.9998 still holds, but the mechanistic interpretation is "chrono is a monotone-in-τ pathway distributed across layers with non-uniform per-layer contributions," not "one scalar dial."
 
 **Verdict: PASS_chrono_causal = true.** The v11 behavioral result on T1 is causally driven by the AdaLN-Zero chrono injection, not by LoRA picking up prompt-text cues.
 
@@ -2088,6 +2106,8 @@ v15 improves log-MAE on extrapolation by 41 % (0.825 → 0.488) but the Pearson 
 
 Identical to v14. Phase generalizes one full week beyond training, then degrades. The 18 K-step training did **not** extend the horizon, which is consistent with the architectural-limit interpretation rather than a training-budget interpretation.
 
+**Stronger architectural reframe (added 2026-05-24 after reviewer round 2):** the chrono encoder timescale list as trained is `(2, 4, 8, ..., 65536, 86400, 604800)`. The 604 800 s scale was added in v13. But training τ for the PHASE task is drawn uniformly in [0, 7 d) = [0, 604 800 s). This means the model saw exactly **one period of the weekly sinusoid** during training. With one period of exposure, the model has no example data from which to learn that the weekly sin/cos is genuinely periodic — it only saw the function evaluated once across its domain. T3 multi-week "failure past week 2" is therefore **not** a generalization failure of a learned weekly phase representation; it is the predictable consequence of training τ ∈ [0, 1·T_week] failing to teach periodicity of T_week. To actually test weekly-phase generalization, training τ should span ≥ 3 weeks. Until that experiment is run, the T3 multi-week result should be framed as: *"the model successfully maps τ → weekday/weekend labels within the trained week and the immediately adjacent week (which falls on similar sin/cos values to week 1), and degrades thereafter — consistent with the model having no chance to learn weekly periodicity from one-period-of-exposure training data."* The architectural limit is not in the encoder; it is in the training distribution.
+
 **v15 headline summary.**
 
 - **4 of 5 pre-registered tests PASS** (T1, T1b, T2, T3 bidirectional; T4 fails on a metric that may not match how v15 actually uses chrono).
@@ -2159,7 +2179,7 @@ Single-seed reporting is a common reviewer attack. Three independent seeds (0, 1
 | T1b r (interp) | **0.993 ± 0.003** | [0.989, 0.994] | 3 / 3 (≥0.7) | tightly clustered |
 | T1b log_MAE | **0.044 ± 0.010** | [0.032, 0.052] | 3 / 3 (<0.5) | best 0.032, original v15 was 0.075 |
 | T2 silent-gap | **1.00 ± 0.00** | saturated | 3 / 3 (≥0.5) | every seed |
-| T3 weekend signal | **0.667 ± 0.577** | {0, 1, 1} | 2 / 3 (≥0.3) | bimodal (seed 1 mode-collapsed) |
+| T3 weekend signal | **2 of 3 seeds pass** | values {1.0, 0.0, 1.0} | 2 / 3 (≥0.3) | bimodal (seed 1 mode-collapsed). Binary outcome -- "0.67 ± 0.58" implies Gaussianity that does not exist on n=3 Bernoulli. |
 | T3 weekday signal | **0.333 ± 0.577** | {0, 0, 1} | 1 / 3 | inconsistent |
 | **T4 first-pos KL** | **0.178 ± 0.082** | [0.121, 0.272] | **3 / 3 (≥0.05)** | original v15 had 0.016 -- that was a SEED quirk, not a metric flaw |
 | **T4 multi-pos KL (new)** | **14.14 ± 1.15** | [13.31, 15.46] | **3 / 3 (≥0.05)** | ~280× threshold; chrono signal grows from position 0 (~0.18 KL) to position 6 (~27 KL) |
@@ -2178,7 +2198,7 @@ The chrono signal's influence at the output **grows by ~150× from the first gen
 2. **T2 is saturated.** Cross-seed std = 0 → silent-gap discrimination is a stable architectural property.
 3. **T3 phase is fragile under seed randomness.** Weekend signal 0.67 ± 0.58; one seed mode-collapses entirely. Phase generalization at this training budget is not robust. Either more phase data, longer training, or curriculum is needed to make T3 reliably pass.
 4. **T4 is RELIABLY ABOVE THRESHOLD on every seed.** v15's anchor failure (KL = 0.016) was a single-seed outlier; cross-seed mean = 0.178 first-position, 14.14 multi-position. The earlier "T4 metric is too local" framing in §24.7.2 was partially correct (multi-pos is the right metric) but the more important finding is that the chrono signal's first-position influence is also reliably above threshold across seeds. **T4 PASSES.**
-5. **The α-flip "single coherent scalar dial" claim is reinforced**, because if chrono were idiosyncratically routed in v15 only, cross-seed T4 first-position would not have averaged 0.18 with std 0.08 -- it would have been wildly variable.
+5. **The α-flip pathway is consistent across seeds**: if chrono were idiosyncratically routed in v15 only, cross-seed T4 first-position would not have averaged 0.18 with std 0.08 — it would have been wildly variable. The signal is a stable weighted-layer chrono pathway (per §24.7.9 reframe), not single-seed noise.
 
 ### 24.7.6 Updated cross-version table with cross-seed v15
 
@@ -2191,7 +2211,7 @@ The §24.0 headline table should now use the cross-seed mean ± std row in place
 | v13 | 0.93 | 0.86 / 0.108 | 1.00 | 0.00 | 0.146 / — |
 | v14 | 0.745 | 0.76 / 0.25 | 1.00 | 1.00 (one-sided) | 0.090 / — |
 | v15 single-seed (4242) | 0.9997 | 0.996 / 0.075 | 1.00 | 1.00 bidirectional | 0.016 / pending |
-| **v15 cross-seed (n=3, mean ± std)** | **0.961 ± 0.035** | **0.993 ± 0.003 / 0.044 ± 0.010** | **1.00 ± 0.00** | **0.67 ± 0.58** | **0.18 ± 0.08 / 14.14 ± 1.15** |
+| **v15 cross-seed (n=3, mean ± std)** | **0.961 ± 0.035** | **0.993 ± 0.003 / 0.044 ± 0.010** | **1.00 ± 0.00** | **2/3 seeds pass** (binary) | **0.18 ± 0.08 / 14.14 ± 1.15** |
 | 7B | 0.747 | 0.76 / 0.23 | 1.00 | 0.00 | 0.129 / — |
 
 The cross-seed row is the **paper headline**. T1, T1b, T2, T4 (both metrics) reliably pass with tight variance bars. T3 is the only unreliable metric -- a single-seed result of weekend_signal = 1.0 is achievable but not guaranteed under v15's training budget. We report this honestly rather than cherry-picking the seed that passed T3.
@@ -2253,7 +2273,7 @@ The single biggest reviewer attack: **no non-chrono baseline**. We trained the v
 | T1b r | **0.993 ± 0.003** | **0.000** | -0.993 |
 | T1b log_mae | **0.044 ± 0.010** | **3.203** | 73 × worse |
 | T2 silent-gap | **1.00 ± 0.00** | **0.000** | -1.00 |
-| T3 weekend | 0.67 ± 0.58 | **0.000** | -0.67 |
+| T3 weekend | 2/3 seeds pass | **0/3 (literally 0.000)** | unambiguous |
 | T4 first-pos KL | **0.18 ± 0.08** | **0.000** | -0.18 |
 
 **Every test goes to zero.** Same architecture, same training data, same training budget — only difference is whether the chrono signal can reach the residual stream. With α frozen, the patch alone cannot pass ANY pre-registered test. T1b log-MAE = 3.20 means predictions are off by **~10³ × on the duration scale** — essentially the model returns nonsense unconditioned on τ.
@@ -2337,7 +2357,7 @@ This paper started as an architecture spec for **involuntary prefix consolidatio
 - A pre-registered five-test eval (T1 in-distribution clock, T1b OOD clock, T2 silent-gap ack, T3 phase, T4 chrono-reaches-output) with thresholds declared before training. v11 passes 4/5; T3 fails due to 40/40/20 training mix imbalance, expected to recover with v12 33/33/33.
 - A pre-registered three-experiment disproof battery (causal interventions, behavioral-pressure OOD transfer, linear probe). v11 survives all three.
 
-**The signature result:** the α-sign-flip Pearson r = **-0.9998** on the T1 clock test. The model has a single coherent scalar dial for time. Reversing that dial reverses every prediction near-perfectly. A template-matching artifact cannot do this. The chrono signal acts as a causal scalar axis, not a decorative feature.
+**The signature result:** the α-sign-flip Pearson r = **-0.9998** on the T1 clock test (effective n = 3 unique parsed τ; see §24.7.6). Flipping every per-layer α inverts every prediction near-perfectly. A template-matching artifact cannot do this. The chrono pathway is a **weighted sum of per-layer monotone-in-τ contributions** (§24.7.9 half-layer-flip control), not a single coherent dial -- different layer subsets contribute different magnitudes, and the all-layer flip cleanly inverts because every per-layer vote flips together. Causal, distributed, directional.
 
 **The mechanistic finding:** the chrono encoding enters at the input side via the chrono injector at L0 and is linearly decodable from the residual stream for the first ~3 layers (L1 R² = 0.43 on OOD τ). Past L3 the linear probe collapses, but the alpha-off intervention destroys the linear axis at every layer (R² = -143), so the chrono signal is *present* throughout the network — just not in a form a small linear or MLP probe can recover from 500 OOD samples.
 
@@ -2382,7 +2402,7 @@ These are the empirical facts a hostile reviewer cannot remove:
 | T1 clock readout in-distribution | r = **0.961 ± 0.035** (range 0.93–1.00, all 3 seeds pass) | §24.7.5 cross-seed |
 | T1b clock interpolation across 4 OOM in [1 s, 7 d] | r = **0.993 ± 0.003**, log-MAE = **0.044 ± 0.010** | §24.7.5 cross-seed |
 | T2 silent-gap discrimination | Δ ack = **1.00 ± 0.00** (saturated, 3/3 seeds) | §24.7.5 cross-seed |
-| T3 weekday/weekend phase discrimination | weekend_signal = **0.67 ± 0.58** (2/3 seeds; fragile under seeds) | §24.7.5 cross-seed |
+| T3 weekday/weekend phase discrimination | **2 of 3 seeds pass** (binary outcome, not continuous) | §24.7.5 cross-seed |
 | T3 phase generalizes 1 full week beyond training | week 2 (12.5 d) signal = +1.00 on passing seeds | §24.7.1 |
 | T4 chrono reaches output (first-pos KL) | **0.18 ± 0.08** (3/3 seeds pass; v15-anchor's 0.016 was a seed outlier) | §24.7.5 |
 | **T4 chrono reaches output (multi-pos KL, NEW)** | **14.14 ± 1.15** (~280× threshold) | §24.7.4, §24.7.5 |
@@ -2405,7 +2425,7 @@ These were in the abstract / contributions at one point and are now removed or d
 
 ### 26.3 Final headline (the one-paragraph version)
 
-**Chronometric injection.** Frozen Qwen 2.5 3B + AdaLN-Zero FiLM modulation of a 27-dim sinusoidal+log encoding of real elapsed seconds, injected at every decoder layer, plus rank-8 LoRA on attention + lm_head (~36 M trainable). Across n = 3 independent training seeds, v15 (18 K conversations, 18 K training steps, 15-scale chrono encoder including day + week, 50/50 weekend balance) achieves Pearson r = **0.961 ± 0.035** on in-distribution clock readout, r = **0.993 ± 0.003** (log-MAE **0.044 ± 0.010**) on held-out τ interpolated across four orders of magnitude inside [1 s, 7 d], perfect silent-gap discrimination (Δ = 1.00 across all seeds), and reliable chrono signal at the output (T4 first-position KL = **0.18 ± 0.08**, multi-position KL = **14.14 ± 1.15** with influence growing ~150× from position 0 to position 6). A causal-intervention battery confirms the chrono signal is a single coherent scalar dial: flipping its sign at every layer yields Pearson r = **−0.9998** OOD anti-prediction. Weekday/weekend phase discrimination is fragile (2 / 3 seeds pass; 0.67 ± 0.58). The model does **not** extrapolate beyond the largest training timescale (τ > 7 d gives r = −0.20), does **not** transfer to deadline-induced response-length modulation OOD (pressure rerun P2 95 % CI [−16, +22] crosses zero), and its phase encoding has a ~14-day generalization horizon — these limits are architectural (sinusoidal readout finite) and are reported as findings rather than asserted as positive results.
+**Chronometric injection.** Frozen Qwen 2.5 3B + AdaLN-Zero FiLM modulation of a 27-dim sinusoidal+log encoding of real elapsed seconds, injected at every decoder layer, plus rank-8 LoRA on attention + lm_head (~36 M trainable). Across n = 3 independent training seeds, v15 (18 K conversations, 18 K training steps, 15-scale chrono encoder including day + week, 50/50 weekend balance) achieves Pearson r = **0.961 ± 0.035** on in-distribution clock readout, r = **0.993 ± 0.003** (log-MAE **0.044 ± 0.010**) on held-out τ interpolated across four orders of magnitude inside [1 s, 7 d], saturated silent-gap discrimination (Δ = 1.00 across all seeds; effective n=1 per condition under greedy decoding, see §24.7.6), reliable chrono signal at the output (T4 first-position KL = **0.18 ± 0.08**, multi-position KL = **14.14 ± 1.15**), and a LoRA-only ablation with α frozen at zero that collapses every test to **0.000** — confirming the chrono channel, not the adapter, is load-bearing. A causal-intervention battery: flipping every per-layer α at once yields Pearson r = **−0.9998** (effective n = 3 unique parsed τ), but half-layer-flip controls produce r = +0.78 vs −0.93 on different 17-layer subsets — the chrono pathway is a **weighted sum of per-layer monotone-in-τ contributions with non-uniform layer dominance**, not a single scalar dial. Weekday/weekend phase discrimination is fragile (**2 of 3 seeds pass**, 1 mode-collapses; reported as a binary outcome, not as continuous std). The model does **not** extrapolate beyond the largest training timescale (τ > 7 d gives r = −0.20; architectural limit of sinusoidal encoders), does **not** transfer to deadline-induced response-length modulation OOD (pressure rerun P2 95 % CI [−16, +22] crosses zero — retracted), and its phase encoding has a ~14-day generalization horizon (the encoder lacks a 604 800 s timescale, so weekly periodicity is unrepresentable by construction). These limits are reported as findings, not asserted as positives.
 
 ### 26.4 What's left before LaTeX submission
 

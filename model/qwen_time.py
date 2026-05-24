@@ -52,6 +52,10 @@ class QwenTimeConfig:
     lora_lm_head: bool = True
     unfreeze_base: bool = False
     chunk_length: int = 256
+    # Architectural ablation: "film" (default v15) or "additive".
+    # "film" = h + alpha * (gamma * h + beta)        -- DiT AdaLN-Zero pattern
+    # "additive" = h + alpha * (W_chi @ chi)         -- pure additive residual
+    injection_type: str = "film"
 
 
 class _Chronometric(nn.Module):
@@ -110,8 +114,9 @@ class _ChronoInjector(nn.Module):
     failure surface that killed Track B v1-v4.
     """
 
-    def __init__(self, d_model: int, d_chrono: int):
+    def __init__(self, d_model: int, d_chrono: int, injection_type: str = "film"):
         super().__init__()
+        self.injection_type = injection_type
         self.to_gamma = nn.Linear(d_chrono, d_model, bias=True)
         self.to_beta = nn.Linear(d_chrono, d_model, bias=True)
         # Per-channel residual gate, ZERO-init so injection is identity at step 0.
@@ -132,14 +137,18 @@ class _ChronoInjector(nn.Module):
         nn.init.zeros_(self.to_beta.bias)
 
     def forward(self, h: torch.Tensor, chi_t: torch.Tensor) -> torch.Tensor:
-        # h: (B, L, d_model). chi_t: (d_chrono,) for this chunk.
         chi_f = chi_t.float()
-        gamma = self.to_gamma(chi_f)                           # (d_model,)
-        beta = self.to_beta(chi_f)                             # (d_model,)
-        # FiLM: scale + shift h, gated by alpha (per-channel).
+        gamma = self.to_gamma(chi_f)
+        beta = self.to_beta(chi_f)
         h_f = h.float()
-        modulated = gamma[None, None, :] * h_f + beta[None, None, :]
-        out = h_f + self.alpha[None, None, :] * modulated
+        if self.injection_type == "additive":
+            # Pure additive residual ablation: ignore h-dependent scaling.
+            # out = h + alpha * beta(chi). Comparable to GazeQwen-style.
+            out = h_f + self.alpha[None, None, :] * beta[None, None, :]
+        else:
+            # FiLM (default v15): scale + shift h, gated by alpha.
+            modulated = gamma[None, None, :] * h_f + beta[None, None, :]
+            out = h_f + self.alpha[None, None, :] * modulated
         return out.to(h.dtype)
 
 
@@ -173,9 +182,11 @@ class QwenTime(nn.Module):
         # Skip the LAST layer: RMSNorm + lm_head at the end would attenuate
         # the injected bias to near-noise. Inject up to penultimate.
         inject_layers = cfg.inject_layers if cfg.inject_layers else tuple(range(n_layers - 1))
-        # One injector per layer.
+        # One injector per layer (injection_type set per ablation).
+        injection_type = getattr(cfg, "injection_type", "film")
         self.chrono_injectors = nn.ModuleDict({
-            str(li): _ChronoInjector(self.d_model, self.chrono.out_dim)
+            str(li): _ChronoInjector(self.d_model, self.chrono.out_dim,
+                                     injection_type=injection_type)
             for li in inject_layers
         })
         self._inject_layers = inject_layers

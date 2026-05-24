@@ -132,18 +132,29 @@ def run_alpha_flip_battery(model, device):
 
 # Paraphrase T1
 def t1_paraphrase_check(model, device, n_per_tau=3):
+    """Paraphrase T1 with FULL response logging (v2). Reviewer attack:
+    paraphrase r=+0.996 identical to 6 decimals could mean model outputs
+    bit-identical strings ignoring prompt. Log all responses to verify.
+    Reports: per-prompt r, per-(prompt,tau) response text, and
+    response-identity matrix (frac of (i,j) prompt pairs producing
+    identical response per tau)."""
     rng = random.Random(31337)
     taus = [math.exp(rng.uniform(math.log(2.0), math.log(7 * 86400.0)))
             for _ in range(8)]
     per_prompt = []
+    responses_by_tau = {round(t, 3): [] for t in taus}
     for pi, prompt in enumerate(CLOCK_PROMPTS_PARAPHRASED):
-        pred, truth = [], []
+        pred, truth, resps = [], [], []
         for tau in taus:
             for _ in range(n_per_tau):
                 resp = greedy_decode(model, prompt, tau_t=tau, device=device)
                 sec = parse_duration_to_seconds(resp)
+                resps.append({"tau": tau, "resp": resp, "parsed": sec})
                 if sec == sec and sec > 0:
                     pred.append(sec); truth.append(tau)
+                    if pi < 11:  # log all for first 11 prompts
+                        responses_by_tau[round(tau, 3)].append(
+                            {"prompt_idx": pi, "resp": resp})
         is_anchor = (pi == 0)
         per_prompt.append({
             "prompt_idx": pi,
@@ -152,17 +163,37 @@ def t1_paraphrase_check(model, device, n_per_tau=3):
             "n": len(pred),
             "n_unique_tau": len(set(truth)),
             "pearson_r": pearson(pred, truth),
+            "responses": resps[:8],  # sample first 8 (one per tau)
         })
         tag = "ANCHOR" if is_anchor else "para "
         print(f"  [{tag}] r={per_prompt[-1]['pearson_r']:+.3f} n={len(pred)}  "
               f"q={per_prompt[-1]['prompt'][:60]}")
     rs = [p["pearson_r"] for p in per_prompt if p["pearson_r"] == p["pearson_r"]]
+    # Compute response-identity matrix: at each tau, frac of prompts that
+    # produced the SAME response string as the anchor prompt
+    identity_per_tau = {}
+    for tau_key, resps in responses_by_tau.items():
+        if len(resps) < 2:
+            continue
+        anchor_resp = next((r["resp"] for r in resps if r["prompt_idx"] == 0), None)
+        if anchor_resp is None:
+            continue
+        n_match = sum(1 for r in resps if r["resp"] == anchor_resp)
+        identity_per_tau[tau_key] = {
+            "n_prompts": len(resps),
+            "n_matching_anchor": n_match,
+            "fraction_identical_to_anchor": n_match / len(resps),
+            "anchor_resp": anchor_resp[:80],
+        }
+    all_id = [v["fraction_identical_to_anchor"] for v in identity_per_tau.values()]
     return {
         "per_prompt": per_prompt,
         "anchor_r": per_prompt[0]["pearson_r"],
         "paraphrase_r_mean": statistics.mean(rs[1:]) if len(rs) > 1 else float("nan"),
         "paraphrase_r_std": statistics.stdev(rs[1:]) if len(rs) > 2 else float("nan"),
         "n_paraphrases": len(per_prompt) - 1,
+        "response_identity_per_tau": identity_per_tau,
+        "fraction_identical_mean": statistics.mean(all_id) if all_id else float("nan"),
     }
 
 

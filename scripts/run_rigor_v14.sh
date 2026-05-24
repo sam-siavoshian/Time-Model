@@ -6,7 +6,7 @@
 #   3. T3 multi-week on Sat at weeks 1-4 (tau-memorization vs phase-encoding)
 
 set -uo pipefail
-cd "$HOME/ipcn"
+cd "$(cd "$(dirname "$0")/.." && pwd)"
 export PATH="$HOME/.local/bin:$PATH"
 export PYTHONUNBUFFERED=1
 

@@ -5,7 +5,7 @@
 # v14 forces 50/50 in gen_phase_conversation.
 
 set -uo pipefail
-cd "$HOME/ipcn"
+cd "$(cd "$(dirname "$0")/.." && pwd)"
 export PATH="$HOME/.local/bin:$PATH"
 export PYTHONUNBUFFERED=1
 export PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True,max_split_size_mb:128"

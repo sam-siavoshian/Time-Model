@@ -57,16 +57,38 @@ def load_trainable(model: QwenTime, ckpt_path: str):
 
 @torch.no_grad()
 def greedy_decode(model: QwenTime, prompt: str, tau_t: float,
-                  max_new_tokens: int = 24, device: str = "cuda") -> str:
+                  max_new_tokens: int = 24, device: str = "cuda",
+                  temperature: float = 0.0, top_p: float = 1.0,
+                  seed: int = None) -> str:
+    """Greedy by default (temperature=0). If temperature > 0, use
+    temperature + top-p sampling with optional torch seed. This is the
+    eff-n=1 fix path: T2/T3 can be re-run with temperature=0.7 + 30
+    seeds to get real variance instead of replicate-inflated n=30."""
     tok = model.tokenizer
     ids = tok.encode(prompt, return_tensors="pt").squeeze(0).to(device)
     generated = []
     cur = ids
     im_end = tok.convert_tokens_to_ids("<|im_end|>") if hasattr(tok, "convert_tokens_to_ids") else None
+    if seed is not None:
+        torch.manual_seed(seed)
     for _ in range(max_new_tokens):
         out = model(cur, tau_t=tau_t)
-        logits = out["logits"]
-        next_id = int(logits[-1].argmax().item())
+        logits = out["logits"][-1].float()
+        if temperature <= 0.0:
+            next_id = int(logits.argmax().item())
+        else:
+            scaled = logits / temperature
+            probs = torch.softmax(scaled, dim=-1)
+            if 0.0 < top_p < 1.0:
+                sorted_probs, sorted_idx = torch.sort(probs, descending=True)
+                cumsum = torch.cumsum(sorted_probs, dim=-1)
+                mask = cumsum > top_p
+                mask[0] = False                                # keep top
+                sorted_probs[mask] = 0.0
+                sorted_probs = sorted_probs / sorted_probs.sum()
+                next_id = int(sorted_idx[torch.multinomial(sorted_probs, 1).item()].item())
+            else:
+                next_id = int(torch.multinomial(probs, 1).item())
         if im_end is not None and next_id == im_end:
             break
         if next_id == tok.eos_token_id:
@@ -317,6 +339,10 @@ def main():
     p.add_argument("--base", type=str, default="Qwen/Qwen2.5-3B-Instruct")
     p.add_argument("--timescales", type=str, default="",
                    help="Comma-separated chrono timescales in seconds.")
+    p.add_argument("--inject-layers", type=str, default="",
+                   help="Layer indices for chrono injection (must match training).")
+    p.add_argument("--injection-type", type=str, default="film",
+                   choices=["film", "additive"])
     args = p.parse_args()
 
     cfg = QwenTimeConfig()
@@ -324,6 +350,11 @@ def main():
     if args.timescales:
         cfg.timescales = tuple(int(x) for x in args.timescales.split(","))
         print(f"  Override timescales: {cfg.timescales}")
+    # Honor injection-type / inject-layers from CLI for ablation eval too
+    if hasattr(args, "inject_layers") and args.inject_layers:
+        cfg.inject_layers = tuple(int(x) for x in args.inject_layers.split(","))
+    if hasattr(args, "injection_type") and args.injection_type != "film":
+        cfg.injection_type = args.injection_type
     print(f"Loading QwenTime ({cfg.base_model_name})...")
     model = build_qwen_time(cfg)
     model = model.to(args.device)

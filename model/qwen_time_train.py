@@ -98,6 +98,15 @@ def main():
                         "still exist and receive gradients but cannot influence the "
                         "residual stream. Used to falsify the architectural claim by "
                         "comparing v15 (alpha learns) vs alpha=0-frozen.")
+    p.add_argument("--inject-layers", type=str, default="",
+                   help="Comma-separated layer indices for chrono injection. "
+                        "Empty = inject at every layer (default v15). "
+                        "'0' = inject only at layer 0 (L0-only ablation).")
+    p.add_argument("--injection-type", type=str, default="film",
+                   choices=["film", "additive"],
+                   help="'film' (default v15, DiT AdaLN-Zero) or 'additive' "
+                        "(pure residual chi-projected, no h-dependent scaling -- "
+                        "GazeQwen-style ablation).")
     args = p.parse_args()
 
     torch.manual_seed(args.seed)
@@ -111,6 +120,12 @@ def main():
     if args.timescales:
         cfg.timescales = tuple(int(x) for x in args.timescales.split(","))
         print(f"  Override timescales: {cfg.timescales}")
+    if args.inject_layers:
+        cfg.inject_layers = tuple(int(x) for x in args.inject_layers.split(","))
+        print(f"  Override inject_layers: {cfg.inject_layers}")
+    if args.injection_type and args.injection_type != "film":
+        cfg.injection_type = args.injection_type
+        print(f"  Override injection_type: {cfg.injection_type}")
     print(f"Loading QwenTime ({cfg.base_model_name})...")
     t0 = time.time()
     model = build_qwen_time(cfg)

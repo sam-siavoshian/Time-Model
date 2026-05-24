@@ -41,10 +41,29 @@ def main():
         "7B": _load("scale_7b_20260523_010310_recall.json"),
     }
 
-    # Try v15 if it exists
+    # Try v15 single-anchor if it exists
     for f in sorted(REP.glob("qwen_time_v15_*_recall.json")):
-        versions["v15"] = json.load(open(f))
+        versions["v15 (single seed)"] = json.load(open(f))
         break
+    # v15 cross-seed: synthesize a virtual row from the aggregate
+    agg_file = REP / "v15_cross_seed_aggregate.json"
+    if agg_file.exists():
+        with open(agg_file) as af:
+            agg = json.load(af)
+        a = agg.get("aggregate", {})
+        def _m(k):
+            v = a.get(k, {})
+            return v.get("mean", float("nan"))
+        synth = {"summary": {
+            "T1_clock_pearson_r": _m("T1_clock_pearson_r"),
+            "T1b_ood_pearson_r": _m("T1b_ood_pearson_r"),
+            "T1b_ood_log_mae": _m("T1b_ood_log_mae"),
+            "T2_ack_delta": _m("T2_ack_delta"),
+            "T3_weekend_signal": _m("T3_weekend_signal"),
+            "T3_weekday_signal": _m("T3_weekday_signal"),
+            "T4_mean_pairwise_kl": _m("T4_mean_pairwise_kl"),
+        }}
+        versions["v15 cross-seed (n=3)"] = synth
 
     tests = ["T1", "T1b r", "T1b mae", "T2", "T3", "T4"]
     thresholds = {"T1": 0.8, "T1b r": 0.7, "T1b mae": 0.5,

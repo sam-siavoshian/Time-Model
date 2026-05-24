@@ -1,4 +1,4 @@
-# Chronometric Injection: Teaching a Frozen LLM to Experience Time
+# Chronometric Injection: Time-Conditional Behavior in a Frozen LLM via Per-Layer FiLM of Real Elapsed Seconds
 
 **Saam Siavoshian** &middot; Independent research
 
@@ -9,7 +9,7 @@
 [![Status: empirical results](https://img.shields.io/badge/status-empirical_results-green.svg)](PAPER.md)
 
 <p align="center">
-  <img src="figures/fig4_alpha_flip_scatter.png" alt="alpha-flip falsification: chronometric injection acts as a single coherent scalar dial" width="640">
+  <img src="figures/fig4_alpha_flip_scatter.png" alt="alpha-flip falsification: per-layer chrono pathway behaves as a monotone-in-tau weighted layer vote (all-flip r=-0.9998; half-flip varies by subset)" width="640">
   <br>
   <em>Flipping the sign of every per-layer chrono gate α inverts the model's time prediction (Pearson r = −0.9998). The chrono signal is one causal dial, not surface pattern matching.</em>
 </p>
@@ -39,7 +39,7 @@ Mean ± std across 3 independent training seeds (0, 1, 2). Full table + per-seed
 | T1 clock consistency, in-distribution | Pearson r | ≥ 0.80 | **0.961 ± 0.035** | 3/3 PASS |
 | T1b clock interpolation across 4 OOM in [1s, 7d] | r, log-MAE | r ≥ 0.70, log-MAE < 0.5 | **r = 0.993 ± 0.003, log-MAE = 0.044 ± 0.010** | 3/3 PASS |
 | T2 silent-gap acknowledgment | Δ ack-rate | ≥ 0.50 | **1.00 ± 0.00** | 3/3 PASS |
-| T3 weekday/weekend phase | weekend signal | ≥ 0.30 | **0.667 ± 0.577** | 2/3 (fragile) |
+| T3 weekday/weekend phase | weekend signal (binary per seed) | ≥ 0.30 | **2 of 3 seeds pass** (signal ∈ {1.0, 0.0, 1.0}; seed 1 mode-collapses) | fragile |
 | T4 chrono signal reaches output (first-pos KL) | KL | ≥ 0.05 | **0.178 ± 0.082** | 3/3 PASS |
 | T4 multi-position KL (NEW) | KL | ≥ 0.05 | **14.14 ± 1.15** | 3/3 PASS (~280× threshold) |
 
@@ -72,9 +72,18 @@ Requires Python ≥ 3.11. Training requires a CUDA GPU with ≥ 40 GB; the paper
 
 Each headline result maps to one command. Seeds are pinned, data generation is deterministic.
 
+**Prerequisite:** Qwen 2.5 3B-Instruct is gated on HuggingFace. Run `huggingface-cli login` and accept the model card at https://huggingface.co/Qwen/Qwen2.5-3B-Instruct before any training/eval command.
+
 | Result | Command | Hardware | Wall time |
 |---|---|---|---|
 | **Paper headline: v15 cross-seed (n=3)** | `bash scripts/run_v15_seeds.sh && uv run python scripts/aggregate_seeds.py` | 1× GB10 / A100 80 GB | ~2.25 GPU-hours |
+| LoRA-only baseline (α=0 frozen, single seed) | `bash scripts/run_baseline_lora.sh` | 1 GPU | ~45 min |
+| LoRA-only seeds 1+2 | `bash scripts/run_lora_seeds.sh` | 1 GPU | ~1.5 GPU-hours |
+| Extra controls (paraphrase + half-flip + teacher-forced T4) | `uv run python -m model.qwen_time_extra_controls --checkpoint <ckpt> --base Qwen/Qwen2.5-3B-Instruct --timescales 2,4,8,16,32,64,128,256,512,1024,4096,16384,65536,86400,604800 --out reports/extra_controls.json` | 1 GPU | ~15 min |
+| α-norm dump + top-k flip | `uv run python -m model.qwen_time_alpha_norms --checkpoint <ckpt> --base Qwen/Qwen2.5-3B-Instruct --timescales ... --out reports/alpha_norms.json` | 1 GPU | ~5 min |
+| T2/T3 sampling (eff-n=1 fix) | `uv run python -m model.qwen_time_t2t3_sampling --checkpoint <ckpt> --base Qwen/Qwen2.5-3B-Instruct --timescales ... --temperature 0.7 --n-samples 30 --out reports/t2t3_sampling.json` | 1 GPU | ~10 min |
+| Architectural ablation: L0-only injection | `bash scripts/run_ablation_l0_only.sh` | 1 GPU | ~45 min |
+| Architectural ablation: additive residual (vs FiLM) | `bash scripts/run_ablation_additive.sh` | 1 GPU | ~45 min |
 | v15 single anchor seed | `bash scripts/run_v15.sh` | 1 GPU | ~45 min |
 | Pressure v2 (n=30, max=256, bootstrap CI) | `uv run python -m model.qwen_time_pressure_v2 --checkpoint <ckpt> --base Qwen/Qwen2.5-3B-Instruct --timescales 2,4,8,16,32,64,128,256,512,1024,4096,16384,65536,86400,604800` | 1 GPU | ~15 min |
 | Genuine OOD + T3 multi-week | `uv run python -m model.qwen_time_check_genuine_ood --checkpoint <ckpt> ...` | 1 GPU | ~10 min |
