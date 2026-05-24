@@ -60,11 +60,16 @@ class PromptAdapter(TauAdapter):
         self.tokenizer = AutoTokenizer.from_pretrained(
             self.base_model, trust_remote_code=True
         )
-        self.model = AutoModelForCausalLM.from_pretrained(
-            self.base_model,
-            torch_dtype=self.dtype,
-            trust_remote_code=True,
-        )
+        # transformers >=5 renamed torch_dtype -> dtype; older versions
+        # use torch_dtype. We try the new kwarg first and fall back.
+        try:
+            self.model = AutoModelForCausalLM.from_pretrained(
+                self.base_model, dtype=self.dtype, trust_remote_code=True,
+            )
+        except TypeError:
+            self.model = AutoModelForCausalLM.from_pretrained(
+                self.base_model, torch_dtype=self.dtype, trust_remote_code=True,
+            )
         self.model.to(self.device)
         self.model.eval()
         for p in self.model.parameters():
