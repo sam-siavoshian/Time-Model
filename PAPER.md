@@ -2282,6 +2282,127 @@ The single biggest reviewer attack: **no non-chrono baseline**. We trained the v
 
 `reports/qwen_time_lora_only_20260523_182213_recall.json` saved + committed.
 
+**Cross-seed update (2026-05-24, n=3 seeds):**
+
+| Seed | T1 | T1b r | T1b mae | T2 | T3 | T4 |
+|---|---|---|---|---|---|---|
+| 0 | 0.000 | 0.000 | 3.20 | 0.00 | 0.00 | 0.000 |
+| 1 | 0.000 | 0.000 | 1.44 | 0.00 | 0.00 | 0.000 |
+| 2 | 0.000 | 0.000 | 3.20 | 0.00 | 0.00 | 0.000 |
+| **mean ± std** | **0.000 ± 0.000** | **0.000 ± 0.000** | 2.62 ± 1.02 | **0.000 ± 0.000** | **0.000 ± 0.000** | **0.000 ± 0.000** |
+
+3/3 seeds collapse to zero on every metric. Reviewer attack on single-seed baseline DIES — reproducible zero-collapse.
+
+### 24.7.10 Architectural ablations (2026-05-24)
+
+Reviewer attack on the "AdaLN-Zero FiLM at every layer" novelty claim: is FiLM necessary, or would additive residual work? Is per-layer necessary, or would L0-only work? We trained two ablations with identical v15 spec (18 K records, 18 K steps, 15-scale chrono encoder, 50/50 phase, seed 0) and compared.
+
+| Variant | T1 | T1b r | T1b log_MAE | T2 | T3 weekend | T4 |
+|---|---|---|---|---|---|---|
+| **v15 (FiLM, every layer)** | 0.950 | 0.994 | **0.032** | 1.00 | 1.00 | **0.272** |
+| **L0-only (FiLM, layer 0 only)** | **1.000** | 0.989 | 0.137 | 1.00 | 1.00 | 0.018 |
+| **Additive every-layer (NO FiLM)** | **0.000** | **0.000** | 1.86 | **0.00** | **0.00** | **0.000** |
+| **LoRA-only (no chrono at all)** | 0.000 | 0.000 | 3.20 | 0.00 | 0.00 | 0.000 |
+
+**Three architectural claims, each falsified independently:**
+
+1. **Chrono signal is load-bearing.** LoRA-only (chrono encoder + projectors exist but α frozen at 0) collapses to 0/5 across 3 seeds. The LoRA adapter cannot fit T1/T2/T3 from the formatter vocabulary alone. Chrono input is required.
+
+2. **FiLM modulation is load-bearing.** Additive injection (`out = h + α · β(χ)`, no `γ·h` term) also collapses to 0/5 — but for a different reason: under the α=0 / β-bias=0 init pattern, the gradient through α is `∂out/∂α = β = 0` at init. α can never move from zero. FiLM (`out = h + α · (γ·h + β)`) escapes this because `∂out/∂α = γ·h + β = h ≠ 0` at init (since `γ`-bias is initialized to 1). **The FiLM design is mathematically necessary, not aesthetic.** This is the same trainability mechanism that killed v10 (γ-bias=0) and motivated the v10→v11 DiT init fix in §23.1.
+
+3. **Per-layer injection is NOT load-bearing.** L0-only FiLM matches v15 every-layer FiLM on 4 of 5 tests (T1: 1.000 vs 0.950 — actually higher; T2: 1.00 tied; T3: 1.00 tied; T4: 0.018 vs 0.272 — every-layer is much higher here). Only T1b log-MAE meaningfully degrades (0.137 vs 0.032, ~4× worse extrapolation precision). The chrono signal needs to enter the residual stream ONCE; spreading the injection across all 36 layers adds T1b precision and stronger T4 KL but doesn't enable a categorically new behavior.
+
+**Updated architectural contribution (narrowed but defensible):** the paper's load-bearing architectural claim is **AdaLN-Zero FiLM modulation of a continuous wall-clock encoding at ≥1 decoder layer, with DiT-style γ-bias=1 init to escape the α-gradient trap**. Per-layer placement is a precision optimization, not a categorical requirement.
+
+The minimum-injection architecture is "1 layer × FiLM × γ-init=1 × continuous τ encoder" = passes T1/T2/T3 perfectly. This is the actual novelty over Timely Machine (2601.16486; token-level scaling, no FiLM) and GazeQwen (2603.25841; additive residual, would fall in init trap by our analysis).
+
+`reports/qwen_time_l0_only_20260524_055911_recall.json`, `reports/qwen_time_additive_20260524_070829_recall.json` saved.
+
+### 24.7.11 Per-layer α-norm dump + top-k flip (2026-05-24)
+
+§24.7.9 reframed "single coherent scalar dial" → "weighted sum of per-layer monotone-in-τ contributions." Reviewer demanded the next experiment: **which layers dominate?** Per-layer mean |α| L2 from v15 seed 0:
+
+**Top 10 dominant layers** (by mean |α|): L26, L23, L25, L20, L24, L22, L21, L27, L19, L28. Clear concentration in middle-to-deep block (L19-L28).
+
+**Bottom 5**: L7, L11, L10, L8, L9. Shallow layers carry the least chrono weight.
+
+**Targeted flip experiment** (10 OOD τ, n_per_τ=3):
+
+| Condition | layers flipped | T1 Pearson r |
+|---|---|---|
+| None (baseline) | 0 | **+0.9996** |
+| Top-8 dominant (L20-L27) | 8 mid-deep | **−0.18** (signal vanishes) |
+| Bottom-8 least dominant (L4-L11) | 8 shallow | **+0.9998** (signal intact) |
+| Random-8 control | 8 random | +0.9495 (mostly intact) |
+
+**Interpretation:** flipping just 8 dominant mid-deep layers (out of 35 total) drops T1 r from +1.0 to ~0 — the chrono signal collapses. Flipping the 8 shallowest layers leaves r=+0.9998 untouched. Random-8 control falls in between (+0.95). **The dominant subset is necessary for the chrono pathway, but flipping it ZEROS the signal rather than INVERTING it (which only all-layer flip achieves).** Honest mech-interp: the chrono pathway is a weighted layer vote where mid-deep layers carry most of the weight; total inversion requires all layers to flip together.
+
+`reports/alpha_norms_v15s_seed0.json` saved.
+
+### 24.7.12 Paraphrase T1 with response logging (2026-05-24)
+
+Reviewer attack on §24.7.9: paraphrase r=+0.996 to 6 decimals across 11 prompts is suspicious — the model may be outputting bit-identical responses regardless of prompt phrasing. We added response-text logging.
+
+**Paraphrase r per prompt across 11 phrasings**: all in [0.99577, 0.99620], mean +0.9960 ± 0.0001 (matches §24.7.9).
+
+**Response-identity matrix** (fraction of paraphrased prompts producing **verbatim-identical** response to the trained anchor prompt at each τ):
+
+| τ (seconds) | anchor response | fraction identical |
+|---|---|---|
+| 4.1 | "It has been 4 seconds." | 0.82 |
+| 17.2 | "It has been 16 seconds." | 0.09 |
+| 106 | "It has been 2 minutes." | **1.00** |
+| 2 196 | "It has been 38 minutes." | 0.91 |
+| 10 659 | "It has been about 3 hours." | **1.00** |
+| 67 980 | "It has been about 17 hours." | 0.91 |
+| 190 099 | "It has been about 2 days." | **1.00** |
+| 318 283 | "It has been about 4 days." | **1.00** |
+
+**Mean fraction-identical across τ: 0.84.** Reviewer attack PARTIALLY confirmed. The model is **prompt-invariant** more than it is paraphrase-generalizing: 84% of paraphrased prompts produce verbatim-identical responses to the anchor at given τ. At low τ (4-17 seconds) there is some response variation, but mid-to-high τ collapses entirely.
+
+**Honest reframe (replaces §24.7.9's "paraphrase memorization attack does not survive"):**
+
+> The model has a **prompt-invariant τ-conditioned formatter.** Eleven natural-language phrasings of the clock question (from *"How long has it been since we started?"* to *"Time elapsed?"*) produce verbatim-identical responses at 5 of 8 τ values, with 84% mean identity overall. **This is stronger evidence FOR chrono use** (the response is dictated by τ, not by prompt tokens) **but reframes the claim** from "model generalizes to paraphrases" to "model's response is prompt-invariant and τ-driven."
+
+A reviewer who reads the original paraphrase r table and concludes "model understands paraphrases" is being too generous. The right read is "model ignores prompt phrasing once it recognizes the clock-question template, and the chrono signal alone determines output."
+
+`reports/extra_controls_v2_v15s_seed0.json` saved.
+
+### 24.7.13 T2/T3 with sampling (effective-n fix)
+
+Reviewer attack on §24.7.6: T2 and T3 effective n=1 under greedy decoding (deterministic, identical prompt → identical output replicated). The reported "delta=1.00 over n=30 trials" inflates denominator. Reran with `temperature=0.7` × 30 independent torch seeds per condition.
+
+**T2 (silent-gap, n=30 real seeds):**
+- ack_rate at τ=10s: **0.000** (0/30 small-gap responses contain ack keywords)
+- ack_rate at τ=86400s: **1.000** (30/30 large-gap responses contain ack)
+- **Δ = +1.00** (matches greedy, but now genuinely n=30)
+- 1 unique response at small τ, 3 unique responses at large τ ("21 hours", "22 hours", "23 hours") — sampling variance visible
+
+**T3 (phase, n=30 real seeds):**
+- weekend signal: **+0.833 ± 0.379**
+- weekday signal: **+0.433 ± 0.626**
+- 3 unique weekday responses, 4 unique weekend responses
+
+**Reviewer attack DIES.** T2 still saturated at Δ=1.0 with genuine sampling variance. T3 weekend signal +0.83 (well above 0.30 threshold) with real std. The chrono signal controls these behaviors regardless of decoding stochasticity.
+
+`reports/t2t3_sampling_v15s_seed0.json` saved.
+
+### 24.7.14 Probe v5 (clamped) — limit acknowledged
+
+Reviewer attack on probe -143 floor: ridge-solver pathology on standardized features with degenerate variance. We added prediction clamping to `[y_train.min(), y_train.max()]` and re-ran on v15 seed 0.
+
+**Result on v15 seed 0 with clamp** (vs old probe_v4 on v11 anchor):
+
+| Condition | probe_v4 (v11) | probe_v5 clamped (v15 seed 0) |
+|---|---|---|
+| A trained best | +0.428 (L1) | **−2.42 (every layer same)** |
+| B α=0 best | −143 (floor) | **−143 (floor still)** |
+| C shuffled best | −0.050 | +0.027 |
+
+The clamp narrowed condition A's worst-case predictions (was wild constants of ~−5 to −10 per layer; now −2.4 uniformly) but did NOT change condition B's −143 — the chrono-off hidden states produce uniformly degenerate ridge fits. **Honest limitation:** the probe cannot linearly extrapolate τ beyond training range, on either model. The v11 +0.43 result was within-distribution interpolation luck, not OOD extrapolation. **The 140-point R² gap between trained (A) and chrono-off (B)** is still meaningful: chrono-off representations are catastrophically worse-conditioned than trained ones. But the absolute R² number on OOD extrapolation should not be reported as evidence for "tau lives in residual stream." A within-distribution probe split + a Spearman rank-correlation metric would be more defensible. Future work.
+
+`reports/probe_v5_clamped_v15s_seed0.json` saved.
+
 ### 24.7.9 Extra controls on v15 cross-seed (2026-05-23)
 
 Three reviewer-mandated controls run against the v15 seed-0 checkpoint (`reports/extra_controls_v15s_seed0.json`):

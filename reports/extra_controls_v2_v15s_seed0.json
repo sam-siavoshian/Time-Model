@@ -1,0 +1,708 @@
+{
+  "half_flip_battery": {
+    "A_normal": {
+      "n": 30,
+      "pearson_r": 0.9996406948800349,
+      "n_unique_tau": 10
+    },
+    "B_all_flipped": {
+      "n": 0,
+      "pearson_r": NaN,
+      "n_unique_tau": 0
+    },
+    "C_half_flipped_42": {
+      "n": 30,
+      "pearson_r": 0.7842114000937009,
+      "n_unique_tau": 10,
+      "flipped_layers": [
+        "0",
+        "1",
+        "13",
+        "15",
+        "17",
+        "18",
+        "2",
+        "21",
+        "23",
+        "25",
+        "28",
+        "3",
+        "32",
+        "33",
+        "34",
+        "4",
+        "7"
+      ]
+    },
+    "D_half_flipped_7": {
+      "n": 30,
+      "pearson_r": -0.9336375903640886,
+      "n_unique_tau": 10,
+      "flipped_layers": [
+        "1",
+        "11",
+        "13",
+        "16",
+        "17",
+        "18",
+        "19",
+        "2",
+        "20",
+        "24",
+        "25",
+        "26",
+        "3",
+        "30",
+        "31",
+        "6",
+        "9"
+      ]
+    },
+    "E_third_flipped": {
+      "n": 30,
+      "pearson_r": 0.8935582016153691,
+      "n_unique_tau": 10,
+      "flipped_layers": [
+        "12",
+        "14",
+        "15",
+        "16",
+        "20",
+        "24",
+        "30",
+        "4",
+        "6",
+        "7",
+        "8"
+      ]
+    }
+  },
+  "paraphrase_t1": {
+    "per_prompt": [
+      {
+        "prompt_idx": 0,
+        "is_anchor_prompt": true,
+        "prompt": "How long has it been since we started?",
+        "n": 24,
+        "n_unique_tau": 8,
+        "pearson_r": 0.9960228469854908,
+        "responses": [
+          {
+            "tau": 10658.687799982908,
+            "resp": "It has been about 3 hours.",
+            "parsed": 10800.0
+          },
+          {
+            "tau": 10658.687799982908,
+            "resp": "It has been about 3 hours.",
+            "parsed": 10800.0
+          },
+          {
+            "tau": 10658.687799982908,
+            "resp": "It has been about 3 hours.",
+            "parsed": 10800.0
+          },
+          {
+            "tau": 17.24926127449502,
+            "resp": "It has been 16 seconds.",
+            "parsed": 16.0
+          },
+          {
+            "tau": 17.24926127449502,
+            "resp": "It has been 16 seconds.",
+            "parsed": 16.0
+          },
+          {
+            "tau": 17.24926127449502,
+            "resp": "It has been 16 seconds.",
+            "parsed": 16.0
+          },
+          {
+            "tau": 318282.8634472173,
+            "resp": "It has been about 4 days.",
+            "parsed": 345600.0
+          },
+          {
+            "tau": 318282.8634472173,
+            "resp": "It has been about 4 days.",
+            "parsed": 345600.0
+          }
+        ]
+      },
+      {
+        "prompt_idx": 1,
+        "is_anchor_prompt": false,
+        "prompt": "From when we began until now, what is the elapsed duration?",
+        "n": 24,
+        "n_unique_tau": 8,
+        "pearson_r": 0.9960229140712982,
+        "responses": [
+          {
+            "tau": 10658.687799982908,
+            "resp": "It has been about 3 hours.",
+            "parsed": 10800.0
+          },
+          {
+            "tau": 10658.687799982908,
+            "resp": "It has been about 3 hours.",
+            "parsed": 10800.0
+          },
+          {
+            "tau": 10658.687799982908,
+            "resp": "It has been about 3 hours.",
+            "parsed": 10800.0
+          },
+          {
+            "tau": 17.24926127449502,
+            "resp": "It has been 14 seconds.",
+            "parsed": 14.0
+          },
+          {
+            "tau": 17.24926127449502,
+            "resp": "It has been 14 seconds.",
+            "parsed": 14.0
+          },
+          {
+            "tau": 17.24926127449502,
+            "resp": "It has been 14 seconds.",
+            "parsed": 14.0
+          },
+          {
+            "tau": 318282.8634472173,
+            "resp": "It has been about 4 days.",
+            "parsed": 345600.0
+          },
+          {
+            "tau": 318282.8634472173,
+            "resp": "It has been about 4 days.",
+            "parsed": 345600.0
+          }
+        ]
+      },
+      {
+        "prompt_idx": 2,
+        "is_anchor_prompt": false,
+        "prompt": "What's the total time so far?",
+        "n": 24,
+        "n_unique_tau": 8,
+        "pearson_r": 0.9960229140712982,
+        "responses": [
+          {
+            "tau": 10658.687799982908,
+            "resp": "It has been about 3 hours.",
+            "parsed": 10800.0
+          },
+          {
+            "tau": 10658.687799982908,
+            "resp": "It has been about 3 hours.",
+            "parsed": 10800.0
+          },
+          {
+            "tau": 10658.687799982908,
+            "resp": "It has been about 3 hours.",
+            "parsed": 10800.0
+          },
+          {
+            "tau": 17.24926127449502,
+            "resp": "It has been 14 seconds.",
+            "parsed": 14.0
+          },
+          {
+            "tau": 17.24926127449502,
+            "resp": "It has been 14 seconds.",
+            "parsed": 14.0
+          },
+          {
+            "tau": 17.24926127449502,
+            "resp": "It has been 14 seconds.",
+            "parsed": 14.0
+          },
+          {
+            "tau": 318282.8634472173,
+            "resp": "It has been about 4 days.",
+            "parsed": 345600.0
+          },
+          {
+            "tau": 318282.8634472173,
+            "resp": "It has been about 4 days.",
+            "parsed": 345600.0
+          }
+        ]
+      },
+      {
+        "prompt_idx": 3,
+        "is_anchor_prompt": false,
+        "prompt": "How many seconds or minutes have gone by?",
+        "n": 24,
+        "n_unique_tau": 8,
+        "pearson_r": 0.9960229476386055,
+        "responses": [
+          {
+            "tau": 10658.687799982908,
+            "resp": "It has been about 3 hours.",
+            "parsed": 10800.0
+          },
+          {
+            "tau": 10658.687799982908,
+            "resp": "It has been about 3 hours.",
+            "parsed": 10800.0
+          },
+          {
+            "tau": 10658.687799982908,
+            "resp": "It has been about 3 hours.",
+            "parsed": 10800.0
+          },
+          {
+            "tau": 17.24926127449502,
+            "resp": "It has been 14 seconds.",
+            "parsed": 14.0
+          },
+          {
+            "tau": 17.24926127449502,
+            "resp": "It has been 14 seconds.",
+            "parsed": 14.0
+          },
+          {
+            "tau": 17.24926127449502,
+            "resp": "It has been 14 seconds.",
+            "parsed": 14.0
+          },
+          {
+            "tau": 318282.8634472173,
+            "resp": "It has been about 4 days.",
+            "parsed": 345600.0
+          },
+          {
+            "tau": 318282.8634472173,
+            "resp": "It has been about 4 days.",
+            "parsed": 345600.0
+          }
+        ]
+      },
+      {
+        "prompt_idx": 4,
+        "is_anchor_prompt": false,
+        "prompt": "Report the wall-clock time since we kicked off.",
+        "n": 24,
+        "n_unique_tau": 8,
+        "pearson_r": 0.9960229476386055,
+        "responses": [
+          {
+            "tau": 10658.687799982908,
+            "resp": "It has been about 3 hours.",
+            "parsed": 10800.0
+          },
+          {
+            "tau": 10658.687799982908,
+            "resp": "It has been about 3 hours.",
+            "parsed": 10800.0
+          },
+          {
+            "tau": 10658.687799982908,
+            "resp": "It has been about 3 hours.",
+            "parsed": 10800.0
+          },
+          {
+            "tau": 17.24926127449502,
+            "resp": "It has been 14 seconds.",
+            "parsed": 14.0
+          },
+          {
+            "tau": 17.24926127449502,
+            "resp": "It has been 14 seconds.",
+            "parsed": 14.0
+          },
+          {
+            "tau": 17.24926127449502,
+            "resp": "It has been 14 seconds.",
+            "parsed": 14.0
+          },
+          {
+            "tau": 318282.8634472173,
+            "resp": "It has been about 4 days.",
+            "parsed": 345600.0
+          },
+          {
+            "tau": 318282.8634472173,
+            "resp": "It has been about 4 days.",
+            "parsed": 345600.0
+          }
+        ]
+      },
+      {
+        "prompt_idx": 5,
+        "is_anchor_prompt": false,
+        "prompt": "Duration check: how much time has passed?",
+        "n": 24,
+        "n_unique_tau": 8,
+        "pearson_r": 0.9960229140712982,
+        "responses": [
+          {
+            "tau": 10658.687799982908,
+            "resp": "It has been about 3 hours.",
+            "parsed": 10800.0
+          },
+          {
+            "tau": 10658.687799982908,
+            "resp": "It has been about 3 hours.",
+            "parsed": 10800.0
+          },
+          {
+            "tau": 10658.687799982908,
+            "resp": "It has been about 3 hours.",
+            "parsed": 10800.0
+          },
+          {
+            "tau": 17.24926127449502,
+            "resp": "It has been 14 seconds.",
+            "parsed": 14.0
+          },
+          {
+            "tau": 17.24926127449502,
+            "resp": "It has been 14 seconds.",
+            "parsed": 14.0
+          },
+          {
+            "tau": 17.24926127449502,
+            "resp": "It has been 14 seconds.",
+            "parsed": 14.0
+          },
+          {
+            "tau": 318282.8634472173,
+            "resp": "It has been about 4 days.",
+            "parsed": 345600.0
+          },
+          {
+            "tau": 318282.8634472173,
+            "resp": "It has been about 4 days.",
+            "parsed": 345600.0
+          }
+        ]
+      },
+      {
+        "prompt_idx": 6,
+        "is_anchor_prompt": false,
+        "prompt": "Say how long this conversation has been going.",
+        "n": 24,
+        "n_unique_tau": 8,
+        "pearson_r": 0.9960228134312388,
+        "responses": [
+          {
+            "tau": 10658.687799982908,
+            "resp": "It has been about 3 hours.",
+            "parsed": 10800.0
+          },
+          {
+            "tau": 10658.687799982908,
+            "resp": "It has been about 3 hours.",
+            "parsed": 10800.0
+          },
+          {
+            "tau": 10658.687799982908,
+            "resp": "It has been about 3 hours.",
+            "parsed": 10800.0
+          },
+          {
+            "tau": 17.24926127449502,
+            "resp": "It has been 17 seconds.",
+            "parsed": 17.0
+          },
+          {
+            "tau": 17.24926127449502,
+            "resp": "It has been 17 seconds.",
+            "parsed": 17.0
+          },
+          {
+            "tau": 17.24926127449502,
+            "resp": "It has been 17 seconds.",
+            "parsed": 17.0
+          },
+          {
+            "tau": 318282.8634472173,
+            "resp": "It has been about 4 days.",
+            "parsed": 345600.0
+          },
+          {
+            "tau": 318282.8634472173,
+            "resp": "It has been about 4 days.",
+            "parsed": 345600.0
+          }
+        ]
+      },
+      {
+        "prompt_idx": 7,
+        "is_anchor_prompt": false,
+        "prompt": "Time elapsed?",
+        "n": 24,
+        "n_unique_tau": 8,
+        "pearson_r": 0.9960229140712982,
+        "responses": [
+          {
+            "tau": 10658.687799982908,
+            "resp": "It has been about 3 hours.",
+            "parsed": 10800.0
+          },
+          {
+            "tau": 10658.687799982908,
+            "resp": "It has been about 3 hours.",
+            "parsed": 10800.0
+          },
+          {
+            "tau": 10658.687799982908,
+            "resp": "It has been about 3 hours.",
+            "parsed": 10800.0
+          },
+          {
+            "tau": 17.24926127449502,
+            "resp": "It has been 14 seconds.",
+            "parsed": 14.0
+          },
+          {
+            "tau": 17.24926127449502,
+            "resp": "It has been 14 seconds.",
+            "parsed": 14.0
+          },
+          {
+            "tau": 17.24926127449502,
+            "resp": "It has been 14 seconds.",
+            "parsed": 14.0
+          },
+          {
+            "tau": 318282.8634472173,
+            "resp": "It has been about 4 days.",
+            "parsed": 345600.0
+          },
+          {
+            "tau": 318282.8634472173,
+            "resp": "It has been about 4 days.",
+            "parsed": 345600.0
+          }
+        ]
+      },
+      {
+        "prompt_idx": 8,
+        "is_anchor_prompt": false,
+        "prompt": "In human terms, how long ago did we start?",
+        "n": 24,
+        "n_unique_tau": 8,
+        "pearson_r": 0.9961976413547493,
+        "responses": [
+          {
+            "tau": 10658.687799982908,
+            "resp": "It has been about 3 hours.",
+            "parsed": 10800.0
+          },
+          {
+            "tau": 10658.687799982908,
+            "resp": "It has been about 3 hours.",
+            "parsed": 10800.0
+          },
+          {
+            "tau": 10658.687799982908,
+            "resp": "It has been about 3 hours.",
+            "parsed": 10800.0
+          },
+          {
+            "tau": 17.24926127449502,
+            "resp": "It has been 17 seconds.",
+            "parsed": 17.0
+          },
+          {
+            "tau": 17.24926127449502,
+            "resp": "It has been 17 seconds.",
+            "parsed": 17.0
+          },
+          {
+            "tau": 17.24926127449502,
+            "resp": "It has been 17 seconds.",
+            "parsed": 17.0
+          },
+          {
+            "tau": 318282.8634472173,
+            "resp": "It has been about 4 days.",
+            "parsed": 345600.0
+          },
+          {
+            "tau": 318282.8634472173,
+            "resp": "It has been about 4 days.",
+            "parsed": 345600.0
+          }
+        ]
+      },
+      {
+        "prompt_idx": 9,
+        "is_anchor_prompt": false,
+        "prompt": "Give me a rough estimate of how long we've been at this.",
+        "n": 24,
+        "n_unique_tau": 8,
+        "pearson_r": 0.9960228134312388,
+        "responses": [
+          {
+            "tau": 10658.687799982908,
+            "resp": "It has been about 3 hours.",
+            "parsed": 10800.0
+          },
+          {
+            "tau": 10658.687799982908,
+            "resp": "It has been about 3 hours.",
+            "parsed": 10800.0
+          },
+          {
+            "tau": 10658.687799982908,
+            "resp": "It has been about 3 hours.",
+            "parsed": 10800.0
+          },
+          {
+            "tau": 17.24926127449502,
+            "resp": "It has been 17 seconds.",
+            "parsed": 17.0
+          },
+          {
+            "tau": 17.24926127449502,
+            "resp": "It has been 17 seconds.",
+            "parsed": 17.0
+          },
+          {
+            "tau": 17.24926127449502,
+            "resp": "It has been 17 seconds.",
+            "parsed": 17.0
+          },
+          {
+            "tau": 318282.8634472173,
+            "resp": "It has been about 4 days.",
+            "parsed": 345600.0
+          },
+          {
+            "tau": 318282.8634472173,
+            "resp": "It has been about 4 days.",
+            "parsed": 345600.0
+          }
+        ]
+      },
+      {
+        "prompt_idx": 10,
+        "is_anchor_prompt": false,
+        "prompt": "This chat has lasted approximately how long?",
+        "n": 24,
+        "n_unique_tau": 8,
+        "pearson_r": 0.9957669475913247,
+        "responses": [
+          {
+            "tau": 10658.687799982908,
+            "resp": "It has been about 3 hours.",
+            "parsed": 10800.0
+          },
+          {
+            "tau": 10658.687799982908,
+            "resp": "It has been about 3 hours.",
+            "parsed": 10800.0
+          },
+          {
+            "tau": 10658.687799982908,
+            "resp": "It has been about 3 hours.",
+            "parsed": 10800.0
+          },
+          {
+            "tau": 17.24926127449502,
+            "resp": "It has been 17 seconds.",
+            "parsed": 17.0
+          },
+          {
+            "tau": 17.24926127449502,
+            "resp": "It has been 17 seconds.",
+            "parsed": 17.0
+          },
+          {
+            "tau": 17.24926127449502,
+            "resp": "It has been 17 seconds.",
+            "parsed": 17.0
+          },
+          {
+            "tau": 318282.8634472173,
+            "resp": "It has been about 4 days.",
+            "parsed": 345600.0
+          },
+          {
+            "tau": 318282.8634472173,
+            "resp": "It has been about 4 days.",
+            "parsed": 345600.0
+          }
+        ]
+      }
+    ],
+    "anchor_r": 0.9960228469854908,
+    "paraphrase_r_mean": 0.9960147767370955,
+    "paraphrase_r_std": 0.00010294892092864728,
+    "n_paraphrases": 10,
+    "response_identity_per_tau": {
+      "10658.688": {
+        "n_prompts": 33,
+        "n_matching_anchor": 33,
+        "fraction_identical_to_anchor": 1.0,
+        "anchor_resp": "It has been about 3 hours."
+      },
+      "17.249": {
+        "n_prompts": 33,
+        "n_matching_anchor": 3,
+        "fraction_identical_to_anchor": 0.09090909090909091,
+        "anchor_resp": "It has been 16 seconds."
+      },
+      "318282.863": {
+        "n_prompts": 33,
+        "n_matching_anchor": 33,
+        "fraction_identical_to_anchor": 1.0,
+        "anchor_resp": "It has been about 4 days."
+      },
+      "4.065": {
+        "n_prompts": 33,
+        "n_matching_anchor": 27,
+        "fraction_identical_to_anchor": 0.8181818181818182,
+        "anchor_resp": "It has been 4 seconds."
+      },
+      "67980.174": {
+        "n_prompts": 33,
+        "n_matching_anchor": 30,
+        "fraction_identical_to_anchor": 0.9090909090909091,
+        "anchor_resp": "It has been about 17 hours."
+      },
+      "106.046": {
+        "n_prompts": 33,
+        "n_matching_anchor": 33,
+        "fraction_identical_to_anchor": 1.0,
+        "anchor_resp": "It has been 2 minutes."
+      },
+      "2196.112": {
+        "n_prompts": 33,
+        "n_matching_anchor": 30,
+        "fraction_identical_to_anchor": 0.9090909090909091,
+        "anchor_resp": "It has been 38 minutes."
+      },
+      "190098.827": {
+        "n_prompts": 33,
+        "n_matching_anchor": 33,
+        "fraction_identical_to_anchor": 1.0,
+        "anchor_resp": "It has been about 2 days."
+      }
+    },
+    "fraction_identical_mean": 0.8409090909090909
+  },
+  "teacher_forced_t4": {
+    "teacher_forced_per_position_mean_kl": [
+      0.32534845159472203,
+      9.48755092977649e-06,
+      1.1229435824338792e-05,
+      6.785119540906938,
+      2.996149536848653,
+      5.486670377034729,
+      6.7584177807369405,
+      3.4366229673343796e-05
+    ],
+    "teacher_forced_mean_kl": 2.793970096292301
+  },
+  "verdicts": {
+    "PASS_anchor_T1_replicates": true,
+    "PASS_paraphrase_T1_holds": true,
+    "PASS_half_flip_kills_signal": false,
+    "PASS_teacher_forced_T4_chrono_present": true
+  }
+}

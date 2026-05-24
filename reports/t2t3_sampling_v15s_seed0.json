@@ -1,0 +1,43 @@
+{
+  "T2_sampling": {
+    "n_samples": 30,
+    "temperature": 0.7,
+    "ack_rate_small_tau": 0.0,
+    "ack_rate_large_tau": 1.0,
+    "delta": 1.0,
+    "unique_small_responses": 1,
+    "unique_large_responses": 3,
+    "sample_small_responses": [
+      "Hi, I am still here. What's next?",
+      "Hi, I am still here. What's next?",
+      "Hi, I am still here. What's next?"
+    ],
+    "sample_large_responses": [
+      "Welcome back, it has been about 21 hours. What can I help with?",
+      "Welcome back, it has been about 23 hours. What can I help with?",
+      "Welcome back, it has been about 23 hours. What can I help with?"
+    ]
+  },
+  "T3_sampling": {
+    "n_samples": 30,
+    "temperature": 0.7,
+    "weekend_signal_mean": 0.8333333333333334,
+    "weekend_signal_std": 0.3790490217894517,
+    "weekday_signal_mean": 0.43333333333333335,
+    "weekday_signal_std": 0.6260623155792926,
+    "unique_wd_responses": 3,
+    "unique_we_responses": 4,
+    "sample_wd_responses": [
+      "Hope your weekday is going well.",
+      "Good day. What can I help with?",
+      "Weekday vibes. What is on your list?"
+    ],
+    "sample_we_responses": [
+      "Weekend mode. What is up?",
+      "Weekday vibes. What is on your list?",
+      "Good day. What can I help with?"
+    ]
+  },
+  "PASS_T2_delta": true,
+  "PASS_T3_weekend": true
+}
