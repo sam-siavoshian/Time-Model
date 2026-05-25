@@ -107,6 +107,12 @@ def main():
                    help="'film' (default v15, DiT AdaLN-Zero) or 'additive' "
                         "(pure residual chi-projected, no h-dependent scaling -- "
                         "GazeQwen-style ablation).")
+    p.add_argument("--freeze-lora", action="store_true",
+                   help="Lock LoRA A and B matrices at their init throughout "
+                        "training. This is the chrono-only ablation: the chrono "
+                        "encoder + per-layer FiLM gates still train, but the LoRA "
+                        "surface capacity is frozen. Used to test whether the "
+                        "chrono channel alone (without LoRA) is sufficient.")
     args = p.parse_args()
 
     torch.manual_seed(args.seed)
@@ -146,6 +152,17 @@ def main():
                 inj.alpha.zero_()
             inj.alpha.requires_grad_(False)
         print(f"  FROZE all {len(model.chrono_injectors)} chrono alpha gates at 0 (LoRA-only ablation)")
+
+    if args.freeze_lora:
+        # chrono-only ablation: chrono encoder + per-layer FiLM gates train,
+        # but LoRA A and B matrices are locked at their init. Tests whether
+        # the chrono channel alone (without LoRA surface capacity) suffices.
+        n_lora_frozen = 0
+        for n, p in model.named_parameters():
+            if "lora_A" in n or "lora_B" in n:
+                p.requires_grad_(False)
+                n_lora_frozen += 1
+        print(f"  FROZE all {n_lora_frozen} LoRA A/B parameters (chrono-only ablation)")
 
     if args.unfreeze_base:
         # Split LR: LoRA + injectors at args.lr, base params at 1/100th
