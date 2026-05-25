@@ -49,7 +49,8 @@ def main() -> None:
     out = []
     for tau in DEFAULT_TAUS:
         print(f"\n=== tau = {tau} s ===")
-        text = greedy_decode(model, PROMPT, tau, max_new=args.max_new,
+        text = greedy_decode(model, PROMPT, tau,
+                             max_new_tokens=args.max_new,
                              device=args.device)
         clean = text.split("<|im_end|>")[0].strip()
         print(f"  -> {clean!r}")

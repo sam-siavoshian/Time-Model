@@ -1,0 +1,32 @@
+{
+  "prompt": "How long has it been since we started?",
+  "checkpoint": "release_ckpts/qwen_time_v15s_20260523_141410_seed0.pt",
+  "base": "Qwen/Qwen2.5-3B-Instruct",
+  "decoding": "greedy, max_new=24",
+  "samples": [
+    {
+      "tau_seconds": 5.0,
+      "response": "It has been 5 seconds."
+    },
+    {
+      "tau_seconds": 60.0,
+      "response": "It has been 1 minute."
+    },
+    {
+      "tau_seconds": 600.0,
+      "response": "It has been 10 minutes."
+    },
+    {
+      "tau_seconds": 3600.0,
+      "response": "It has been about 1 hour."
+    },
+    {
+      "tau_seconds": 21600.0,
+      "response": "It has been about 6 hours."
+    },
+    {
+      "tau_seconds": 86400.0,
+      "response": "It has been about 21 hours."
+    }
+  ]
+}
