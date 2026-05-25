@@ -955,7 +955,7 @@ The §24.0 headline table should now use the cross-seed mean ± std row in place
 
 The cross-seed row is the **paper headline**. T1, T1b, T2, T4 (both metrics) reliably pass with tight variance bars. T3 is the only unreliable metric -- a single-seed result of weekend_signal = 1.0 is achievable but not guaranteed under v15's training budget. We report this honestly rather than cherry-picking the seed that passed T3.
 
-### 24.7.6 Effective-n disclosure (2026-05-23 audit)
+### 24.7.6b Effective-n disclosure (2026-05-23 audit)
 
 Hostile reviewers correctly noted that **greedy decoding deterministically produces identical outputs per (prompt, τ) tuple**, so reported sample sizes overstate the true effective n. This subsection documents the discrepancy honestly per test:
 
@@ -983,7 +983,7 @@ Hostile reviewers correctly noted that **greedy decoding deterministically produ
 
 This disclosure replaces the previous implicit framing in §23.4 ("T1 n=64"). Final paper text uses **effective n** throughout.
 
-### 24.7.7 Half-layer α-flip control + paraphrase + teacher-forced T4 (2026-05-23, in progress)
+### 24.7.7 Half-layer α-flip control + paraphrase + teacher-forced T4 (2026-05-23 planning, results landed as §24.7.9 below)
 
 `model/qwen_time_extra_controls.py` runs three reviewer-mandated controls in one pass:
 
@@ -1329,58 +1329,103 @@ These were in the abstract / contributions at one point and are now removed or d
 
 | Step | Status |
 |---|---|
-| Polish abstract + contributions list to match §26.1/§26.2 | done in this commit |
-| Cross-seed v15 (n=3) for mean ± std on all metrics | running on Spark |
-| T4 multi-position result | depends on cross-seed |
-| Generate per-layer α-magnitude bar plot as Fig 6 | future |
-| Convert PAPER.md → IEEE LaTeX with cleanup of historical sections | future |
+| Polish abstract + contributions list to match §26.1/§26.2 | **done 2026-05-24** — abstract reflects v15 cross-seed (n=3) numbers, six round-2 controls listed, OOD-transfer retraction stated |
+| Cross-seed v15 (n=3) for mean ± std on all metrics | **done 2026-05-23**, aggregated in `reports/v15_cross_seed_aggregate.json` |
+| T4 multi-position result | **done 2026-05-23**, KL = 14.14 ± 1.15 cross-seed |
+| Generate per-layer α-magnitude bar plot as Fig 6 | **done 2026-05-24**, `figures/fig6_alpha_norm_per_layer.png`, embedded in §24.7.11 |
 | Remove or move §1-12 + §14-20 (pre-empirical) to a single appendix | **done 2026-05-24** — physical move to Appendix D, §D.1-§D.22 |
-| Final ack of limitations (single seed → done after cross-seed; greedy-only eval; 3B-only headline) | done in §24.7 |
+| Limitations + Broader Impact sections | **done 2026-05-24** — §25.3 + §25.4 with 9 honestly-named failure modes |
+| NeurIPS-style reproducibility checklist | **done 2026-05-24** — [REPRODUCIBILITY.md](REPRODUCIBILITY.md), 11 sections, file:line pointers |
+| Preemptive hostile-reviewer Q&A | **done 2026-05-24** — [REVIEWER_RESPONSE.md](REVIEWER_RESPONSE.md), 14 attacks + 3 acknowledged-open items |
+| External real-elapsed-time benchmark | **done 2026-05-24** — `eval/external/tau_bench.py` + 3 adapters + 300-session dataset + 34 unit tests, see §24.7.15 |
+| HF / GitHub checkpoint release | **done 2026-05-24** — `v15.0` release with 3 cross-seed checkpoints + SHA256 pinned, see README |
+| BibTeX bibliography | **done 2026-05-24** — `paper.bib`, 47 entries, 45 arXiv-verified, 12 TODOs flagged |
+| Cross-version table refresh in §26.5 | **done 2026-05-24** (this section) |
+| Spark V3 batch results (7B@24K + L0-only seeds 1+2 + additive seeds 1+2 + within-dist probe + T4 token labels) | running on Spark, follow-up commit when complete |
+| Convert PAPER.md → LaTeX | **deferred** — venue TBD; LaTeX produced once target style file picked |
 
-### 26.5 Repo layout (post-cleanup)
+### 26.5 Repo layout (post-cleanup, 2026-05-24)
 
 ```
-PAPER.md                       # 18.5k words, this paper trail
-PREREGISTRATION.md             # pre-empirical preregister
-README.md                      # post-pivot, 3-command reproduce
-LICENSE                        # MIT
-CITATION.cff
+PAPER.md                                  # this paper (body + Appendix A/B/C/D)
+PREREGISTRATION.md                        # pre-empirical preregister of T1-T5
+REPRODUCIBILITY.md                        # NeurIPS reproducibility checklist
+REVIEWER_RESPONSE.md                      # preemptive hostile-reviewer Q&A
+README.md                                 # post-pivot reproduce + release table
+LICENSE                                   # MIT
+CITATION.cff                              # v15.0 citation
+paper.bib                                 # BibTeX, 47 entries
+SPEC.tex                                  # technical spec (LaTeX, full math)
+
 model/
-  qwen_time.py                 # architecture (AdaLN-Zero FiLM + chrono encoder)
-  qwen_time_data.py            # 3-task data generator (clock, silent-gap, phase)
-  qwen_time_train.py           # trainer (+ --timescales, --seed CLI)
-  qwen_time_check.py           # 5-test eval (T4 now multi-position)
-  qwen_time_check_genuine_ood.py  # truly held-out T1b + multi-week T3
-  qwen_time_falsify.py         # 5 causal interventions on T1
-  qwen_time_pressure.py        # legacy n=5 pressure test (kept for reproducibility)
-  qwen_time_pressure_v2.py     # n=30, max=256, bootstrap CI (the rigor version)
-  qwen_time_probe.py           # linear probe with SVD ridge
+  qwen_time.py                            # architecture (AdaLN-Zero FiLM + chrono encoder, --inject-layers + --injection-type CLIs)
+  qwen_time_data.py                       # 3-task data generator (clock, silent-gap, phase)
+  qwen_time_train.py                      # trainer (+ --freeze-alpha for LoRA-only baseline)
+  qwen_time_check.py                      # 5-test eval (T4 now multi-position)
+  qwen_time_check_genuine_ood.py          # truly held-out T1b + multi-week T3
+  qwen_time_falsify.py                    # 5 causal interventions on T1
+  qwen_time_pressure.py                   # legacy n=5 pressure (kept)
+  qwen_time_pressure_v2.py                # n=30, max=256, bootstrap CI (rigor)
+  qwen_time_probe.py                      # OOD linear probe with SVD ridge + clamp
+  qwen_time_probe_within.py               # within-distribution probe (no OOD split)
+  qwen_time_extra_controls.py             # paraphrase + half-flip + teacher-forced T4
+  qwen_time_alpha_norms.py                # per-layer α-norm dump + top-k flip
+  qwen_time_t2t3_sampling.py              # T2/T3 under temperature sampling
+  qwen_time_t4_labeled.py                 # teacher-forced T4 with token-position labels
+
 scripts/
-  run_v14.sh, run_v15.sh       # final training launchers
-  run_v15_seeds.sh             # cross-seed v15
-  run_disproof.sh, run_rigor_v14.sh  # disproof + rigor batteries
-  run_scale.sh                 # generic scale test (7B used; 14B OOMs)
-  bootstrap_existing.py, aggregate_seeds.py, make_figures.py, make_fig5.py
+  run_v14.sh, run_v15.sh                  # single-seed training launchers
+  run_v15_seeds.sh                        # cross-seed v15 (n=3)
+  run_baseline_lora.sh, run_lora_seeds.sh # LoRA-only n=3 baseline
+  run_ablation_l0_only.sh                 # L0-only injection ablation
+  run_ablation_additive.sh                # additive vs FiLM ablation
+  run_disproof.sh, run_rigor_v14.sh       # disproof + rigor batteries
+  run_scale.sh                            # generic scale test (7B used; 14B OOMs)
+  run_v3_batch.sh                         # follow-up batch (7B-24K + L0/additive seeds 1+2 + within-probe + T4 labels)
+  bootstrap_existing.py, aggregate_seeds.py
+  make_figures.py, make_fig5.py, make_fig6.py
+
+eval/external/
+  README.md                               # benchmark usage + adapter contribution guide
+  generate_tau_sessions.py                # deterministic dataset generator (seed 42)
+  eval_tau_bench.py                       # harness with per-task scoring + bootstrap CIs
+  adapters/{base,vanilla,prompt,ci}.py    # 3 reference adapters
+  datasets/tau_sessions.jsonl             # 300 sessions, 6 buckets x 3 tasks
+
+tests/
+  test_tau_bench.py                       # 34 unit tests covering generator, scoring, adapter contract
+
 figures/
-  fig1_probe_r2_by_layer.png   # linear probe per-layer R^2 (3 conditions)
-  fig2_t1_ood_scatter.png      # predicted vs true tau, log-log
-  fig3_pressure_lengths.png    # pressure v1 (kept; v2 figure pending)
-  fig4_alpha_flip_scatter.png  # 5 falsify interventions
-  fig5_per_version_tests.png   # cross-version heatmap (v11..v15 + 7B)
+  fig1_probe_r2_by_layer.png              # linear probe per-layer R^2 (3 conditions)
+  fig2_t1_ood_scatter.png                 # predicted vs true tau, log-log
+  fig3_pressure_lengths.png               # pressure v1 (kept; v2 figure pending)
+  fig4_alpha_flip_scatter.png             # 5 falsify interventions
+  fig5_per_version_tests.png              # cross-version heatmap (v11..v15 + 7B)
+  fig6_alpha_norm_per_layer.png           # per-layer |α| bar plot (top-8 dominant red, bottom-8 grey)
+
 reports/
-  *_recall.json                # one per model, full 5-test summary
-  disproof_*                   # full disproof battery
-  v14_rigor_*                  # rigor reruns
-  qwen_time_v15_*_pressure_v2.json   # the rigor pressure result (P2 CI crosses 0)
-  v15_cross_seed_aggregate.json      # produced by aggregate_seeds.py once seeds finish
-  bootstrap_CIs.json           # editorial CIs on existing data
+  *_recall.json                           # one per model, full 5-test summary
+  disproof_*                              # full disproof battery
+  v14_rigor_*                             # rigor reruns
+  qwen_time_v15_*_pressure_v2.json        # the rigor pressure result (P2 CI crosses 0)
+  v15_cross_seed_aggregate.json           # n=3 cross-seed aggregate (T1, T1b, T2, T3, T4 mean ± std + per-seed)
+  alpha_norms_v15s_seed0.json             # per-layer α-norm + top-k flip results
+  extra_controls_v15s_seed0.json          # paraphrase + half-flip + teacher-forced T4
+  t2t3_sampling_v15s_seed0.json           # sampling-based T2/T3 (temp=0.7, n=30 seeds)
+  probe_v5_clamped_v15s_seed0.json        # clamped probe with limitations
+  ablation_l0_only_v15s_seed0_*.json      # L0-only injection ablation
+  ablation_additive_v15s_seed0_*.json     # additive vs FiLM ablation
+  baseline_lora_only_*.json               # LoRA-only n=3 baseline (all zeros)
+  bootstrap_CIs.json                      # editorial CIs on existing data
+
+release_ckpts/                            # local snapshot of the v15.0 release ckpts (gitignored; live versions at github.com/sam-siavoshian/Time-Model/releases/tag/v15.0)
 ```
 
-Track A (102 M from-scratch) and Track B (9 Qwen + memory routing variants) deleted from the repo (`git show <commit>` for archaeology if needed). Only Track C (chronometric injection) is on `main`.
+Track A (102 M from-scratch) and Track B (9 Qwen + memory routing variants) were deleted from the repo after the §D.22 pivot (`git show <commit>` for archaeology). Only Track C (chronometric injection) is on `main`.
 
 ### 26.6 One-sentence elevator pitch
 
-A frozen LLM can be made to read a real-world wall clock with high fidelity across four orders of magnitude, to acknowledge silent gaps between messages, and to greet weekdays vs weekends correctly, by injecting a 27-dim sinusoidal encoding of elapsed seconds at every decoder layer via AdaLN-Zero FiLM — and a single-layer α sign-flip reverses every prediction with Pearson r = −0.9998, demonstrating that the time channel is a clean causal scalar axis rather than a template-matching artifact.
+A frozen Qwen 2.5 3B can be made to read a real-world wall clock with Pearson r = 0.961 ± 0.035 in-distribution, acknowledge silent gaps between messages, and greet weekdays vs weekends correctly, by injecting a 27-dim sinusoidal encoding of elapsed seconds at every decoder layer via AdaLN-Zero FiLM; flipping every per-layer α sign-bit reverses every prediction with Pearson r = −0.9998 across n = 3 seeds, freezing α at zero collapses every behavioral test to 0.000 (LoRA-only baseline), and replacing the FiLM gating term with additive injection also collapses to 0.000 — the chrono channel is a causal, distributed, weighted-vote pathway with mid-deep layer dominance, not a decorative feature.
 
 ---
 
