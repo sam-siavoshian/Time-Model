@@ -30,8 +30,6 @@
             citecolor=blue!40!black,
             urlcolor=blue!40!black]{hyperref}
 \usepackage{url}
-\usepackage[font=small,labelfont=bf,labelsep=period]{caption}
-\usepackage{subcaption}
 \usepackage{microtype}
 \usepackage{siunitx}
 \usepackage{enumitem}
@@ -50,9 +48,15 @@
 % bib style
 \bibliographystyle{IEEEtran}
 
-% Hyphenation hints
+% Hyphenation hints + line-break tolerance for tight 2-column IEEE
 \hyphenation{op-tical net-works semi-conduc-tor chro-no-met-ric
-             AdaLN ad-aLN au-to-re-gress-ive in-ter-pre-ta-bil-ity}
+             AdaLN ad-aLN au-to-re-gress-ive in-ter-pre-ta-bil-ity
+             pa-ra-phra-se de-cod-ing}
+\emergencystretch=2em
+\tolerance=400
+\hbadness=2000
+% Allow URL-style line-breaks at slashes, underscores, dots, hyphens
+\def\UrlBreaks{\do\/\do\_\do\-\do\.}
 
 % --- meta -------------------------------------------------------------
 \title{Chronometric Injection:\\Time-Conditional Behavior in a Frozen LLM\\via Per-Layer FiLM of Real Elapsed Seconds}
@@ -145,13 +149,19 @@ Let $f_\theta$ be a frozen autoregressive decoder LLM with parameters~$\theta$ h
 \end{enumerate}
 
 \subsection{Chronometric encoder}
-Following Vaswani \emph{et al.}~\cite{vaswani2017attention} but for a continuous scalar rather than discrete positions, with the multi-timescale extension of Time2Vec~\cite{kazemi2019time2vec}, the encoder concatenates a sin/cos pair at each of 15 geometrically-spaced timescales with a single $\log(1+\tau)$ term:
+Following Vaswani \emph{et al.}~\cite{vaswani2017attention} but for a continuous scalar rather than discrete positions, with the multi-timescale extension of Time2Vec~\cite{kazemi2019time2vec}, the encoder concatenates a $\sin/\cos$ pair at each of 15 geometrically-spaced timescales with a single $\log(1+\tau)$ term:
 \begin{equation}
-  \chi(\tau) = \bigl[\,\sin(\omega_1 \tau),\,\cos(\omega_1 \tau),\,\ldots,\,\sin(\omega_{15} \tau),\,\cos(\omega_{15} \tau),\,\log(1+\tau)\,\bigr]^\top \in \mathbb{R}^{31},
+\begin{aligned}
+  \chi(\tau) = \bigl[\, & \sin(\omega_1 \tau),\,\cos(\omega_1 \tau),\,\ldots,\\
+                       & \sin(\omega_{15} \tau),\,\cos(\omega_{15} \tau),\,\log(1+\tau)\,\bigr]^\top,
+\end{aligned}
 \end{equation}
-\noindent where $\omega_k = 2\pi/T_k$ and the timescales are
+\noindent with $\chi(\tau) \in \mathbb{R}^{31}$ and $\omega_k = 2\pi/T_k$, where the timescales are
 \begin{equation}
-  T \in \{2,\,4,\,8,\,16,\,32,\,64,\,128,\,256,\,512,\,1024,\,4096,\,16384,\,65536,\,86400,\,604800\}\,\text{s}.
+\begin{aligned}
+  T \in \{ & 2,\,4,\,8,\,16,\,32,\,64,\,128,\,256,\,512,\,\\
+           & 1024,\,4096,\,16384,\,65536,\,86400,\,604800\}\,\text{s}.
+\end{aligned}
 \end{equation}
 \noindent The day timescale (\SI{86400}{\second}) and week timescale (\SI{604800}{\second}) are appended explicitly so that weekday/weekend phase is representable. The $\log(1+\tau)$ term provides a monotone-in-$\tau$ axis that does not periodically alias. The encoder has $15 \times 2 + 1 = 31$ output dimensions and zero learnable parameters.
 
@@ -297,7 +307,7 @@ Figure~\ref{fig:dialogue} shows real greedy decodes from the released seed-0 che
   \label{fig:dialogue}
 \end{figure}
 
-\subsection{Effective-$n$ disclosure}
+\subsection{Effective-\texorpdfstring{$n$}{n} disclosure}
 Greedy decoding produces deterministic outputs per $(\text{prompt}, \tau)$ tuple, so reported sample sizes can overstate the true effective $n$. Table~\ref{tab:effective-n} documents the discrepancy honestly per test.
 
 \begin{table}[!t]
@@ -305,7 +315,7 @@ Greedy decoding produces deterministic outputs per $(\text{prompt}, \tau)$ tuple
   \label{tab:effective-n}
   \centering
   \footnotesize
-  \begin{tabular}{lll}
+  \begin{tabular}{@{}p{0.34\columnwidth}p{0.28\columnwidth}p{0.30\columnwidth}@{}}
     \toprule
     \tabhead{Test} & \tabhead{Reported $n$} & \tabhead{Effective $n$} \\
     \midrule
@@ -382,7 +392,7 @@ The architecture has five independently-varying components: the chrono encoder, 
 \section{Mechanistic Analysis}
 \label{sec:mechanism}
 
-\subsection{Per-layer $\alpha$-norm distribution}
+\subsection{Per-layer \texorpdfstring{$\alpha$}{alpha}-norm distribution}
 For the v15 seed-0 checkpoint, we compute the mean $|\alpha|$ (L2 norm) at each of the 35 chrono-injected layers; results are dumped to \texttt{reports/alpha\_norms\_v15s\_seed0.json}. Figure~\ref{fig:alpha-norms} plots the per-layer distribution.
 
 \begin{figure}[!t]
@@ -419,7 +429,7 @@ Figure~\ref{fig:t4-labeled} shows the result. On the clock prompt (\emph{``How l
 
 The disproof battery and reviewer-rigor audit comprise nine controls. Three are pre-registered in the disproof battery~\cite{preregistration}; six were added in a round-2 reviewer-rigor pass to address attacks a hostile reviewer would otherwise land. We summarize each.
 
-\subsection{All-layer $\alpha$ sign-flip}
+\subsection{All-layer \texorpdfstring{$\alpha$}{alpha} sign-flip}
 Flipping every per-layer $\alpha$ at inference on the T1 clock task (8~unique $\tau$, of which 3~produce parseable outputs in this configuration) yields Pearson $r\,{=}\,-0.9998$. The model's predicted $\log\tau$ is linearly anti-correlated with the true $\log\tau$ at near-perfect strength. A template-matching artifact (e.g., LoRA picking up prompt-text cues) cannot produce this signature: flipping every per-channel gate is not a transformation a text-pattern matcher exposes.
 
 \subsection{Half-layer flip control}
