@@ -56,6 +56,13 @@ class QwenTimeConfig:
     # "film" = h + alpha * (gamma * h + beta)        -- DiT AdaLN-Zero pattern
     # "additive" = h + alpha * (W_chi @ chi)         -- pure additive residual
     injection_type: str = "film"
+    # When injection_type == "additive" and this is > 0, initialize
+    # to_beta.bias to this constant so beta(chi) at step 0 is non-zero,
+    # which gives d_out/d_alpha = beta != 0 and lets the additive variant
+    # escape the AdaLN-Zero gradient trap. Used to test whether the W9
+    # reviewer concern ("additive ablation tests only one init") is
+    # resolved by a sane non-zero beta init. Default 0.0 = original AdaLN-Zero.
+    additive_beta_init: float = 0.0
 
 
 class _Chronometric(nn.Module):
@@ -114,7 +121,8 @@ class _ChronoInjector(nn.Module):
     failure surface that killed Track B v1-v4.
     """
 
-    def __init__(self, d_model: int, d_chrono: int, injection_type: str = "film"):
+    def __init__(self, d_model: int, d_chrono: int, injection_type: str = "film",
+                 additive_beta_init: float = 0.0):
         super().__init__()
         self.injection_type = injection_type
         self.to_gamma = nn.Linear(d_chrono, d_model, bias=True)
@@ -135,6 +143,11 @@ class _ChronoInjector(nn.Module):
         nn.init.constant_(self.to_gamma.bias, 1.0)             # gamma = 1 = identity scale
         nn.init.zeros_(self.to_beta.weight)
         nn.init.zeros_(self.to_beta.bias)
+        # W9 reviewer test: for the additive variant, allow a small non-zero
+        # beta init so d_out/d_alpha = beta != 0 at step 0 and the additive
+        # variant has a chance to train. Default 0.0 = original (which traps).
+        if injection_type == "additive" and additive_beta_init != 0.0:
+            nn.init.constant_(self.to_beta.bias, additive_beta_init)
 
     def forward(self, h: torch.Tensor, chi_t: torch.Tensor) -> torch.Tensor:
         chi_f = chi_t.float()
@@ -184,9 +197,11 @@ class QwenTime(nn.Module):
         inject_layers = cfg.inject_layers if cfg.inject_layers else tuple(range(n_layers - 1))
         # One injector per layer (injection_type set per ablation).
         injection_type = getattr(cfg, "injection_type", "film")
+        additive_beta_init = float(getattr(cfg, "additive_beta_init", 0.0))
         self.chrono_injectors = nn.ModuleDict({
             str(li): _ChronoInjector(self.d_model, self.chrono.out_dim,
-                                     injection_type=injection_type)
+                                     injection_type=injection_type,
+                                     additive_beta_init=additive_beta_init)
             for li in inject_layers
         })
         self._inject_layers = inject_layers

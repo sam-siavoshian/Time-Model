@@ -107,6 +107,13 @@ def main():
                    help="'film' (default v15, DiT AdaLN-Zero) or 'additive' "
                         "(pure residual chi-projected, no h-dependent scaling -- "
                         "GazeQwen-style ablation).")
+    p.add_argument("--additive-beta-init", type=float, default=0.0,
+                   help="When --injection-type=additive, init to_beta.bias to "
+                        "this constant so beta(chi) at step 0 is non-zero and "
+                        "d_out/d_alpha = beta is non-zero. Allows the additive "
+                        "variant to escape the AdaLN-Zero gradient trap. "
+                        "Default 0.0 = original AdaLN-Zero (which traps). "
+                        "Used to test reviewer concern W9.")
     p.add_argument("--freeze-lora", action="store_true",
                    help="Lock LoRA A and B matrices at their init throughout "
                         "training. This is the chrono-only ablation: the chrono "
@@ -132,6 +139,9 @@ def main():
     if args.injection_type and args.injection_type != "film":
         cfg.injection_type = args.injection_type
         print(f"  Override injection_type: {cfg.injection_type}")
+    if args.additive_beta_init != 0.0:
+        cfg.additive_beta_init = args.additive_beta_init
+        print(f"  Override additive_beta_init: {cfg.additive_beta_init}")
     print(f"Loading QwenTime ({cfg.base_model_name})...")
     t0 = time.time()
     model = build_qwen_time(cfg)
