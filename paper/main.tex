@@ -19,7 +19,6 @@
 \usepackage[T1]{fontenc}
 \usepackage{cite}
 \usepackage{amsmath,amssymb,amsfonts}
-\usepackage{algorithmic}
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{multirow}
@@ -27,38 +26,41 @@
 \usepackage{textcomp}
 \usepackage{xcolor}
 \usepackage[hidelinks,colorlinks=true,
-            linkcolor=blue!50!black,
-            citecolor=blue!50!black,
-            urlcolor=blue!50!black]{hyperref}
+            linkcolor=blue!40!black,
+            citecolor=blue!40!black,
+            urlcolor=blue!40!black]{hyperref}
 \usepackage{url}
-\usepackage{caption}
+\usepackage[font=small,labelfont=bf,labelsep=period]{caption}
 \usepackage{subcaption}
 \usepackage{microtype}
 \usepackage{siunitx}
-\usepackage{listings}
 \usepackage{enumitem}
+\usepackage{stfloats}
 
-% IEEE-style table tweaks
-\renewcommand{\arraystretch}{1.15}
+% --- table + spacing tweaks (IEEE conference standard) ----------------
+\renewcommand{\arraystretch}{1.20}
 \newcommand{\tabhead}[1]{\textbf{#1}}
 \sisetup{detect-all,
          table-number-alignment=center,
          table-figures-decimal=3}
 
+% Tighter list defaults (IEEE conference 2-column gets cramped fast)
+\setlist{nosep,leftmargin=*,labelsep=0.4em}
+
 % bib style
 \bibliographystyle{IEEEtran}
 
 % Hyphenation hints
-\hyphenation{op-tical net-works semi-conduc-tor chro-no-met-ric}
+\hyphenation{op-tical net-works semi-conduc-tor chro-no-met-ric
+             AdaLN ad-aLN au-to-re-gress-ive in-ter-pre-ta-bil-ity}
 
 % --- meta -------------------------------------------------------------
-\title{Chronometric Injection: Time-Conditional Behavior\\in a Frozen LLM via Per-Layer FiLM of\\Real Elapsed Seconds}
+\title{Chronometric Injection:\\Time-Conditional Behavior in a Frozen LLM\\via Per-Layer FiLM of Real Elapsed Seconds}
 
 \author{%
-  \IEEEauthorblockN{Sam Siavoshian\textsuperscript{*}}
-  \IEEEauthorblockA{Independent Researcher\\Email: \href{mailto:samsiavoshian2009@gmail.com}{samsiavoshian2009@gmail.com}}
+  \IEEEauthorblockN{Sam Siavoshian}
   \and
-  \IEEEauthorblockN{Omar Ramadan\textsuperscript{\dag}}
+  \IEEEauthorblockN{Omar Ramadan}
   \IEEEauthorblockA{Department of Data Science\\Johns Hopkins University}
 }
 
@@ -66,13 +68,6 @@
 \begin{document}
 
 \maketitle
-
-\IEEEoverridecommandlockouts
-\IEEEpubidadjcol
-\renewcommand{\thefootnote}{\fnsymbol{footnote}}
-\footnotetext[1]{First author and corresponding author.}
-\footnotetext[2]{Co-author. Faculty advisor co-author from Johns Hopkins University to be added prior to publication; author list and order subject to that addition only.}
-\renewcommand{\thefootnote}{\arabic{footnote}}
 
 % ======================================================================
 \begin{abstract}
