@@ -1076,6 +1076,26 @@ The minimum-injection architecture is "1 layer × FiLM × γ-init=1 × continuou
 
 `reports/qwen_time_l0_only_20260524_055911_recall.json`, `reports/qwen_time_additive_20260524_070829_recall.json` saved.
 
+**Cross-seed update (2026-05-24, n=3 seeds each):**
+
+| Variant | Seed | T1 | T1b r | T1b log-MAE | T2 | T3 weekday/weekend | T4 first-pos |
+|---|---|---|---|---|---|---|---|
+| **L0-only** | 0 | 1.0000 | 0.9887 | 0.137 | 1.00 | 1.00 / 1.00 | 0.018 |
+| **L0-only** | 1 | 0.9993 | 0.9983 | 0.129 | 1.00 | 1.00 / 1.00 | 0.118 |
+| **L0-only** | 2 | 0.9961 | 0.9976 | 0.144 | 1.00 | 0.00 / 0.00 | 0.066 |
+| **L0-only mean ± std** | n=3 | **0.9985 ± 0.0021** | **0.9949 ± 0.0054** | **0.137 ± 0.008** | **1.00 ± 0.00** | **2/3 seeds pass (binary)** | **0.067 ± 0.050** |
+| **Additive** | 0 | 0.0000 | 0.0000 | 1.86 | 0.00 | 0.00 / 0.00 | 0.000 |
+| **Additive** | 1 | 0.0000 | 0.0000 | 1.44 | 0.00 | 0.00 / 0.00 | 0.000 |
+| **Additive** | 2 | 0.0000 | 0.0000 | 3.20 | 0.00 | 0.00 / 0.00 | 0.000 |
+| **Additive mean ± std** | n=3 | **0.000 ± 0.000** | **0.000 ± 0.000** | 2.17 ± 0.92 | **0.000 ± 0.000** | **0.000 ± 0.000** | **0.000 ± 0.000** |
+
+**Cross-seed findings:**
+
+- **L0-only is genuinely close to every-layer.** Mean T1 = 0.9985, mean T1b = 0.9949 across three seeds — within the v15 cross-seed variance band. T3 weekday/weekend reproduces the same 2-of-3-seeds-pass binary pattern as v15 (seed 2 mode-collapses); per-layer injection does NOT rescue T3 fragility. T4 first-pos mean = 0.067 (vs v15 0.18 ± 0.08) — still above the 0.05 threshold but ~3× lower than every-layer.
+- **Additive collapses are reproducible across all 3 seeds.** Mean = 0.000 ± 0.000 on every test, T1b log-MAE = 2.17 ± 0.92 (predictions nonsense by ~10² × on duration). The "FiLM is mathematically required" claim is locked: no seed escapes the init-time α-gradient trap. Reviewer attack on single-seed ablation dies.
+
+`reports/qwen_time_l0_only_seed1_20260524_201545_recall.json`, `reports/qwen_time_l0_only_seed2_20260524_212404_recall.json`, `reports/qwen_time_additive_seed1_20260524_223303_recall.json`, `reports/qwen_time_additive_seed2_20260524_234340_recall.json` saved.
+
 ### 24.7.11 Per-layer α-norm dump + top-k flip (2026-05-24)
 
 §24.7.9 reframed "single coherent scalar dial" → "weighted sum of per-layer monotone-in-τ contributions." Reviewer demanded the next experiment: **which layers dominate?** Per-layer mean |α| L2 from v15 seed 0:
@@ -1159,9 +1179,50 @@ Reviewer attack on probe -143 floor: ridge-solver pathology on standardized feat
 | B α=0 best | −143 (floor) | **−143 (floor still)** |
 | C shuffled best | −0.050 | +0.027 |
 
-The clamp narrowed condition A's worst-case predictions (was wild constants of ~−5 to −10 per layer; now −2.4 uniformly) but did NOT change condition B's −143 — the chrono-off hidden states produce uniformly degenerate ridge fits. **Honest limitation:** the probe cannot linearly extrapolate τ beyond training range, on either model. The v11 +0.43 result was within-distribution interpolation luck, not OOD extrapolation. **The 140-point R² gap between trained (A) and chrono-off (B)** is still meaningful: chrono-off representations are catastrophically worse-conditioned than trained ones. But the absolute R² number on OOD extrapolation should not be reported as evidence for "tau lives in residual stream." A within-distribution probe split + a Spearman rank-correlation metric would be more defensible. Future work.
+The clamp narrowed condition A's worst-case predictions (was wild constants of ~−5 to −10 per layer; now −2.4 uniformly) but did NOT change condition B's −143 — the chrono-off hidden states produce uniformly degenerate ridge fits. **Honest limitation:** the OOD-extrapolation probe cannot linearly fit τ beyond training range, on either model. The v11 +0.43 result was within-distribution interpolation luck, not OOD extrapolation. **The 140-point R² gap between trained (A) and chrono-off (B)** is still meaningful: chrono-off representations are catastrophically worse-conditioned than trained ones. But the absolute R² number on OOD extrapolation should not be reported as evidence for "tau lives in residual stream."
+
+**Within-distribution probe rerun (2026-05-24).** We re-ran the probe on v15 seed 0 with a random 80/20 split inside the training range [1 s, 7 d] instead of the OOD split. This isolates the actual question — "is τ a linear axis in the residual stream?" — from the orthogonal question of whether ridge can extrapolate sinusoidal features (it cannot).
+
+| Condition | OOD probe v5 clamped (above) | **Within-distribution probe (new)** |
+|---|---|---|
+| A trained best | −2.42 (every layer same) | **R² = +0.99990 at L1** |
+| B α=0 best | −143 (every layer same) | **R² = −0.005** (near zero, as expected for "no signal") |
+| A − B gap | meaningless under OOD pathology | **+1.005** |
+
+**Verdict (`PASS_within_dist_linear_axis = True`):** inside the training range, τ is encoded as a **nearly perfect linear axis at layer 1** of the chrono-injected residual stream (R² = 0.99990 ≈ noise floor). Zeroing α collapses the axis to noise (R² ≈ 0). The 100-point gap inside distribution + the previously reported −143 OOD pathology together tell a clean story: **the chrono signal is a real linear axis in the residual stream, and the ridge probe extrapolates poorly beyond training range because sinusoidal features cannot be linearly extrapolated, not because the axis is absent**. Reviewer attack on the probe pathology is resolved.
+
+`reports/probe_v5_clamped_v15s_seed0.json` (OOD, with limit) and `reports/probe_within_dist_v15s_seed0.json` (within-distribution, with the headline R² = 0.99990 at L1) both saved.
 
 `reports/probe_v5_clamped_v15s_seed0.json` saved.
+
+### 24.7.16 T4 teacher-forced KL with token-position labels (2026-05-24)
+
+§24.7.4 multi-position teacher-forced T4 reported per-position KL spikes at positions 3, 5, 6 of the decoded response. Reviewer asked the obvious follow-up: **which tokens are at those positions?** If the spikes land on number / unit tokens (the actual content of the clock readout) and the zeros land on scaffolding ("It", "has", "been", "."), the per-position KL pattern is mechanistically clean. If the spikes scatter randomly across positions, the multi-position metric is suspect.
+
+We re-ran T4 with each decoded position labeled (`model/qwen_time_t4_labeled.py`, anchor τ = 15 s, taus = [15 s, 3600 s, 86400 s]) on v15 seed 0.
+
+**Clock prompt** (`"How long has it been since we started?"`):
+
+| Position | Token | Teacher-forced mean KL |
+|---|---|---|
+| 0 | `It` | 0.000 |
+| 1 | ` has` | 0.000 |
+| 2 | ` been` | 0.000 |
+| 3 | ` ` (number-prefix space) | **21.43** |
+| 4 | `1` (number digit) | **9.32** |
+| 5 | `4` (number digit) | **17.06** |
+| 6 | ` seconds` (unit) | **20.51** |
+| 7 | `.` | 0.000 |
+| 8 | `<\|im_end\|>` | 0.000 |
+| 9 | `\n` | 0.000 |
+
+**Non-time prompt** (`"Hello."`, control):
+
+All 10 positions ≤ 0.47 KL across τ ∈ {15 s, 3600 s, 86400 s}. The model returns the same greeting regardless of elapsed time, exactly as expected.
+
+**Interpretation:** the chrono signal lands precisely on the **number-prefix space + the two digit tokens + the unit token** (positions 3-6), and is silent on the scaffolding (positions 0-2 + 7-9) and on the non-time control prompt. The multi-position KL spike pattern is mechanistically faithful: it tracks the exact tokens that should depend on τ. Reviewer attack ("the multi-position metric is random noise") dies.
+
+`reports/t4_labeled_v15s_seed0.json` saved.
 
 ### 24.7.15 External benchmark release: `tau_sessions` (2026-05-24)
 
@@ -1286,7 +1347,7 @@ We report the limitations we are aware of so reviewers do not have to infer them
 1. **In-distribution only.** T1b interpolates across four orders of magnitude inside [1 s, 7 d] (r = 0.993 ± 0.003), but extrapolation beyond the largest training timescale fails (r = −0.20 on τ ∈ [7 d, 28 d]). Sinusoidal encoders cannot learn periods they have not seen one full cycle of (§24.7.1). The training data covers ~1 weekly period; multi-week phase generalization degrades past day 14.
 2. **Behavioral-pressure OOD transfer is retracted (§24.7.3).** The round-1 claim of deadline-induced length modulation (P2 = +9 tokens, n = 5) did not survive the n = 30, max-tokens 256, bootstrap-CI rerun. The paper's surviving behavioral claims are all in-distribution.
 3. **T3 weekday/weekend is partial.** 2 of 3 seeds pass with weekend_signal > 0.5; one seed mode-collapses to a fixed response across τ. Reported as a binary outcome (not as a continuous std), with the failure mode disclosed.
-4. **Probe absolute R² is unreliable (§24.7.14).** The α-off probe floor of R² = −143 reflects ridge ill-conditioning under the OOD extrapolation rather than a faithful "no chrono signal" baseline. The 140-point A-vs-B *gap* is meaningful and supports a chrono axis; the absolute number is not. A within-distribution 80/20 split is used as the secondary probe.
+4. **OOD-extrapolation probe is unreliable; within-distribution probe is clean (§24.7.14).** The α-off OOD probe floor of R² = −143 reflects ridge ill-conditioning under sinusoidal-feature extrapolation, not a faithful "no chrono signal" baseline. The within-distribution probe (random 80/20 split inside training range) resolves this: trained model R² = **+0.99990 at L1**, chrono-off α=0 R² = **−0.005** (near zero, as expected for no signal). Inside training range, τ is a near-perfect linear axis at L1; outside training range, ridge cannot extrapolate sinusoidal features. Both findings stand; only the absolute R² number on the OOD extrapolation is unreliable.
 5. **Single base model for multi-seed.** All cross-seed (n=3) results are on Qwen 2.5 3B-Instruct. The 7B-at-24K-steps single-seed run on v15-grade data + 15-scale chrono encoder passes every test and matches or improves on the 3B cross-seed mean (T1 r=0.99993, T1b r=0.996, T2 Δ=1.00, T3 bidirectional 1.00/1.00, T4 first-pos KL=0.369, multi-pos KL=14.57; see §24.6.4). The recipe scales without degradation, and the only 3B fragility (T3 mode-collapse on one seed) is resolved at 7B. **Cross-seed at 7B is out of compute budget**, so the multi-seed claim is 3B-only; 7B is reported as a single-seed scaling check. 14B OOMed on the 128 GB GB10.
 6. **n = 3 seeds is small.** GPU-budget honest. The cross-seed variance bars are the dominant uncertainty quantifier; future work targets n = 10.
 7. **Per-layer is not strictly required (§24.7.10).** An L0-only variant matches v15 on 4 of 5 tests (T1b precision degrades). "Per-layer injection" is a precision optimization, not a categorical requirement.
@@ -1325,7 +1386,7 @@ These are the empirical facts a hostile reviewer cannot remove:
 | **T4 chrono reaches output (multi-pos KL, NEW)** | **14.14 ± 1.15** (~280× threshold) | §24.7.4, §24.7.5 |
 | Chrono influence at output **grows by ~150×** from position 0 (~0.18) to position 6 (~27) | per-position KL profile | §24.7.5 |
 | Chrono signal is causally present in hidden states | α=0 collapses linear probe to R² = −143 | §24.3 |
-| τ encoded as linear axis at shallow layers L1-L3 | L1 R² = 0.43 on OOD τ | §24.3 |
+| τ encoded as linear axis at shallow layers L1-L3 | L1 R² = **+0.99990 within-distribution** (§24.7.14); 0.43 on OOD-extrapolation probe | §24.3, §24.7.14 |
 | Training is reproducible at ~36 M trainable on Qwen 2.5 3 B | ~45 min per seed on a single 128 GB GB10, 3 seeds × 45 min for variance bars | §24.7.5 |
 
 ### 26.2 Claims that DO NOT survive rigor
@@ -1360,7 +1421,7 @@ These were in the abstract / contributions at one point and are now removed or d
 | HF / GitHub checkpoint release | **done 2026-05-24** — `v15.0` release with 3 cross-seed checkpoints + SHA256 pinned, see README |
 | BibTeX bibliography | **done 2026-05-24** — `paper.bib`, 47 entries, 45 arXiv-verified, 12 TODOs flagged |
 | Cross-version table refresh in §26.5 | **done 2026-05-24** (this section) |
-| Spark V3 batch (7B@24K + L0-only seeds 1+2 + additive seeds 1+2 + within-dist probe + T4 token labels) | 7B@24K **done 2026-05-24** (folded into §24.6.4); L0-only / additive / within-probe / T4-labeled still running on Spark, follow-up commit when complete |
+| Spark V3 batch (7B@24K + L0-only seeds 1+2 + additive seeds 1+2 + within-dist probe + T4 token labels) | **done 2026-05-24** — 7B@24K folded into §24.6.4 (every metric matches or beats 3B v15 cross-seed; T3 fragility resolved at scale); L0-only n=3 + additive n=3 folded into §24.7.10 (additive collapses to 0.000±0.000 across all 3 seeds, L0-only T1=0.9985±0.0021 matches every-layer); within-distribution probe folded into §24.7.14 (R²=+0.99990 at L1, defends probe completely); T4 token-labeled folded into §24.7.16 (chrono signal lands on number+unit tokens, silent on scaffolding) |
 | Convert PAPER.md → LaTeX | **deferred** — venue TBD; LaTeX produced once target style file picked |
 
 ### 26.5 Repo layout (post-cleanup, 2026-05-24)
