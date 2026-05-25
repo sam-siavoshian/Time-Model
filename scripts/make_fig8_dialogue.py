@@ -42,8 +42,8 @@ def bubble(ax, x, y, w, h, text, *, color, text_color):
             va="center", ha="left", color=text_color)
 
 
-def panel(ax, title, user, assistant_pairs, *, bubble_h=0.70, gap=1.40,
-          tau_offset=1.10):
+def panel(ax, title, user, assistant_pairs, *, bubble_h=0.70, gap=1.60,
+          tau_offset=1.30):
     n = len(assistant_pairs)
     ax.set_xlim(0, 12)
     needed = 1.3 + 0.45 + n * gap + 0.2
@@ -58,7 +58,8 @@ def panel(ax, title, user, assistant_pairs, *, bubble_h=0.70, gap=1.40,
 
     y = top_y - 0.40
     for tau_label, resp in assistant_pairs:
-        ax.text(0.30, y - 0.30, tau_label, fontsize=9, color="#16a085",
+        # tau label sits in the gap with clear separation from bubble below
+        ax.text(0.30, y - 0.15, tau_label, fontsize=9, color="#16a085",
                 fontweight="bold", style="italic")
         bubble(ax, 0.2, y - tau_offset, 11.6, bubble_h,
                f"ASSISTANT:  {resp}",
