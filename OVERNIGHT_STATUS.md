@@ -141,3 +141,68 @@ No silent overclaiming. No backdoors. No hidden caveats.
    (technically true but functionally overstated).
 
 Both are honest losses that make the paper MORE credible, not less.
+
+
+## Update 04:18 PDT (final batch complete)
+
+### Mac mini work complete
+
+All four Mac mini evals finished:
+
+| Eval | File | Key result |
+|---|---|---|
+| Robustness | `reports/robustness_v15s_seed0.json` | Graceful degradation under noise; tau=0 and tau=1e9 clamp to fixed defaults |
+| Cross-seed alpha-flip | `reports/alpha_flip_permutation.json` | Top-8 collapse 2/3 seeds (not 3/3); norm-stable, functionally partial |
+| T1 expanded 50 tau | `reports/t1_expanded_50tau.json` | Cross-seed mean r=0.898+/-0.070 (was 0.961+/-0.035 on n=8) |
+| T1 sampling temp 0.7 | `reports/t1_sampling_v15s_seed0.json` | r=0.998 across 480 samples; 21/24 bins show response diversity |
+| External tau_sessions (vanilla/prompt/ci) | `reports/ext_bench_{vanilla,prompt,ci}.json` | **Prompt 0.520 beats CI 0.377 composite; CI only adapter with positive tau-adaptive Pearson r=+0.184** |
+
+### Most significant finding
+
+The external benchmark result is the biggest honest concession in the paper:
+- **Prompt-injected tau wins on basic time-recall** (duration_recall log-MAE 0.065 vs 0.098)
+- **CI wins only on adaptive task** (positive Pearson r vs negative for prompt and vanilla)
+
+CI's contribution narrows from "the architectural fix for LLM temporal blindness"
+to "a specific design that lets continuous tau shape behavior at the residual-stream
+level, with measurable benefit on tasks where that integration matters and a cost
+on tasks where simple prompt injection suffices." Honest. Reviewer-resistant.
+
+Workshop-strong stays workshop-strong. Main-conference path narrowed but not eliminated.
+
+### Spark trainings still pending
+
+Spark still 96% Omar all night. Five training scripts ready, none have run.
+When Spark frees, fire in this order:
+1. `run_prompt_baseline.sh` (W3 in-house T1-T4 with prompt-injected tau)
+2. `run_t3_heldout_day.sh` (W8 phase generalization to Sunday)
+3. `run_3b_24k_matched.sh` (W4 matched-budget 3B vs 7B)
+4. `run_chrono_only_no_lora.sh` (W10 prior sufficiency)
+5. `run_additive_nonzero_beta.sh` (W9 additive family escape)
+
+Total ~12.5 hr sequential on free Spark.
+
+### Final reviewer-issue closure status
+
+| Issue | Status |
+|---|---|
+| W1 tautology | TEXT-DONE + MLP baseline confirms |
+| W2 effective-n | EVAL-DONE (r=0.898 with bootstrap CI) |
+| W3 prompt baseline | PARTIAL (ext bench done; in-house T1-T4 needs Spark) |
+| W4 7B confound | SCRIPT-READY (Spark) |
+| W5 alpha-flip oversold | EVAL-DONE (2/3 cross-seed replication) |
+| W6 reframing | TEXT-DONE + ext bench result |
+| W7 KL reconcile | TEXT-DONE |
+| W8 T3 supervised | TEXT-DONE; held-out-day SCRIPT-READY (Spark) |
+| W9 additive strawman | SCRIPT-READY (Spark) + trainer flag added |
+| W10 first-to | TEXT-DONE |
+| W11 v10 bug | TEXT-DONE |
+| W12 external bench | EVAL-DONE |
+| W13 FiLM-required | TEXT-DONE |
+| W14 greedy-only | EVAL-DONE (r=0.998 sampled) |
+| W15 robustness | EVAL-DONE |
+
+11 of 15 issues fully closed. 4 of 15 pending Spark trainings.
+Bottom-line shift: paper now reports honest negative findings (ext bench
+shows prompt wins; T1 expanded shows lower r at proper n; mid-deep dominance
+is 2/3 not 3/3). Each makes the paper more credible.
