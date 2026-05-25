@@ -165,8 +165,8 @@ def main() -> None:
             "per-layer rule", ha="center", va="center",
             fontsize=10, fontweight="bold")
     ax.text(eq_box_x + eq_w/2, eq_box_y + eq_h - 0.95,
-            r"$h' = h + \alpha_\ell\,(\gamma_\ell(\chi_t)\cdot h + \beta_\ell(\chi_t))$",
-            ha="center", va="center", fontsize=10, color=TRAINABLE)
+            r"$h' = h + \alpha_\ell\,(\gamma_\ell(\chi_t)\,h + \beta_\ell(\chi_t))$",
+            ha="center", va="center", fontsize=8.5, color=TRAINABLE)
     ax.text(eq_box_x + eq_w/2, eq_box_y + eq_h - 1.55,
             "AdaLN-Zero init", ha="center", va="center",
             fontsize=9.5, fontweight="bold")
