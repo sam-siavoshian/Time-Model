@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # W12: run external tau_sessions benchmark on all 3 reference adapters.
 set -euo pipefail
-cd "$HOME/Time-Model" 2>/dev/null || cd "$HOME/Desktop/Time-Model"
+cd "$HOME/Time-Model" 2>/dev/null || cd "$HOME/Desktop/Time-Model" 2>/dev/null || cd "$HOME/ipcn"
 export PATH="$HOME/.local/bin:$PATH"
 mkdir -p logs reports
 

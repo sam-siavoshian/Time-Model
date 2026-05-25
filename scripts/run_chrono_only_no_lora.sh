@@ -2,7 +2,7 @@
 # W10 (prior review) + sufficiency: chrono channel on, LoRA frozen at zero.
 # Tests whether chrono alone (no LoRA surface capacity) can fit T1-T4.
 set -euo pipefail
-cd "$HOME/Time-Model" 2>/dev/null || cd "$HOME/Desktop/Time-Model"
+cd "$HOME/Time-Model" 2>/dev/null || cd "$HOME/Desktop/Time-Model" 2>/dev/null || cd "$HOME/ipcn"
 export PATH="$HOME/.local/bin:$PATH"
 mkdir -p logs reports checkpoints
 TIMESCALES="2,4,8,16,32,64,128,256,512,1024,4096,16384,65536,86400,604800"

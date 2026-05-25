@@ -3,7 +3,7 @@
 # scaling claim. If 3B@24k passes T3 bidirectionally on >= 2/3 seeds,
 # "7B fixed T3" collapses to "more steps fixed T3".
 set -euo pipefail
-cd "$HOME/Time-Model" 2>/dev/null || cd "$HOME/Desktop/Time-Model"
+cd "$HOME/Time-Model" 2>/dev/null || cd "$HOME/Desktop/Time-Model" 2>/dev/null || cd "$HOME/ipcn"
 export PATH="$HOME/.local/bin:$PATH"
 mkdir -p logs reports checkpoints
 

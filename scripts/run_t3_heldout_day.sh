@@ -4,7 +4,7 @@
 # not, T3 was supervised classification on the trained labels, not
 # unsupervised phase discovery.
 set -euo pipefail
-cd "$HOME/Time-Model" 2>/dev/null || cd "$HOME/Desktop/Time-Model"
+cd "$HOME/Time-Model" 2>/dev/null || cd "$HOME/Desktop/Time-Model" 2>/dev/null || cd "$HOME/ipcn"
 export PATH="$HOME/.local/bin:$PATH"
 mkdir -p logs reports checkpoints
 

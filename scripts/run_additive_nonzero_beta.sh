@@ -7,7 +7,7 @@
 # claim "additive cannot escape the AdaLN-Zero gradient trap" generalizes
 # beyond a single init choice.
 set -euo pipefail
-cd "$HOME/Time-Model" 2>/dev/null || cd "$HOME/Desktop/Time-Model"
+cd "$HOME/Time-Model" 2>/dev/null || cd "$HOME/Desktop/Time-Model" 2>/dev/null || cd "$HOME/ipcn"
 export PATH="$HOME/.local/bin:$PATH"
 mkdir -p logs reports checkpoints
 

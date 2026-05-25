@@ -3,7 +3,7 @@
 # Same data distribution as v15 but with tau text-prefixed; chrono
 # channel forced off via --freeze-alpha so tau MUST come from the prompt.
 set -euo pipefail
-cd "$HOME/Time-Model" 2>/dev/null || cd "$HOME/Desktop/Time-Model"
+cd "$HOME/Time-Model" 2>/dev/null || cd "$HOME/Desktop/Time-Model" 2>/dev/null || cd "$HOME/ipcn"
 export PATH="$HOME/.local/bin:$PATH"
 mkdir -p logs reports data/processed
 
