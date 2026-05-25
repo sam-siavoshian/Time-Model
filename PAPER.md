@@ -1673,6 +1673,20 @@ The TPDR run is in progress at the time of this writing; results will land in `r
 
 If TPDR fails to discriminate CI from prompt: the architectural contribution remains as narrow as the external-benchmark adaptive Pearson r = +0.184 implies. Either way, the result is honest and pre-registered before running.
 
+### 27.13b Additive with non-zero β init TRAINS (W9 closed, single seed)
+
+`reports/additive_nonzero_beta_s0_recall.json`. Spark trained an additive-injection variant with `β-bias init = 0.01` (otherwise identical to the original additive ablation). Results on seed 0:
+
+- T1 PASS
+- T1b OOD r = **0.9958**, log10-MAE = **0.038** → PASS
+- T2 silent-gap Δ = **1.00** → PASS
+- T3 weekend signal = **0.00**, weekday signal = **0.00** → FAIL
+- T4 mean pairwise KL = **0.303** → PASS
+
+**The "FiLM gating is required" claim narrows substantially.** With non-zero β init, additive injection trains and matches CI on 4 of 5 tests. The architectural primitive is **any init scheme that gives non-zero ∂h'/∂α at step 0**, not FiLM specifically. FiLM with γ-bias=1 and additive with non-zero β-bias are both valid solutions to the same gradient-trap problem.
+
+Paper §3.4, abstract, falsification map, Discussion, conclusion, and Limitations item 13 all updated. Cross-seed (seeds 1, 2) currently training on Spark.
+
 ### 27.14 Trainer additions
 
 - `--freeze-lora` flag (mirror of `--freeze-alpha`): locks LoRA A/B at init while chrono + FiLM gates train. Tests chrono-channel sufficiency (W10 prior reviewer concern).
