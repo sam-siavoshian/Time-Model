@@ -398,7 +398,7 @@ For the v15 seed-0 checkpoint, we compute the mean $|\alpha|$ (L2 norm) at each 
 \begin{figure}[!t]
   \centering
   \includegraphics[width=\columnwidth]{figures/fig6_alpha_norm_per_layer.png}
-  \caption{Per-layer chronometric gate magnitude on v15 seed~0. Red: top-8 dominant layers (L20--L27 by $|\alpha|$ rank, plus L19 and L28 in the top-10). Grey: bottom-8 layers (shallow + the final two). The chronometric signal weight is concentrated in mid-to-deep transformer blocks. Inverting only the red bars collapses the all-layer-flip correlation; inverting only the grey bars preserves it. The signal is a weighted layer vote with non-uniform per-layer contributions.}
+  \caption{Per-layer chronometric gate magnitude on v15 seed~0. Red: top-8 dominant layers (L20--L27 by $|\alpha|$ rank, plus L19 and L28 in the top-10). Grey: bottom-8 layers (shallow + the final two). The chronometric signal weight is concentrated in mid-to-deep transformer blocks. Inverting only the red bars collapses the all-layer-flip correlation; inverting only the grey bars preserves it. \textbf{The top-8 layer set is identical across all three v15 cross-seed checkpoints} (seeds 0, 1, 2; \texttt{reports/alpha\_norms\_cross\_seed.json}), confirming mid-deep dominance is a stable architectural property rather than a seed-0 artifact.}
   \label{fig:alpha-norms}
 \end{figure}
 
