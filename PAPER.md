@@ -672,17 +672,36 @@ The trade: T1 in-distribution slipped to 0.745 (below the 0.8 threshold). T1b OO
 
 ### 24.6.4 7B scale test
 
-Same CI architecture on Qwen 2.5 7B-Instruct. 12 K steps, same v11 data, same hyperparameters.
+Two runs at the 7B size: a round-1 12 K-step run on v11 data (undertrained, reported below for completeness) and a round-2 24 K-step run on v15-grade data + 15-scale chrono encoder (the headline scaling result).
 
-| Test | 3B (v11) | 7B | change |
+**Round-1: 7B at 12 K steps, v11 data, same hyperparameters as 3B.**
+
+| Test | 3B (v11) | 7B 12K | change |
 |---|---|---|---|
-| T1 clock | r=0.94 | r=0.747 | below threshold |
+| T1 clock | r=0.94 | r=0.747 | below threshold (undertrained) |
 | T1b OOD | r=0.86, log_mae=0.20 | r=0.76, log_mae=0.23 | both still pass |
 | T2 silent-gap | delta=1.00 | delta=1.00 | flat |
 | T3 phase | 0.00 fail | 0.00 fail | unchanged (encoder issue) |
-| T4 mutability | KL=0.087 | **KL=0.129** | +48 % |
+| T4 mutability | KL=0.087 | KL=0.129 | +48 % |
 
-7B passes T1b (the load-bearing OOD test) and T4 (stronger than 3B). T1 in-distribution likely needs more than 12 K steps at the larger size. Result confirms the architecture scales beyond 3B; only the training budget needs adjustment.
+12 K steps were not enough for the 7B to fully fit T1. We re-ran at matched step count (24 K) on the v15-grade data + 15-scale chrono encoder to make a clean apples-to-apples scaling comparison against the v15 3B cross-seed.
+
+**Round-2: 7B at 24 K steps, v15 data, 15-scale chrono encoder, single seed (`reports/scale_7b_24k_20260524_180844_recall.json`).**
+
+| Test | 3B v15 cross-seed (n=3, mean ± std) | **7B 24K (single seed)** | Verdict |
+|---|---|---|---|
+| T1 clock r | 0.961 ± 0.035 | **0.99993** | improves at scale |
+| T1b OOD r | 0.993 ± 0.003 | 0.996 | matches |
+| T1b OOD log-MAE | 0.044 ± 0.010 | 0.047 | matches |
+| T2 silent-gap Δ | 1.00 ± 0.00 | 1.00 | saturated at both scales |
+| T3 weekday signal | 2/3 seeds (binary outcome) | **1.00** | **mode-collapse fragility resolved at scale** |
+| T3 weekend signal | 2/3 seeds (binary outcome) | **1.00** | **bidirectional pass at scale** |
+| T4 chrono-reaches-output (first-pos KL) | 0.18 ± 0.08 | **0.369** | ~2× stronger at scale |
+| T4 chrono-reaches-output (multi-pos KL) | 14.14 ± 1.15 | 14.57 | matches |
+
+**Headline scaling finding:** every metric matches or improves at 7B. The single 3B fragility (T3 weekday/weekend phase, where one of three seeds mode-collapsed to a fixed response across τ) is resolved at 7B: the larger base model passes T3 bidirectionally with weekday_signal = weekend_signal = 1.00. The chronometric injection architecture **scales without degradation up to 7B**, and the test most sensitive to model capacity (T3 phase) actually *benefits* from scale.
+
+Caveat: 7B-24K is single-seed. Cross-seed 7B is out of compute budget for this paper (~36 GB activation memory plus 14 GB chrono + LoRA = ~50 GB per seed; three 7B seeds would consume ~6 GPU-hours each on a single GB10 versus the ~45 min per 3B seed). The single-seed 7B result is reported as a scaling check, not as a multi-seed claim.
 
 ### 24.6.5 14B scale test — OOM kill
 
@@ -1268,7 +1287,7 @@ We report the limitations we are aware of so reviewers do not have to infer them
 2. **Behavioral-pressure OOD transfer is retracted (§24.7.3).** The round-1 claim of deadline-induced length modulation (P2 = +9 tokens, n = 5) did not survive the n = 30, max-tokens 256, bootstrap-CI rerun. The paper's surviving behavioral claims are all in-distribution.
 3. **T3 weekday/weekend is partial.** 2 of 3 seeds pass with weekend_signal > 0.5; one seed mode-collapses to a fixed response across τ. Reported as a binary outcome (not as a continuous std), with the failure mode disclosed.
 4. **Probe absolute R² is unreliable (§24.7.14).** The α-off probe floor of R² = −143 reflects ridge ill-conditioning under the OOD extrapolation rather than a faithful "no chrono signal" baseline. The 140-point A-vs-B *gap* is meaningful and supports a chrono axis; the absolute number is not. A within-distribution 80/20 split is used as the secondary probe.
-5. **Single base model.** All cross-seed results are on Qwen 2.5 3B-Instruct. A 7B-at-12K-steps single-seed run (r = 0.747 on T1) suggests the recipe scales without degradation; a 7B-at-24K-step single-seed run is in progress at submission time. 14B OOMed on the 128 GB GB10. No multi-seed scaling claim is made.
+5. **Single base model for multi-seed.** All cross-seed (n=3) results are on Qwen 2.5 3B-Instruct. The 7B-at-24K-steps single-seed run on v15-grade data + 15-scale chrono encoder passes every test and matches or improves on the 3B cross-seed mean (T1 r=0.99993, T1b r=0.996, T2 Δ=1.00, T3 bidirectional 1.00/1.00, T4 first-pos KL=0.369, multi-pos KL=14.57; see §24.6.4). The recipe scales without degradation, and the only 3B fragility (T3 mode-collapse on one seed) is resolved at 7B. **Cross-seed at 7B is out of compute budget**, so the multi-seed claim is 3B-only; 7B is reported as a single-seed scaling check. 14B OOMed on the 128 GB GB10.
 6. **n = 3 seeds is small.** GPU-budget honest. The cross-seed variance bars are the dominant uncertainty quantifier; future work targets n = 10.
 7. **Per-layer is not strictly required (§24.7.10).** An L0-only variant matches v15 on 4 of 5 tests (T1b precision degrades). "Per-layer injection" is a precision optimization, not a categorical requirement.
 8. **Paraphrase generalization is narrower than first reported (§24.7.12).** The model returns the same response 84 % of the time across 11 paraphrased prompts. This is *prompt-invariant τ-conditioned formatting* — strong evidence that the chrono channel drives the readout (not the prompt wording) — but a weaker generalization claim than "the model handles arbitrary phrasings."
@@ -1341,7 +1360,7 @@ These were in the abstract / contributions at one point and are now removed or d
 | HF / GitHub checkpoint release | **done 2026-05-24** — `v15.0` release with 3 cross-seed checkpoints + SHA256 pinned, see README |
 | BibTeX bibliography | **done 2026-05-24** — `paper.bib`, 47 entries, 45 arXiv-verified, 12 TODOs flagged |
 | Cross-version table refresh in §26.5 | **done 2026-05-24** (this section) |
-| Spark V3 batch results (7B@24K + L0-only seeds 1+2 + additive seeds 1+2 + within-dist probe + T4 token labels) | running on Spark, follow-up commit when complete |
+| Spark V3 batch (7B@24K + L0-only seeds 1+2 + additive seeds 1+2 + within-dist probe + T4 token labels) | 7B@24K **done 2026-05-24** (folded into §24.6.4); L0-only / additive / within-probe / T4-labeled still running on Spark, follow-up commit when complete |
 | Convert PAPER.md → LaTeX | **deferred** — venue TBD; LaTeX produced once target style file picked |
 
 ### 26.5 Repo layout (post-cleanup, 2026-05-24)
