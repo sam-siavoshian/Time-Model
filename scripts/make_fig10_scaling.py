@@ -56,9 +56,13 @@ def main() -> None:
                      color="#c0392b", edgecolor="black", linewidth=0.7,
                      label="Qwen 2.5 7B (single seed, 24K steps)")
 
-    # value labels
+    YLIM_TOP = 1.55
+    LABEL_CEIL = YLIM_TOP - 0.10  # keep labels inside the plot
+
+    # value labels (3B). Clip y to keep inside plot when whiskers exceed ceiling.
     for i, (v, s) in enumerate(zip(m_3b, s_3b)):
-        ax.text(i - w/2, v + s + 0.03, f"{v:.3f}",
+        y = min(v + s + 0.03, LABEL_CEIL)
+        ax.text(i - w/2, y, f"{v:.3f}",
                 ha="center", va="bottom", fontsize=8, color="#1f618d")
     for i, v in enumerate(m_7b):
         ax.text(i + w/2, v + 0.03, f"{v:.3f}",
@@ -79,7 +83,7 @@ def main() -> None:
     ax.set_xticks(x)
     ax.set_xticklabels(labels, fontsize=10)
     ax.set_ylabel("metric value", fontsize=10)
-    ax.set_ylim(0, 1.20)
+    ax.set_ylim(0, YLIM_TOP)
     ax.set_title("3B vs 7B: chronometric injection scales without degradation",
                  fontsize=12.5, fontweight="bold", pad=10)
     ax.grid(axis="y", alpha=0.25, linestyle="--")
@@ -88,14 +92,14 @@ def main() -> None:
     ax.legend(loc="upper left", frameon=False, fontsize=10,
               bbox_to_anchor=(0.01, 0.99))
 
-    # caption below the two T3 columns (inside plot, no overlap with legend)
-    ax.text(3.5, 0.85,
+    # caption pinned top-right inside plot, clear of all bars and whiskers
+    ax.text(len(labels) - 0.5, YLIM_TOP - 0.05,
             "T3 phase fragility resolved at scale:\n"
             "3B = 1 of 3 seeds passes weekday; 7B = bidirectional 1.00 / 1.00",
-            ha="center", va="top", fontsize=8.5, color="#229954",
+            ha="right", va="top", fontsize=8.5, color="#229954",
             fontweight="bold",
             bbox=dict(boxstyle="round,pad=0.3", facecolor="white",
-                      edgecolor="#229954", alpha=0.85))
+                      edgecolor="#229954", alpha=0.95))
 
     fig.tight_layout()
     DST.parent.mkdir(parents=True, exist_ok=True)
