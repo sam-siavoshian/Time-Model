@@ -271,6 +271,8 @@ All from concurrent test-time-scaling literature. IPCN's substrate-vs-budget axi
 
 AdaLN-Zero FiLM injection at every Qwen layer of a 3B base, evaluated on time-conditional tasks rather than memory recall. Two training runs separated by a one-line init fix: v10 failed everything, v11 passed 4 of 5 falsifiable tests including the load-bearing out-of-distribution test. Commit `263022a`.
 
+![Figure 0: Chronometric Injection architecture. A frozen Qwen 2.5 3B (dark blue, no gradient) receives both prompt tokens and a real wall-clock elapsed time tau. The chronometric encoder (green) maps tau to a 27-dim sinusoidal+log embedding chi_t, which feeds per-layer FiLM projectors (red, trainable). Each decoder layer applies `h' = h + alpha_L * (gamma_L(chi) * h + beta_L(chi))` with AdaLN-Zero init (alpha=0, gamma=1, beta=0) so behavior at step 0 is identity but the alpha gradient is non-zero. A rank-8 LoRA on attention + lm_head (red, trainable) gives the model surface capacity to act on the modulated hidden states. Total ~36 M trainable parameters out of 1.54 B base. Base weights are never touched.](figures/fig0_architecture.png)
+
 ### 23.1 Architecture (model/qwen_time.py)
 
 - Base: **Qwen 2.5 3B-Instruct**, frozen. 1.54B params.
@@ -492,6 +494,8 @@ Throughout the project trail in **Appendix D**, the architecture is called IPCN 
 ---
 
 ## Section 24: Disproof battery results (2026-05-22)
+
+![Figure 8: Same prompt + different real elapsed time produces different model output. Greedy decoding of Qwen 2.5 7B + chronometric injection (v15 spec at 24K steps). Top panel - T1 clock readout: the assistant returns "It has been N seconds/minutes/hours/days" with N tracking the real elapsed time across four orders of magnitude. Middle panel - T2 silent-gap acknowledgment: short gap returns "Hi, I am still here," long gap returns "Welcome back, it has been about 1 day." Bottom panel - T3 weekday/weekend phase: same morning greeting prompt elicits "Weekday vibes" on a weekday tau and "Hope you are enjoying the weekend" on a weekend tau. The chronometric channel, not the prompt text, drives the response.](figures/fig8_dialogue.png)
 
 ### 24.0 Headline (cross-version evidence summary)
 
@@ -1223,6 +1227,8 @@ All 10 positions ≤ 0.47 KL across τ ∈ {15 s, 3600 s, 86400 s}. The model re
 **Interpretation:** the chrono signal lands precisely on the **number-prefix space + the two digit tokens + the unit token** (positions 3-6), and is silent on the scaffolding (positions 0-2 + 7-9) and on the non-time control prompt. The multi-position KL spike pattern is mechanistically faithful: it tracks the exact tokens that should depend on τ. Reviewer attack ("the multi-position metric is random noise") dies.
 
 `reports/t4_labeled_v15s_seed0.json` saved.
+
+![Figure 7: T4 teacher-forced KL per output position with token labels, on the clock prompt (left) and a non-time control prompt (right). Bars are colored by token type: red = number/digit tokens, orange = time-unit tokens, grey = scaffolding. On the clock prompt the KL spikes are 21.4, 9.3, 17.1, 20.5 at positions 3, 4, 5, 6, which correspond exactly to the number-prefix space, the two digit tokens `1` and `4`, and the unit token ` seconds`. Scaffolding tokens (`It`, ` has`, ` been`, `.`) are flat at 0.000. The non-time `Hello.` control is flat across all positions because the response does not depend on tau. The multi-position KL pattern of Section 24.7.4 is mechanistically faithful: the chrono signal lands precisely on the tokens that should depend on tau.](figures/fig7_t4_token_labeled.png)
 
 ### 24.7.15 External benchmark release: `tau_sessions` (2026-05-24)
 
