@@ -1756,6 +1756,12 @@ Paper updates:
 - Limitations item 14: "PENDING" → "RESOLVED. Matched-budget 3B (24k steps) passes T1-T3 comparably but FAILS T4 (KL=0.015). Model size matters for T4 stability under extended training, not for T1-T3 fitting capacity."
 - Add to discussion: "Training budget is sufficient for T1-T3 at 3B; T4 requires either more parameters (7B) or fewer training steps (18k) at 3B. The interaction between scale and steps is non-trivial and deserves systematic study."
 
+### 27.13g-pre TPDR partial results: vanilla adapter complete (real control confirmed)
+
+`logs/tpdr.log`, scenarios 25-50 of vanilla adapter printed at 2026-05-25 ~19:30 PDT after ~68min wall time on Spark CUDA. **All 50 vanilla scenarios returned r=nan** for length elasticity vs τ, meaning the vanilla Qwen 2.5-3B-Instruct produces **constant-length responses regardless of elapsed τ** (std=0 across τ → undefined Pearson). This is **the expected behavior for a no-time-aware control** and confirms the vanilla baseline is genuinely insensitive to τ. CI and prompt adapters still in flight.
+
+Final TPDR table (vanilla / CI / prompt across 7 response-shape metrics) will be folded into §28 once all 3 adapters complete and the cross-adapter mean-r aggregate lands at `reports/tpdr_results.json`.
+
 ### 27.13g Prompt baseline eval bug identified + fix shipped
 
 `reports/prompt_baseline_s0_recall.json` returned **all zeros** for T1-T4 — initially alarming. Root cause: the `qwen_time_check.py` eval pipeline was feeding raw test prompts to the model, but the prompt_baseline ckpt was trained on prompts with a `[elapsed: X]` text prefix injected by `qwen_time_data_prompt.inject_tau_in_text()` (and chrono channel frozen via `--freeze-alpha`). So at eval time, the prompt model had **no time cue at all** and produced canned `"It has been 1 day."` for every τ regardless of true elapsed time.
