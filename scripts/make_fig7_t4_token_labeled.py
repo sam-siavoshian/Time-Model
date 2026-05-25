@@ -20,25 +20,33 @@ import matplotlib.pyplot as plt
 SRC = Path("reports/t4_labeled_v15s_seed0.json")
 DST = Path("figures/fig7_t4_token_labeled.png")
 
-NUMBER_HINT = ("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")
-UNIT_HINT = ("second", "minute", "hour", "day", "week", "Welcome", "Hi")
+DIGIT_CHARS = set("0123456789")
+UNIT_HINT = ("second", "minute", "hour", "day", "week")
 
 
 def classify(tok: str) -> str:
     s = tok.strip()
+    if s and all(c in DIGIT_CHARS for c in s):
+        return "digit"            # pure digit token
     if not s:
-        return "number"  # the bare space between scaffolding + number
-    if any(ch in s for ch in NUMBER_HINT):
-        return "number"
-    if any(h in tok for h in UNIT_HINT):
+        return "number-prefix"    # the bare space that precedes the number
+    if any(h in tok.lower() for h in UNIT_HINT):
         return "unit"
     return "scaffolding"
 
 
 COLOR = {
-    "number": "#c0392b",
+    "digit": "#c0392b",
+    "number-prefix": "#e74c3c",
     "unit": "#e67e22",
     "scaffolding": "#95a5a6",
+}
+
+LEGEND_LABEL = {
+    "digit": "digit token (1, 4, ...)",
+    "number-prefix": "space-before-number",
+    "unit": "time-unit token (seconds, hours, ...)",
+    "scaffolding": "scaffolding token (It, has, ., ...)",
 }
 
 
@@ -83,12 +91,11 @@ def main() -> None:
 
     # shared legend
     legend = [
-        plt.Rectangle((0, 0), 1, 1, color=COLOR["number"], label="number / digit token"),
-        plt.Rectangle((0, 0), 1, 1, color=COLOR["unit"], label="time-unit token"),
-        plt.Rectangle((0, 0), 1, 1, color=COLOR["scaffolding"], label="scaffolding token"),
+        plt.Rectangle((0, 0), 1, 1, color=COLOR[k], label=LEGEND_LABEL[k])
+        for k in ("digit", "number-prefix", "unit", "scaffolding")
     ]
-    fig.legend(handles=legend, loc="upper center", ncol=3, frameon=False,
-               bbox_to_anchor=(0.5, 1.01), fontsize=10)
+    fig.legend(handles=legend, loc="upper center", ncol=4, frameon=False,
+               bbox_to_anchor=(0.5, 1.01), fontsize=9.5)
 
     fig.suptitle("", y=1.05)
     fig.tight_layout(rect=[0, 0, 1, 0.96])
