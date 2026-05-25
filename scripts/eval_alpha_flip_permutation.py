@@ -13,6 +13,26 @@ import torch
 from transformers import AutoTokenizer
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from model.qwen_time import QwenTime, QwenTimeConfig, build_qwen_time
+# MPS-safe: override the chrono injector forward to keep dtype homogeneous,
+# avoiding the MPS-bf16 matmul accumulator error on Apple Silicon.
+import torch as _torch_for_patch
+from model.qwen_time import _ChronoInjector as _CI
+def _patched_forward(self, h, chi_t):
+    chi_x = chi_t.to(self.to_gamma.weight.dtype)
+    gamma = self.to_gamma(chi_x)
+    beta = self.to_beta(chi_x)
+    h_d = h
+    a = self.alpha[None, None, :].to(h_d.dtype)
+    gamma_e = gamma[None, None, :].to(h_d.dtype)
+    beta_e = beta[None, None, :].to(h_d.dtype)
+    if self.injection_type == "additive":
+        out = h_d + a * beta_e
+    else:
+        modulated = gamma_e * h_d + beta_e
+        out = h_d + a * modulated
+    return out
+_CI.forward = _patched_forward
+
 
 
 def parse_duration(s: str) -> float:
@@ -27,12 +47,12 @@ def parse_duration(s: str) -> float:
 @torch.no_grad()
 def greedy(model, tok, prompt, tau, max_new=24, device="mps"):
     ids = tok(prompt, return_tensors="pt").input_ids.to(device)
-    tau_t = torch.tensor([float(tau)], device=device)
     out = ids.clone()
     im_end = tok.convert_tokens_to_ids("<|im_end|>")
     eos = tok.eos_token_id
     for _ in range(max_new):
-        logits = model(out, tau=tau_t).logits
+        out_dict = model(out, tau_t=float(tau)); logits = out_dict["logits"]; 
+        if logits.dim() == 2: logits = logits.unsqueeze(0)
         nxt = logits[:, -1].argmax(-1, keepdim=True)
         out = torch.cat([out, nxt], dim=1)
         if nxt.item() in (eos, im_end): break
@@ -61,8 +81,9 @@ def load_model(ckpt, base, device):
     cfg = QwenTimeConfig(**cfg_kwargs)
     model = build_qwen_time(cfg)
     model.load_state_dict(ck["trainable_state"], strict=False)
+    pass  # use default dtype
     model.eval()
-    return model.to(device, dtype=torch.float16)
+    return model.to(device)
 
 
 def get_alpha_layers(model):
@@ -103,8 +124,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--base", default="Qwen/Qwen2.5-3B-Instruct")
     ap.add_argument("--device", default="mps")
-    ap.add_argument("--n-tau", type=int, default=10)
-    ap.add_argument("--n-permutations", type=int, default=50)
+    ap.add_argument("--n-tau", type=int, default=6)
+    ap.add_argument("--n-permutations", type=int, default=20)
     ap.add_argument("--out", default="reports/alpha_flip_permutation.json")
     args = ap.parse_args()
     tok = AutoTokenizer.from_pretrained(args.base)
