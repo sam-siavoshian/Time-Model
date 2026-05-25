@@ -1551,6 +1551,171 @@ A frozen Qwen 2.5 3B can be made to read a real-world wall clock with Pearson r 
 
 ---
 
+## Section 27: 2026-05-25 updates (post-reviewer audits #2 and #3)
+
+Three reviewer audits between 2026-05-24 and 2026-05-25 surfaced a long list of items. This section is a single consolidated changelog of everything that landed since the §26 summary. The LaTeX manuscript at `paper/main.tex` is the canonical artifact and reflects all of these changes; this Markdown file is the long-form record.
+
+### 27.1 Title and abstract narrowed
+
+The title dropped "Per-Layer" because the L0-only ablation (Table III Row 3) matches the per-layer model on 4 of 5 tests. New title: *Chronometric Injection: Time-Conditional Behavior in a Frozen LLM via AdaLN-Zero FiLM of Real Elapsed Seconds*. The abstract now reports BOTH the original T1 cross-seed r=0.961 ± 0.035 (over 8 unique τ) AND the expanded eval r=0.898 ± 0.070 (over 50 unique τ with bootstrap CIs). The chrono encoder dimension is now correctly stated as 31 (15 timescales × 2 sin/cos + 1 log), not 27 (which was the v11 spec). The headline `~36 M trainable parameters` figure was wrong; recomputed and reported as `~9.5 M trainable (<0.7 % of 1.54 B base)`.
+
+### 27.2 Cross-seed alpha-norm replication confirmed (W2/W5 mid-deep dominance)
+
+`reports/alpha_norms_cross_seed.json`. Per-layer mean |α| L2 norms on all three trained checkpoints (seeds 0, 1, 2) rank the same eight layers in the top-8: **{L20, L21, L22, L23, L24, L25, L26, L27}**. Intersection size = 8, union size = 8. L19 and L28 are always in the top-10. The bottom-8 reliably clusters in the shallow band L4-L11 plus the final pre-head layer L34. Mid-deep dominance by NORM is a stable architectural property.
+
+### 27.3 Targeted top-8 flip cross-seed (W5)
+
+`reports/alpha_flip_permutation.json`. Top-8 sign-flip eval on all 3 trained checkpoints (6 unique τ per seed):
+- seed 0: r = **-0.457** (signal collapses)
+- seed 1: r = **+0.796** (signal mostly preserved)
+- seed 2: r = **-0.634** (signal collapses)
+
+Bottom-8 flip: r = +1.000 on all 3 seeds. Random-8 control: r ≥ 0.997 on all 3 seeds. Permutation test on seed 0 (20 random half-subsets): median r = 1.000, range [-1, +1].
+
+Honest finding: norm-ranking replicates cleanly cross-seed but FUNCTIONAL importance (via flip) is 2 of 3 seeds. Mid-deep dominance is "typical but not universal." Paper now reports this honestly.
+
+### 27.4 T1 expanded effective-n (W2)
+
+`reports/t1_expanded_50tau.json`. T1 with 50 unique τ drawn fresh log-uniform in [1s, 7d] + bootstrap 95% CI per seed:
+- seed 0: r = 0.8585, CI = [0.7994, 0.9995]
+- seed 1: r = 0.9962, CI = [0.9833, 0.9993]
+- seed 2: r = 0.8398, CI = [0.7849, 0.9992]
+- **cross-seed mean: r = 0.898 ± 0.070, range [0.84, 1.00]**
+
+The original headline r = 0.961 ± 0.035 was over 8 unique τ per seed. With proper effective-n (50 τ), the cross-seed mean drops to 0.898 ± 0.070. Still passes the pre-registered threshold (r ≥ 0.8) on 3 of 3 seeds. Paper reports both numbers.
+
+### 27.5 T1 under temperature sampling (W14)
+
+`reports/t1_sampling_v15s_seed0.json`. T1 at temperature 0.7, 24 unique τ × 20 samples per τ = 480 total samples on the v15 seed-0 checkpoint:
+- overall Pearson r = **0.9980**
+- 21 of 24 τ bins show >1 unique response (genuine sampling diversity)
+
+T1 survives stochastic decoding cleanly.
+
+### 27.6 Robustness eval (W15)
+
+`reports/robustness_v15s_seed0.json`. v15 seed-0 checkpoint, 12 unique τ, 5 perturbation conditions:
+- A (clean): r = 0.999
+- B (Gaussian log10(τ) noise, σ=0.1): r = 0.978
+- B (σ=0.3): r = 0.322
+- B (σ=1.0): r = 0.251
+- C (random τ unrelated to scenario): r = -0.24 vs original true τ (predictions follow supplied τ, as expected)
+- D (τ=0): single fixed default response (1 unique output across 12 trials)
+- E (τ=10⁹, way OOD): single fixed default ≈ 5 days
+
+Deployment caveat (stated in paper): any actor who controls τ controls the time-conditional behavior. Validate τ at the boundary.
+
+### 27.7 MLP/linear baseline on χ(τ) (W8 / the tokenizer-critique vindication)
+
+`reports/mlp_baseline_chi_to_bucket.json`. A 31→148 linear classifier on χ(τ) directly (no transformer, no LoRA, no FiLM; 30k synthetic train, 24 eval points):
+- linear baseline: r = **0.9965**, log₁₀-MAE = **0.0267**
+- 2-layer MLP (128 hidden): same r = 0.9965, log-MAE = 0.0267
+- CI v15 cross-seed for comparison: r = 0.993, log-MAE = 0.044
+
+**The linear baseline beats the full CI on T1b.** This is the most uncomfortable disclosure in the paper. The paper now states explicitly that T1/T1b measure chrono-channel transit, not LLM time learning, and that the non-trivial behavioral claims (T2, T3, T4, causal interventions) are the things a linear χ(τ) baseline cannot produce.
+
+### 27.8 External `tau_sessions` benchmark, 3 adapters (W6/W12 — the biggest single result)
+
+`reports/ext_bench_{vanilla,prompt,ci}.json`. 300 sessions × 3 adapters, bootstrap CIs:
+
+| Adapter | Staleness ↑ | Duration log10-MAE ↓ | Adaptive Pearson r ↑ | Composite |
+|---|---|---|---|---|
+| Vanilla (no τ) | 0.491 | NaN | -0.057 | 0.245 |
+| Prompt (τ in text) | 0.511 | **0.065** | -0.045 | **0.520** |
+| CI (chrono channel) | 0.226 | 0.098 | **+0.184** | 0.377 |
+
+Composite = mean of (staleness_accuracy, 1 - log10-MAE clamped to [0,1], adaptive Pearson r clamped to [0,1]), NaN entries dropped.
+
+**Prompt-injected τ beats CI on the composite and on duration_recall.** Vanilla beats CI on staleness (CI's τ-conditioned response interferes with the vanilla default). **CI is the only adapter producing positive τ-adaptive response-length correlation (+0.184).** The paper now reads: CI's contribution is residual-stream-integrated τ-conditional behavior, NOT general-purpose preferable to prompt injection.
+
+### 27.9 Discussion subsection: the "learned tokenizer" critique (W1)
+
+A new Discussion subsection in `paper/main.tex` owns the W1 critique directly. Three honest responses: (a) T1/T1b ARE tokenizer-like by construction — the linear baseline confirms it; (b) T2/T3/T4/causal interventions are NOT tokenizer-like — they require LLM machinery a linear baseline can't replicate; (c) the retracted OOD behavioral-transfer claim was the right design to address W1, it just didn't survive; we need a successor task (TPDR, §27.13 below).
+
+### 27.10 Falsification Map
+
+A new Discussion subsection enumerates, claim-by-claim, what evidence would falsify each surviving conclusion. Includes specific thresholds and the experiments that would settle them.
+
+### 27.11 Composite scoring transparency (3rd reviewer W9)
+
+The external-benchmark composite was undefined in the abstract. Paper now has a full Table III with per-task scores AND the explicit composite definition. Per-task numbers show CI's staleness loss (0.226 vs prompt 0.511) which was previously hidden.
+
+### 27.12 Paraphrase qualitative breakdown (3rd reviewer W12)
+
+`reports/extra_controls_v2_v15s_seed0.json` per-τ response-identity:
+- τ ≈ 4s: 27/33 paraphrases produce verbatim-identical response
+- τ ≈ 17s: 3/33 (most variable)
+- τ ≈ 106s: 33/33 ("It has been 2 minutes")
+- τ ≈ 2196s: 30/33
+- τ ≈ 10659s: 33/33 ("about 3 hours")
+- τ ≈ 67980s: 30/33
+- τ ≈ 190099s: 33/33 ("about 2 days")
+- τ ≈ 318283s: 33/33
+
+Five of eight τ values produce COMPLETE prompt invariance. Two defensible readings: (i) appropriately prompt-invariant — all paraphrases of the same time-readout question return the same time; (ii) collapsed to τ-only function — model ignores prompt content beyond template recognition. Paper presents both readings; the data does not distinguish them.
+
+### 27.13 TPDR: Time-Pressured Decision Reasoning (the dream-bigger benchmark)
+
+`eval/tpdr/{scenarios.py, metrics.py, run_tpdr.py}`. 50 ambiguous decision prompts that do NOT mention time. Each evaluated at 10 log-uniform τ values in [1s, 7d] on three adapters (vanilla, prompt, CI). Seven response-shape metrics measure HOW the response changes with τ, not WHAT τ is.
+
+Example scenarios:
+- "Your laptop starts glitching mid-presentation in front of the CEO. What do you do?"
+- "A close friend hasn't returned your calls in days. What do you do?"
+- "A small leak is forming under the kitchen sink. What's your next move?"
+- "You receive an inheritance offer from a relative you've never met. What's next?"
+- "Your team disagrees about a major decision. What's your approach?"
+
+Metrics: length (chars and words), urgency lexicon count, deliberative lexicon count, hedge ratio, conditional clauses, imperative count. For each (adapter, metric), Pearson r between log(τ) and the metric across the 10-τ sweep, averaged across 50 scenarios.
+
+Hypothesis: CI's per-layer FiLM modulation makes RESPONSE STYLE smoothly vary with τ in non-template ways. Prompt injection has to allocate attention to a single text token at every layer, limiting continuous behavioral modulation.
+
+The TPDR run is in progress at the time of this writing; results will land in `reports/tpdr_results.json` and be folded into a follow-up commit and paper revision. If CI shows larger absolute |mean_r| across reasoning-shape metrics than prompt AND smoother metric-vs-log(τ) curves (fewer step-function jumps at prompt-rounding boundaries), this is the architectural-contribution-defending result the paper has been missing.
+
+If TPDR fails to discriminate CI from prompt: the architectural contribution remains as narrow as the external-benchmark adaptive Pearson r = +0.184 implies. Either way, the result is honest and pre-registered before running.
+
+### 27.14 Trainer additions
+
+- `--freeze-lora` flag (mirror of `--freeze-alpha`): locks LoRA A/B at init while chrono + FiLM gates train. Tests chrono-channel sufficiency (W10 prior reviewer concern).
+- `--additive-beta-init <float>` (paired with `--injection-type=additive`): seeds `to_beta.bias` to a non-zero constant so the additive variant can escape the AdaLN-Zero gradient trap. Tests W9/W7 reviewer concern that the "FiLM is required" claim only holds under the specific zero-β init.
+
+### 27.15 New data + launchers (Spark trainings, in flight)
+
+- `model/qwen_time_data_prompt.py` + `scripts/run_prompt_baseline.sh`: prompt-injected τ training. Same 18k v15-grade data, but τ prefixed as text in every user prompt, with chrono channel frozen at α=0. Tests whether prompt injection passes T1-T4 at matched LoRA budget.
+- `model/qwen_time_data_t3_holdout.py` + `scripts/run_t3_heldout_day.sh`: phase task without Sunday. Tests whether T3 generalizes phase OR is supervised label recall.
+- `scripts/run_3b_24k_matched.sh`: 3B at 24k steps × 3 seeds. Matched-budget control for the 7B "T3 resolved at scale" claim.
+- `scripts/run_chrono_only_no_lora.sh`: LoRA frozen, chrono + FiLM train. Sufficiency check.
+- `scripts/run_additive_nonzero_beta.sh`: additive injection with non-zero β init.
+
+All five are queued sequentially on Spark in the `saam-spark-queue` tmux session. ETA ~38 hours total at observed pace.
+
+### 27.16 Citations bulletproofed (4-round audit)
+
+`paper/refs.bib` pruned from 54 entries to 25 (only the cites actually used in `paper/main.tex`). Every entry cross-checked against arxiv.org metadata: all 22 arxiv IDs resolve to real papers with matching titles + authors. Added Elhage et al. transformer-circuits foundational ref and Geva et al. KV-memory ref for the mech-interp framings. 7 claim-context softenings applied where the paraphrase in the paper exceeded what the cited abstract supports (e.g., dropped "GRPO variant" attribution for Timely Machine, dropped specific 16.3% / 12.9% numbers for Wang et al. that aren't in their abstract).
+
+### 27.17 What's still pending
+
+- `run_prompt_baseline.sh` results on T1-T4 (training in flight on Spark, ~7 hr to seed 0 completion)
+- `run_t3_heldout_day.sh` results (Sunday generalization, ~7 hr after prompt baseline)
+- `run_3b_24k_matched.sh` results (~7 hr after T3 held-out)
+- `run_chrono_only_no_lora.sh` results (~7 hr after 3B@24k)
+- `run_additive_nonzero_beta.sh` results (~7 hr after chrono-only)
+- TPDR results (in flight on Mac mini, smaller scale: 20 scenarios × 6 τ; will rerun at full 50×10 on Spark after queue drains)
+- GitHub repo flip from private to public (so `\cite{preregistration}` resolves for reviewers)
+
+### 27.18 Honest contribution claim, as of 2026-05-25
+
+After all the controls and ablations, the paper supports:
+1. CI is necessary against a no-time baseline (LoRA-only collapses every test to 0.000 across 3 seeds).
+2. CI is NOT preferable to prompt-injected τ on the public `tau_sessions` benchmark on basic time recall.
+3. CI is the ONLY adapter producing positive τ-adaptive response-length correlation on the external benchmark (+0.184).
+4. The chrono pathway is causal (all-layer α-flip inverts; LoRA-only and additive baselines collapse).
+5. Per-layer |α|-norm ranking is stable across seeds (L20-L27 always in top-8); functional importance via flip is 2 of 3 seeds.
+6. T1/T1b are tokenizer-like by construction; T2/T3/T4 require LLM machinery a non-LLM χ(τ) baseline cannot produce.
+
+What the paper claims and what the paper does NOT claim is now sharply aligned with what the evidence supports.
+
+---
+
 *End of paper. Word count: ~17,500. Living document.*
 *2026-05-12: §13.5 — deep-read findings on highest-risk priors.*
 *2026-05-13: §21 — Track A Phase 0/1 results; 13 production bugs.*

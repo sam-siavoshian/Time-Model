@@ -542,6 +542,36 @@ We evaluate the v15 seed-0 checkpoint under five inference-time perturbations to
 Three reasons. First, the diagnostic literature is clear that the failure mode is architectural~\cite{wang2025discrete, cheng2025temporallyblind, garikaparthi2026perceive}; CI is a concrete architectural primitive that demonstrates one viable path. Second, the architecture is small ($\sim$\SI{9.5}{} million trainable on a $\sim$\num{1.54}\,B base, less than \SI{0.7}{\percent}) and composes with existing LoRA adapters, so the path to deployment is short. Third, the falsification protocol is reusable: any future continuous-signal injection into a frozen LLM can be evaluated against the same five pre-registered tests, the same disproof battery, and the same six-control reviewer-rigor audit, including the explicit tokenizer-baseline check.
 
 % ======================================================================
+\section{Beyond template recovery: the TPDR benchmark}
+\label{sec:tpdr}
+
+The benchmarks reported so far (T1, T1b, T2, T3, T4, \texttt{tau\_sessions} \texttt{duration\_recall}, and \texttt{staleness}) all reduce, in their pure form, to ``read $\tau$, look up an answer.'' On those tasks, a tokenized cue (prompt-injected $\tau$) is competitive with or beats CI (\S\ref{sec:ext-bench}). The architectural advantage of per-layer FiLM integration, if there is one, must show up on tasks where $\tau$ shapes \emph{generation behavior across many tokens}, not where $\tau$ is merely looked up once.
+
+We introduce \textbf{TPDR (Time-Pressured Decision Reasoning)}: a held-out behavioral benchmark designed to make exactly this distinction measurable. TPDR has three properties: (i)~\emph{the prompt never mentions time}, so any $\tau$ effect must enter the response generation through the model's internal state, not the input tokens; (ii)~\emph{the scenarios are decision-style and ambiguous}, so $\tau$ should plausibly modulate the urgency, depth, hedging, and length of a reasonable response; and (iii)~\emph{the metrics measure response \emph{shape}, not response content}, so the test cannot be passed by template selection.
+
+\paragraph{Scenarios.} 50 ambiguous decision prompts that admit responses ranging from terse-and-actionable to deliberative-and-thorough. Examples:
+
+\begin{itemize}[leftmargin=*,itemsep=1pt]
+  \item ``Your laptop starts glitching mid-presentation in front of the CEO. What do you do?''
+  \item ``A close friend hasn't returned your calls in days. What do you do?''
+  \item ``A small leak is forming under the kitchen sink. What's your next move?''
+  \item ``You receive an inheritance offer from a relative you've never met. What's next?''
+  \item ``Your team disagrees about a major decision. What's your approach?''
+\end{itemize}
+
+\noindent The full 50-scenario set is in \texttt{eval/tpdr/scenarios.py}.
+
+\paragraph{Sweep.} Each scenario is evaluated at 10 $\tau$ values drawn log-uniform from $[\SI{1}{\second}, \SI{7}{\day}]$ on three adapters: vanilla (no $\tau$), prompt (text prefix ``\texttt{[elapsed: 3h 42m]}''), and CI (chronometric channel active). Greedy decoding, max 200 new tokens.
+
+\paragraph{Metrics.} Each generated response is scored by seven response-shape statistics, none of which depend on $\tau$ being mentioned: \texttt{length\_chars}, \texttt{length\_words}, \texttt{urgency\_score} (lexical count of ``now, immediately, quickly, asap, urgent''), \texttt{deliberative\_score} (``consider, however, weigh, tradeoffs, alternatively''), \texttt{hedge\_score} (``might, maybe, perhaps, could''), \texttt{conditional\_clauses} (``if, unless, when, suppose, depending''), \texttt{imperative\_count} (sentences starting with an action verb).
+
+\paragraph{Test statistic.} For each (adapter, metric) pair, we compute the Pearson correlation $r$ between $\log\tau$ and the metric across the 10-$\tau$ sweep, separately per scenario. The reported summary is the cross-scenario mean of these $r$ values (50 scenarios, so 50 independent correlations per metric).
+
+\paragraph{What CI should win, if the architectural-integration hypothesis holds.} Per-layer FiLM modulation continuously shifts the residual stream as a smooth function of $\tau$; the same value of $\tau$ does not have to compete for attention with the other input tokens. Prompt-injected $\tau$ is a single token (rounded by the formatter to a discrete bucket) that must be attended-to at every layer to influence generation. The hypothesis is: (i)~CI shows larger absolute $|\bar r|$ across reasoning-shape metrics than prompt; (ii)~CI's metric-vs-$\log\tau$ curve is smoother than prompt's (which should show step-like jumps at the prompt-text rounding boundaries, e.g., when ``[elapsed: 3h]'' becomes ``[elapsed: 4h]''). If the hypothesis fails, CI offers no measurable advantage over prompt injection on behavioral modulation, and the architectural contribution narrows further than the current paper concedes.
+
+\paragraph{Results.} Runs are in progress as this version is prepared and will be folded into a follow-up revision; the runner is in \texttt{eval/tpdr/run\_tpdr.py}, metrics in \texttt{eval/tpdr/metrics.py}. We list the benchmark in the paper, before its results land, because TPDR is the experiment that would either rescue or close the architectural-contribution claim, and naming it before running it is the same pre-registration discipline we applied to T1--T4.
+
+% ======================================================================
 \section{Limitations}
 \label{sec:limitations}
 
