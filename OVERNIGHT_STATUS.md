@@ -106,3 +106,38 @@ contract." If CI wins, the contribution is solid as written. Either way the pape
 is honest about the question.
 
 No silent overclaiming. No backdoors. No hidden caveats.
+
+
+## Update 02:46 PDT (live progress)
+
+### Additional evals completed overnight on Mac mini
+
+**Alpha-flip permutation (W5 / Q6)** -- `reports/alpha_flip_permutation.json`:
+- Full 3-seed run. Top-8 flip COLLAPSES signal on seeds 0 (r=-0.46) and 2 (r=-0.63);
+  on seed 1 the top-8 flip yields r=+0.80 (mostly preserved). 2-of-3 replication.
+- Bottom-8 flip is reliably r=+1.000 on every seed (shallow + final layers inert).
+- Random-8 control r >= 0.997 on every seed.
+- Permutation test on seed 0 (n=20 random half-subsets): median r=1.0, range [-1,+1],
+  confirming subset-dependent outcomes -- distributed weighted-vote pathway.
+- Paper updated to report the 2-of-3 cross-seed flip result honestly.
+
+**T1 expanded effective-n (W2)** -- `reports/t1_expanded_50tau.json`:
+- 50 unique tau per seed (vs original 8), bootstrap 95% CI per seed.
+- seed 0: r=0.86, CI=[0.80, 1.00]
+- seed 1: r=1.00, CI=[0.98, 1.00]
+- seed 2: r=0.84, CI=[0.78, 1.00]
+- **Cross-seed mean drops from 0.961 +/- 0.035 (n=8) to 0.898 +/- 0.070 (n=50).**
+- Still passes pre-registered threshold (r >= 0.8) on all 3 seeds.
+- Abstract + Table 1 updated to report BOTH numbers honestly.
+
+**Now running**: eval_t1_sampling.py (W14 -- T1 under temperature 0.7 sampling).
+**Queued after**: run_external_bench.sh (W12 -- vanilla / prompt / ci adapters).
+
+### Headline shifts driven by these results
+
+1. T1 cross-seed = 0.898 +/- 0.070 (NEW, conservative) replaces 0.961 +/- 0.035 (n=8 inflated).
+2. Mid-deep dominance is "norm-stable across seeds but functionally 2-of-3 via flip eval"
+   (NEW, honest) replaces "the top-8 layer set is identical across all three seeds"
+   (technically true but functionally overstated).
+
+Both are honest losses that make the paper MORE credible, not less.
