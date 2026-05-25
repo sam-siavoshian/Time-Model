@@ -42,23 +42,23 @@ def bubble(ax, x, y, w, h, text, *, color, text_color):
             va="center", ha="left", color=text_color)
 
 
-def panel(ax, title, user, assistant_pairs, *, bubble_h=0.85, gap=1.30,
-          tau_offset=1.05):
+def panel(ax, title, user, assistant_pairs, *, bubble_h=0.70, gap=1.40,
+          tau_offset=1.10):
     n = len(assistant_pairs)
     ax.set_xlim(0, 12)
-    needed = 1.4 + 0.45 + n * gap + 0.4
-    ax.set_ylim(0, max(needed, 4.5))
+    needed = 1.3 + 0.45 + n * gap + 0.2
+    ax.set_ylim(0, needed)
     ax.axis("off")
     ax.set_title(title, fontsize=11.5, pad=4, loc="left", fontweight="bold")
 
     # user prompt at top
-    top_y = ax.get_ylim()[1] - 1.4
-    bubble(ax, 0.2, top_y, 11.6, 1.0, f"USER:  {user}",
+    top_y = ax.get_ylim()[1] - 1.20
+    bubble(ax, 0.2, top_y, 11.6, 0.80, f"USER:  {user}",
            color="#dfe6ea", text_color="#2c3e50")
 
-    y = top_y - 0.55
+    y = top_y - 0.40
     for tau_label, resp in assistant_pairs:
-        ax.text(0.30, y - 0.05, tau_label, fontsize=9, color="#16a085",
+        ax.text(0.30, y - 0.30, tau_label, fontsize=9, color="#16a085",
                 fontweight="bold", style="italic")
         bubble(ax, 0.2, y - tau_offset, 11.6, bubble_h,
                f"ASSISTANT:  {resp}",
@@ -98,13 +98,13 @@ def main() -> None:
     ]
 
     # Panel heights proportional to bubble counts
-    h1 = 1.4 + 0.45 + len(t1_pairs) * 1.30 + 0.4
-    h2 = 1.4 + 0.45 + len(t2_pairs) * 1.30 + 0.4
-    h3 = 1.4 + 0.45 + len(t3_pairs) * 1.30 + 0.4
-    total = h1 + h2 + h3 + 1.6
+    h1 = 1.3 + 0.45 + len(t1_pairs) * 1.40 + 0.2
+    h2 = 1.3 + 0.45 + len(t2_pairs) * 1.40 + 0.2
+    h3 = 1.3 + 0.45 + len(t3_pairs) * 1.40 + 0.2
+    total = h1 + h2 + h3
 
-    fig = plt.figure(figsize=(13, max(11, total * 0.85)))
-    gs = fig.add_gridspec(3, 1, height_ratios=[h1, h2, h3], hspace=0.32)
+    fig = plt.figure(figsize=(13, total * 0.55))
+    gs = fig.add_gridspec(3, 1, height_ratios=[h1, h2, h3], hspace=0.15)
     ax1, ax2, ax3 = (fig.add_subplot(gs[i]) for i in range(3))
 
     panel(ax1, "T1 - Clock readout (same prompt, multiple real elapsed times)",
