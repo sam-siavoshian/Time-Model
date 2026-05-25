@@ -551,3 +551,82 @@
 % (12) Garikaparthi (garikaparthi2026perceive, 2604.00010) -- the YYMM
 %      "2604" implies April 2026; verify whether the ID has been
 %      reassigned or whether the workshop version supersedes it.
+
+% =====================================================================
+% Added 2026-05-24 after review pass: missing entries + adjacencies
+% (Time2Vec, xVal, TimeLLM, IA3, prefix tuning, ContiFormer,
+%  self-citation to preregistration)
+% =====================================================================
+
+@inproceedings{contiformer2023,
+  title         = {{ContiFormer}: Continuous-Time Transformer for Irregular Time Series Modeling},
+  author        = {Chen, Yuqi and Ren, Kan and Wang, Yansen and Fang, Yuchen and Sun, Weiwei and Li, Dongsheng},
+  booktitle     = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year          = {2023},
+  eprint        = {2402.10635},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG},
+  url           = {https://arxiv.org/abs/2402.10635}
+}
+
+@misc{preregistration,
+  title         = {Pre-Registration: Five Falsifiable Tests of Chronometric Injection},
+  author        = {Siavoshian, Sam},
+  year          = {2026},
+  howpublished  = {\url{https://github.com/sam-siavoshian/Time-Model/blob/main/PREREGISTRATION.md}},
+  note          = {Pre-registered T1--T5 thresholds, declared before training}
+}
+
+@article{kazemi2019time2vec,
+  title         = {{Time2Vec}: Learning a Vector Representation of Time},
+  author        = {Kazemi, Seyed Mehran and Goel, Rishab and Eghbali, Sepehr and Ramanan, Janahan and Sahota, Jaspreet and Thakur, Sanjay and Wu, Stella and Smyth, Cathal and Poupart, Pascal and Brubaker, Marcus},
+  year          = {2019},
+  eprint        = {1907.05321},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG},
+  url           = {https://arxiv.org/abs/1907.05321}
+}
+
+@article{golkar2023xval,
+  title         = {{xVal}: A Continuous Number Encoding for Large Language Models},
+  author        = {Golkar, Siavash and Pettee, Mariel and Eickenberg, Michael and Bietti, Alberto and Cranmer, Miles and Krawezik, Geraud and Lanusse, Francois and McCabe, Michael and Ohana, Ruben and Parker, Liam and R{\'e}galdo-Saint Blancard, Bruno and Tesileanu, Tiberiu and Cho, Kyunghyun and Ho, Shirley},
+  year          = {2023},
+  eprint        = {2310.02989},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG},
+  url           = {https://arxiv.org/abs/2310.02989}
+}
+
+@inproceedings{jin2024timellm,
+  title         = {{Time-LLM}: Time Series Forecasting by Reprogramming Large Language Models},
+  author        = {Jin, Ming and Wang, Shiyu and Ma, Lintao and Chu, Zhixuan and Zhang, James Y. and Shi, Xiaoming and Chen, Pin-Yu and Liang, Yuxuan and Li, Yuan-Fang and Pan, Shirui and Wen, Qingsong},
+  booktitle     = {International Conference on Learning Representations (ICLR)},
+  year          = {2024},
+  eprint        = {2310.01728},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG},
+  url           = {https://arxiv.org/abs/2310.01728}
+}
+
+@inproceedings{liu2022ia3,
+  title         = {Few-Shot Parameter-Efficient Fine-Tuning is Better and Cheaper than In-Context Learning},
+  author        = {Liu, Haokun and Tam, Derek and Muqeeth, Mohammed and Mohta, Jay and Huang, Tenghao and Bansal, Mohit and Raffel, Colin},
+  booktitle     = {Advances in Neural Information Processing Systems (NeurIPS)},
+  year          = {2022},
+  eprint        = {2205.05638},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG},
+  url           = {https://arxiv.org/abs/2205.05638},
+  note          = {Introduces IA3, a multiplicative-gating PEFT method analogous to FiLM}
+}
+
+@inproceedings{li2021prefixtuning,
+  title         = {Prefix-Tuning: Optimizing Continuous Prompts for Generation},
+  author        = {Li, Xiang Lisa and Liang, Percy},
+  booktitle     = {Annual Meeting of the Association for Computational Linguistics (ACL)},
+  year          = {2021},
+  eprint        = {2101.00190},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL},
+  url           = {https://arxiv.org/abs/2101.00190}
+}
