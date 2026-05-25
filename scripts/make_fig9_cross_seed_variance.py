@@ -61,12 +61,15 @@ def main() -> None:
                   edgecolor="black", linewidth=0.7,
                   error_kw={"ecolor": "black", "lw": 1.4})
 
-    # threshold dashes per metric
+    # threshold dashes per metric - drawn ABOVE bars with white bbox so they
+    # are not buried inside the bar fill
     for i, thr in enumerate(thresholds):
-        ax.hlines(thr, i - 0.40, i + 0.40, colors="black",
-                  linestyles="--", lw=1.0, alpha=0.8)
-        ax.text(i + 0.42, thr, f"thr {thr}", fontsize=7, va="center",
-                color="black", alpha=0.7)
+        ax.hlines(thr, i - 0.45, i + 0.45, colors="black",
+                  linestyles="--", lw=1.4, alpha=1.0, zorder=4)
+        ax.text(i, thr - 0.045, f"thr {thr}", fontsize=8, va="top",
+                ha="center", color="black", fontweight="bold", zorder=5,
+                bbox=dict(boxstyle="round,pad=0.18", facecolor="white",
+                          edgecolor="black", lw=0.5, alpha=0.95))
 
     # individual seed dots
     for i, vals in enumerate(vals_list):
@@ -98,9 +101,11 @@ def main() -> None:
             edgecolor="black", linewidth=0.7,
             error_kw={"ecolor": "black", "lw": 1.4}, width=0.5)
     ax2.hlines(LOG_MAE_THRESHOLD, -0.30, 0.30, colors="black",
-               linestyles="--", lw=1.0, alpha=0.8)
-    ax2.text(0.35, LOG_MAE_THRESHOLD, f"thr {LOG_MAE_THRESHOLD}",
-             fontsize=8, va="center", alpha=0.7)
+               linestyles="--", lw=1.4, alpha=1.0, zorder=4)
+    ax2.text(0, LOG_MAE_THRESHOLD - 0.025, f"thr {LOG_MAE_THRESHOLD}",
+             fontsize=8, va="top", ha="center", fontweight="bold", zorder=5,
+             bbox=dict(boxstyle="round,pad=0.18", facecolor="white",
+                       edgecolor="black", lw=0.5, alpha=0.95))
     for v in mae["vals"]:
         ax2.plot([-0.12, 0.12], [v, v], color="black", alpha=0.75, lw=0.8)
     ax2.text(0, mean_mae + std_mae + 0.025,

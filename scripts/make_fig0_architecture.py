@@ -153,8 +153,9 @@ def main() -> None:
         subtext="tau-conditional", fontsize=10)
     arrow(ax, 8.5, 6.48, 9.4, 6.48, color=FLOW, lw=1.5)
 
-    # --- FAR RIGHT: equation + init ---
-    eq_box_x, eq_box_y, eq_w, eq_h = 9.7, 2.2, 2.1, 3.0
+    # --- FAR RIGHT: equation + init (shifted further right so it doesn't
+    # touch the layer column) ---
+    eq_box_x, eq_box_y, eq_w, eq_h = 10.25, 2.2, 1.7, 3.0
     ax.add_patch(mpatches.FancyBboxPatch(
         (eq_box_x, eq_box_y), eq_w, eq_h,
         boxstyle="round,pad=0.06,rounding_size=0.12",
