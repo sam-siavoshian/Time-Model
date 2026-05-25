@@ -44,6 +44,38 @@ import torch.nn.functional as F
 from model.qwen_time import QwenTime, QwenTimeConfig, build_qwen_time
 
 
+# When True, every prompt fed to the model gets a `[elapsed: X]` prefix
+# injected after the first `<|im_start|>user\n` marker. This mirrors the
+# training distribution for prompt_baseline ckpts (trained via
+# qwen_time_data_prompt.inject_tau_in_text). Set from CLI flag --inject-prompt.
+INJECT_PROMPT_TAU = False
+
+
+def _tau_text(tau: float) -> str:
+    if tau < 60:
+        return f"[elapsed: {tau:.1f}s]"
+    if tau < 3600:
+        m = tau / 60
+        return f"[elapsed: {m:.1f}m]"
+    if tau < 86400:
+        h = int(tau // 3600); m = int((tau % 3600) // 60)
+        return f"[elapsed: {h}h {m}m]"
+    d = int(tau // 86400); h = int((tau % 86400) // 3600)
+    return f"[elapsed: {d}d {h}h]"
+
+
+def _maybe_inject_prompt(prompt: str, tau: float) -> str:
+    """If INJECT_PROMPT_TAU global is set, prepend `[elapsed: X] ` after the
+    first `<|im_start|>user\n` marker. Matches training prep exactly
+    (qwen_time_data_prompt.inject_tau_in_text uses replace(..., 1))."""
+    if not INJECT_PROMPT_TAU:
+        return prompt
+    marker = "<|im_start|>user\n"
+    if marker not in prompt:
+        return prompt
+    return prompt.replace(marker, f"{marker}{_tau_text(float(tau))} ", 1)
+
+
 def load_trainable(model: QwenTime, ckpt_path: str):
     state = torch.load(ckpt_path, map_location="cpu", weights_only=False)
     cur = dict(model.named_parameters())
@@ -65,6 +97,7 @@ def greedy_decode(model: QwenTime, prompt: str, tau_t: float,
     eff-n=1 fix path: T2/T3 can be re-run with temperature=0.7 + 30
     seeds to get real variance instead of replicate-inflated n=30."""
     tok = model.tokenizer
+    prompt = _maybe_inject_prompt(prompt, tau_t)
     ids = tok.encode(prompt, return_tensors="pt").squeeze(0).to(device)
     generated = []
     cur = ids
@@ -101,6 +134,7 @@ def greedy_decode(model: QwenTime, prompt: str, tau_t: float,
 @torch.no_grad()
 def logits_at_first_pos(model: QwenTime, prompt: str, tau_t: float, device: str = "cuda") -> torch.Tensor:
     tok = model.tokenizer
+    prompt = _maybe_inject_prompt(prompt, tau_t)
     ids = tok.encode(prompt, return_tensors="pt").squeeze(0).to(device)
     out = model(ids, tau_t=tau_t)
     return out["logits"][-1].float().cpu()                     # (vocab,)
@@ -259,6 +293,7 @@ def _generate_with_tau(model, prompt: str, tau_t: float, n_steps: int,
     """Greedy decode n_steps tokens at fixed tau_t. Returns list of
     log-softmax distributions at each generated position."""
     tok = model.tokenizer
+    prompt = _maybe_inject_prompt(prompt, tau_t)
     ids = tok.encode(prompt, return_tensors="pt").squeeze(0).to(device)
     cur = ids
     dists = []
@@ -343,7 +378,17 @@ def main():
                    help="Layer indices for chrono injection (must match training).")
     p.add_argument("--injection-type", type=str, default="film",
                    choices=["film", "additive"])
+    p.add_argument("--inject-prompt", action="store_true",
+                   help="Prepend `[elapsed: X]` to every test prompt. "
+                        "Use this to eval prompt-baseline checkpoints "
+                        "(trained via qwen_time_data_prompt). For CI/"
+                        "additive ckpts, leave OFF.")
     args = p.parse_args()
+
+    global INJECT_PROMPT_TAU
+    if args.inject_prompt:
+        INJECT_PROMPT_TAU = True
+        print("  prompt-injection mode: ON (prepending [elapsed: X] to every test prompt)")
 
     cfg = QwenTimeConfig()
     cfg.base_model_name = args.base
