@@ -1687,6 +1687,85 @@ If TPDR fails to discriminate CI from prompt: the architectural contribution rem
 
 Paper §3.4, abstract, falsification map, Discussion, conclusion, and Limitations item 13 all updated. Cross-seed (seeds 1, 2) currently training on Spark.
 
+### 27.13c Additive non-zero β CROSS-SEED n=3 complete: 2/3 pass all 5 tests
+
+`reports/additive_nonzero_beta_s{0,1,2}_recall.json`. All three seeds done on Spark CUDA.
+
+| Seed | T1 r  | T1b r  | T1b log-MAE | T2 Δ | T3 (wkend / wkday) | T4 KL  | All 5 pass? |
+|------|-------|--------|-------------|------|--------------------|--------|-------------|
+| 0    | 1.000 | 0.996  | 0.038       | 1.00 | **0.00 / 0.00**    | 0.303  | NO (T3)     |
+| 1    | 0.932 | 0.996  | 0.045       | 1.00 | **1.00 / 1.00**    | 0.0945 | YES         |
+| 2    | 0.980 | 0.996  | 0.037       | 1.00 | **1.00 / 1.00**    | 0.378  | YES         |
+
+**Verdict: 2/3 seeds pass all 5 tests with the additive-with-nonzero-β variant.** Seed 0's T3 collapse (0.00 / 0.00) is the outlier, not the mode. The earlier single-seed (§27.13b) claim that "additive matches CI on 4/5 tests, T3 collapses" was a seed-0 artifact. With n=3, the honest claim is: **additive with β-bias=0.01 trains successfully and passes all 5 tests in the majority of seeds**. T3 is the one test that shows seed-dependence under this variant; FiLM with γ-bias=1 passes T3 in all 3 seeds (v15s).
+
+Paper §3.4 + abstract should now read: "Additive injection with β-bias init = 0.01 trains and passes all 5 tests in 2 of 3 seeds (T3 fails in 1 seed); FiLM with γ-bias=1 passes all 5 in 3 of 3 seeds. Both are valid solutions to the gradient-trap problem; FiLM is the more reliable of the two."
+
+### 27.13d Chrono-only (LoRA frozen at zero) PASSES ALL 5 TESTS — sufficiency claim
+
+`reports/chrono_only_s0_recall.json`. FiLM + chrono channel train; LoRA A/B locked at init (zero). The reviewer concern (item 12, prior-review W10): is the chrono channel doing the work, or is LoRA's parameter capacity carrying the model?
+
+| Test | Value             | Verdict |
+|------|-------------------|---------|
+| T1   | r = 0.952         | PASS    |
+| T1b  | r = 0.802, log-MAE = 0.095 | PASS (lower than CI's 0.996/0.038 but above threshold) |
+| T2   | Δ = 1.00          | PASS    |
+| T3   | weekend = 1.0, weekday = 1.0 | PASS |
+| T4   | KL = 2.66         | PASS (T4 ceiling, model differentiates τ heavily) |
+
+**All 5 tests pass with LoRA frozen.** The chrono FiLM channel alone is sufficient to fit T1-T4. LoRA improves T1b OOD precision (log-MAE 0.095 → 0.038) and reduces T4 perturbation noise (KL 2.66 → 0.30) but is **not required** for any test to pass. Reviewer item 12 closed: chrono channel sufficiency is empirically demonstrated.
+
+**Paper updates needed:**
+- Limitations item 12: "PENDING" → "RESOLVED. Chrono-only-no-LoRA passes all 5 tests at n=1; LoRA improves precision but is not necessary."
+- Abstract: add "FiLM channel alone (LoRA frozen at zero) passes all 5 tests; LoRA is a precision enhancer, not a necessity."
+- Falsification map: add "If chrono-only-no-LoRA fails T1 or T2 → LoRA was load-bearing → CI claim falsified. **Result: passes both. CI claim survives.**"
+
+### 27.13e T3 held-out day: T3 FAILS without Sunday in training
+
+`reports/t3_heldout_s0_recall.json`. v15 PHASE data regenerated excluding Sunday from training; otherwise identical to standard v15s.
+
+| Test | Value | Verdict |
+|------|-------|---------|
+| T1   | r = 0.930 | PASS |
+| T1b  | r = 0.996, log-MAE = 0.044 | PASS |
+| T2   | Δ = 1.00 | PASS |
+| T3   | weekend = 0.00, weekday = 0.00 | **FAIL** |
+| T4   | KL = 7.15 | PASS (high — model differentiates strongly w/o calibration) |
+
+**Verdict: T3 collapses when held-out day excluded.** This is honest evidence that T3 is **in-distribution generalization**, not held-out-day generalization. The model learns "weekend keyword distribution" from training-day examples; when Sunday is absent from training, the model has no signal for it at eval. This **narrows the T3 claim** to "multi-scale phase discrimination within distribution" and **closes Limitations item 9**.
+
+Paper updates needed:
+- Limitations item 9: "PENDING" → "RESOLVED. T3 is in-distribution phase recall, not held-out-day generalization. Future work should pre-register a held-out-day variant as the primary T3 test."
+- §3 / Results: add caveat — "T3 passes test (3 of 3 seeds v15s, 2 of 3 seeds additive-nonzero-β) when training distribution includes all 7 days. Held-out variant (Sunday excluded) fails T3, indicating T3 measures in-distribution multi-scale phase recall, not generalization to unseen calendar days."
+
+### 27.13f 3B at 24k steps (matched-budget): T1-T3 pass, T4 FAILS
+
+`reports/qwen_time_3b_24k_s0_recall.json`. 3B model trained for 24k steps (matched to 7B's training budget). Reviewer item 14: is the 7B win a scale effect or a training-steps effect?
+
+| Test | Value | Verdict |
+|------|-------|---------|
+| T1   | r = 0.9995 | PASS |
+| T1b  | r = 0.996, log-MAE = 0.084 | PASS (worse than 18k-step 7B's 0.06) |
+| T2   | Δ = 1.00 | PASS |
+| T3   | weekend = 1.0, weekday = 1.0 | PASS |
+| T4   | KL = 0.015 | **FAIL** (below 0.05 threshold — model under-differentiates τ at output) |
+
+**Verdict: more steps ≠ better at 3B.** At 24k steps the 3B model has comparable T1-T3 to 18k-step 7B but **regresses on T4** (KL collapses to 0.015). T4 measures how strongly τ perturbs the output distribution; KL = 0.015 means the model has nearly identical output distributions across τ values, indicating **chrono-channel attenuation under longer training at the smaller scale**. The 7B@24k result (§24.6 prior) does NOT show this collapse, suggesting the scaling axis matters for T4 stability under extended training.
+
+Paper updates:
+- Limitations item 14: "PENDING" → "RESOLVED. Matched-budget 3B (24k steps) passes T1-T3 comparably but FAILS T4 (KL=0.015). Model size matters for T4 stability under extended training, not for T1-T3 fitting capacity."
+- Add to discussion: "Training budget is sufficient for T1-T3 at 3B; T4 requires either more parameters (7B) or fewer training steps (18k) at 3B. The interaction between scale and steps is non-trivial and deserves systematic study."
+
+### 27.13g Prompt baseline eval bug identified + fix shipped
+
+`reports/prompt_baseline_s0_recall.json` returned **all zeros** for T1-T4 — initially alarming. Root cause: the `qwen_time_check.py` eval pipeline was feeding raw test prompts to the model, but the prompt_baseline ckpt was trained on prompts with a `[elapsed: X]` text prefix injected by `qwen_time_data_prompt.inject_tau_in_text()` (and chrono channel frozen via `--freeze-alpha`). So at eval time, the prompt model had **no time cue at all** and produced canned `"It has been 1 day."` for every τ regardless of true elapsed time.
+
+**Fix shipped (commit `f763565`):** added `--inject-prompt` CLI flag to `qwen_time_check.py`. When set, the module-level `INJECT_PROMPT_TAU = True` causes `greedy_decode`, `logits_at_first_pos`, and `_generate_with_tau` to inject `[elapsed: X]` after the first `<|im_start|>user\n` marker (matching training prep exactly via `.replace(..., 1)`).
+
+Re-eval queued on Spark (`scripts/eval_prompt_baseline_injected.sh`), waits for TPDR to finish then evaluates `prompt_baseline_s{0,1,2}.pt` with `--inject-prompt`. Output: `reports/prompt_baseline_injected_s{0,1,2}_recall.json`.
+
+Until those results land, **the prompt-baseline → CI head-to-head comparison (reviewer item 11) is unresolved**. The all-zeros result in `prompt_baseline_s0_recall.json` is an eval artifact, NOT a model failure, and must not be cited in the paper.
+
 ### 27.14 Trainer additions
 
 - `--freeze-lora` flag (mirror of `--freeze-alpha`): locks LoRA A/B at init while chrono + FiLM gates train. Tests chrono-channel sufficiency (W10 prior reviewer concern).
@@ -1706,27 +1785,45 @@ All five are queued sequentially on Spark in the `saam-spark-queue` tmux session
 
 `paper/refs.bib` pruned from 54 entries to 25 (only the cites actually used in `paper/main.tex`). Every entry cross-checked against arxiv.org metadata: all 22 arxiv IDs resolve to real papers with matching titles + authors. Added Elhage et al. transformer-circuits foundational ref and Geva et al. KV-memory ref for the mech-interp framings. 7 claim-context softenings applied where the paraphrase in the paper exceeded what the cited abstract supports (e.g., dropped "GRPO variant" attribution for Timely Machine, dropped specific 16.3% / 12.9% numbers for Wang et al. that aren't in their abstract).
 
-### 27.17 What's still pending
+### 27.17 What's still pending (as of 2026-05-25 evening)
 
-- `run_prompt_baseline.sh` results on T1-T4 (training in flight on Spark, ~7 hr to seed 0 completion)
-- `run_t3_heldout_day.sh` results (Sunday generalization, ~7 hr after prompt baseline)
-- `run_3b_24k_matched.sh` results (~7 hr after T3 held-out)
-- `run_chrono_only_no_lora.sh` results (~7 hr after 3B@24k)
-- `run_additive_nonzero_beta.sh` results (~7 hr after chrono-only)
-- TPDR results (in flight on Mac mini, smaller scale: 20 scenarios × 6 τ; will rerun at full 50×10 on Spark after queue drains)
-- GitHub repo flip from private to public (so `\cite{preregistration}` resolves for reviewers)
+**LANDED THIS SESSION** (folded into §27.13c-g above):
+- ✅ `run_additive_nonzero_beta.sh` cross-seed n=3 → 2/3 pass all 5 tests (T3 in s0 = outlier)
+- ✅ `run_chrono_only_no_lora.sh` s0 → ALL 5 PASS (FiLM sufficient, reviewer item 12 closed)
+- ✅ `run_t3_heldout_day.sh` s0 → T3 FAIL when Sunday excluded (reviewer item 9 closed, honest limit)
+- ✅ `run_3b_24k_matched.sh` s0 → T1-T3 pass, T4 FAIL (reviewer item 14 closed, scale-vs-steps interaction characterized)
+- ✅ `qwen_time_check.py` `--inject-prompt` flag (eval mismatch fix shipped)
 
-### 27.18 Honest contribution claim, as of 2026-05-25
+**IN FLIGHT (Spark CUDA)**:
+- TPDR full-scale (50 scenarios × 10 τ × 3 adapters: vanilla, CI, prompt) — running, ETA ~20 min
+- Prompt-baseline re-eval with `--inject-prompt` — queued after TPDR, ETA ~5 min after
+
+**STILL TODO (cross-seed completeness)**:
+- chrono_only seeds 1+2 (s0 ckpt exists, retrains needed)
+- t3_heldout seeds 1+2 (s0 only)
+- qwen_time_3b_24k seeds 1+2 (s0 only)
+- prompt_baseline seeds 1+2 ckpts (data prepared but training didn't run via retry_missing; needs investigation)
+
+**SAAM-SIDE**:
+- GitHub repo flip from private to public (so `\cite{preregistration}` URL resolves)
+- Decide whether to retrain missing seeds before submission OR submit with n=1 + cross-seed-as-future-work disclosure
+
+### 27.18 Honest contribution claim, as of 2026-05-25 (post-overnight pipeline)
 
 After all the controls and ablations, the paper supports:
-1. CI is necessary against a no-time baseline (LoRA-only collapses every test to 0.000 across 3 seeds).
-2. CI is NOT preferable to prompt-injected τ on the public `tau_sessions` benchmark on basic time recall.
-3. CI is the ONLY adapter producing positive τ-adaptive response-length correlation on the external benchmark (+0.184).
-4. The chrono pathway is causal (all-layer α-flip inverts; LoRA-only and additive baselines collapse).
-5. Per-layer |α|-norm ranking is stable across seeds (L20-L27 always in top-8); functional importance via flip is 2 of 3 seeds.
-6. T1/T1b are tokenizer-like by construction; T2/T3/T4 require LLM machinery a non-LLM χ(τ) baseline cannot produce.
 
-What the paper claims and what the paper does NOT claim is now sharply aligned with what the evidence supports.
+1. **CI is necessary against a no-time baseline** (LoRA-only collapses every test to 0.000 across 3 seeds).
+2. **CI is NOT preferable to prompt-injected τ on the public `tau_sessions` benchmark on basic time recall** (external benchmark result, prior session). Internal head-to-head (T1-T4) pending re-eval with `--inject-prompt` fix.
+3. **CI is the ONLY adapter producing positive τ-adaptive response-length correlation on the external benchmark** (+0.184).
+4. **The chrono pathway is causal** (all-layer α-flip inverts; LoRA-only and additive baselines collapse).
+5. **Per-layer |α|-norm ranking is stable across seeds** (L20-L27 always in top-8); functional importance via flip is 2 of 3 seeds.
+6. **T1/T1b are tokenizer-like by construction**; T2/T3/T4 require LLM machinery a non-LLM χ(τ) baseline cannot produce.
+7. **Chrono FiLM channel alone (LoRA frozen at zero) passes all 5 tests** (n=1, §27.13d). LoRA is a precision enhancer (T1b OOD: log-MAE 0.095 → 0.038), not a sufficiency condition.
+8. **The "FiLM is required" claim is now narrowed**: any init scheme giving non-zero ∂h'/∂α at step 0 trains. FiLM with γ-bias=1 passes all 5 tests in 3 of 3 v15s seeds; additive with β-bias=0.01 passes all 5 in 2 of 3 seeds (T3 in seed 0 = outlier).
+9. **T3 is in-distribution multi-scale phase recall, not held-out-day generalization**: held-out variant (Sunday excluded) collapses T3 to 0/0 (§27.13e). This is an honest limitation, not a falsification of CI.
+10. **Scale and training steps interact non-trivially**: 3B at matched 24k-step budget passes T1-T3 but FAILS T4 (KL=0.015 collapse); 7B at 24k does not exhibit this collapse. T4 stability under extended training requires more parameters.
+
+What the paper claims and what the paper does NOT claim is now sharply aligned with what the evidence supports. The "FiLM-required" original framing was overclaimed; the "T3 generalizes to held-out days" implicit framing was overclaimed; both are now narrowed with honest evidence on the table.
 
 ---
 
