@@ -1,0 +1,28 @@
+{
+  "task": "MLP on chi(tau) -> bucket (matched to T1b protocol)",
+  "n_train": 30000,
+  "n_eval": 24,
+  "n_buckets": 151,
+  "tau_range_seconds": [
+    1.0,
+    604800.0
+  ],
+  "mlp_2x128": {
+    "eval_acc": 1.0,
+    "pearson_r": 0.9964674934390864,
+    "log10_mae": 0.026719343587253933
+  },
+  "linear": {
+    "eval_acc": 1.0,
+    "pearson_r": 0.9964674934390864,
+    "log10_mae": 0.026719343587253933
+  },
+  "ci_v15_cross_seed_for_comparison": {
+    "pearson_r": 0.993,
+    "pearson_r_std": 0.003,
+    "log10_mae": 0.044,
+    "log10_mae_std": 0.01,
+    "note": "from reports/v15_cross_seed_aggregate.json T1b"
+  },
+  "interpretation": "MLP / linear baseline numbers shown for the question 'does the chrono encoder alone (no LLM) already solve T1b?' If the MLP/linear gets r near 1 and log-MAE near 0.044, then T1/T1b are largely a learned-tokenizer task and the LLM contributes little. Lower numbers here = the LLM is contributing real work."
+}
