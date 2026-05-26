@@ -1820,6 +1820,46 @@ Reviewer item 11 (head-to-head with prompt baseline) **RESOLVED**:
 
 **Headline takeaway for paper**: CI's per-layer FiLM integration produces **measurably stronger and more consistent τ-adaptive response-shape modulation across 7 metrics** than the same model with the same τ value delivered as a text prefix. This is the empirical content of the "CI is not just prompt injection" claim. **Reviewer item 11 (head-to-head vs prompt baseline) is now resolved with quantitative evidence on the behavioral side**, complementing the T4 architectural-distinction result of §27.13h.
 
+### 27.13k Prompt baseline cross-seed n=3 — T4 architectural distinction SURVIVES
+
+`reports/prompt_baseline_injected_s{0,1,2}_recall.json` complete on Spark CUDA.
+
+| Seed | T1 | T1b log-MAE | T2 | T3 wkend/wkday | T4 KL | T4 pass | All 5? |
+|------|-----|------|------|----------------|-------|---------|--------|
+| s0   | 1.0 | 0.022 | 1.0 | 1.0 / 0.0      | 0.0084 | FAIL    | NO     |
+| s1   | 1.0 | 0.022 | 1.0 | 1.0 / 1.0      | 0.0524 | PASS (borderline) | YES |
+| s2   | 1.0 | 0.022 | 1.0 | 1.0 / 1.0      | 0.0093 | FAIL    | NO     |
+
+**T4 cross-seed mean for prompt baseline = ~0.024 (FAIL).** Only 1/3 seeds marginally passes T4 (s1 at KL=0.0524, just above the 0.05 threshold). The other two seeds fail by an order of magnitude (KL=0.008-0.009).
+
+**CI cross-seed T4 = 14.14 ± 1.15 (PASS in 3/3 seeds).** Effect-size ratio CI/prompt ≈ **590×** at the T4 metric. The architectural-distinction claim is not a knife-edge call: CI's output-distribution modulation across τ is two-to-three orders of magnitude larger than the prompt baseline's at every seed, with 3-of-3 vs 1-of-3 pass rates. **Reviewer item 11 + W3 (T4 architectural distinction) survives cross-seed scrutiny.**
+
+T1/T1b/T2 are tied at the seed level (prompt baseline passes all three in 3/3 seeds, just like CI). T3 prompt baseline 1/3 seeds is one-direction (s0 wkend=1.0/wkday=0.0); 2/3 are bidirectional. CI is bidirectional in 2/3 seeds. T3 is therefore not a clean distinction either.
+
+The cleanly-surviving CI-vs-prompt distinction at the in-house pre-registered T1-T4 suite is T4 (3/3 vs 1/3) and TPDR (mean |r| 0.240 vs 0.122, behavioral-shape modulation).
+
+### 27.13l Per-layer probe sweep L0 → L36 (W8 fix)
+
+`reports/probe_per_layer_v15s_s0.json`. Probe at every layer of the v15s seed-0 ckpt for both the trained condition (A) and the α-zeroed condition (B). Reviewer W8 concern: ``R²=0.99990 at L1 is partly trivial; the residual stream at L1 is L0's output plus the chrono modulation, so a linear probe at L1 is decoding the injection one layer downstream.'' The right control is a probe at L0 of the same model: if that's also ~1.0, the probe is trivially recovering the injection; if it jumps from L0 to L1, there is representational uplift. We did not report L0 in the original draft. The data now in hand:
+
+| Layer | A (trained) R² | B (α-zeroed) R² |
+|-------|----------------|------------------|
+| L0    | **-0.005 (chance)** | -0.005 (chance) |
+| L1    | **0.9999**     | -0.005           |
+| L2    | 0.99984        | -0.005           |
+| L3    | 0.99983        | -0.005           |
+| L20   | 0.9998         | -0.005           |
+| L35   | 0.9997         | -0.005           |
+| L36   | 0.9998         | -0.005           |
+
+**L0 is at chance under the trained condition.** The high R² values start at L1 and persist through L36. This means the FiLM injection at L0 is *not* directly linearly decodable from the residual stream at L0; the linear axis emerges after one transformer block of processing. The α-zeroed control returns chance at every layer (FiLM gates locked, so no chrono signal anywhere), confirming the gap is caused by the chrono channel, not by any other linear feature in the residual stream.
+
+**Reviewer W8 partially resolves in our favor.** The R²=0.9999 number at L1 is not the trivial-decoding artifact W8 worried about; L0 is chance under the same conditions. The within-distribution linear-time axis is a property of the L1+ residual stream, not a readout of the raw injection.
+
+### 27.13m Teacher-forced T4 confirms paper claim of 2.79
+
+`reports/extra_controls_v15s_s0_teacher.json`. Mean teacher-forced KL = **2.794** (paper claim was 2.79; matches exactly). Per-position breakdown spikes at positions 3, 5, 6 (digit/space/unit tokens), consistent with the labeled-position analysis in §6 and Fig. 7. The original headline T4 multi-position KL (14.14) is structurally inflated by autoregressive drift; teacher-forced KL (2.79) is the honest architectural-comparison number. Both are presented in the paper.
+
 ### 27.13j Cross-seed s1+s2 status (chrono_only, t3_heldout, 3b_24k, prompt_baseline)
 
 Only `_s0` ckpts exist for these 4 ablations. The retry_missing.done flag landed but no s1/s2 ckpts. Means retry_missing.sh detected the s0 ckpt existed and skipped, OR training failed silently for s1+s2. Investigation deferred — for paper purposes, cite n=1 for these 4 ablations with explicit cross-seed-as-future-work disclosure. Additive_nonzero_beta has full n=3 (§27.13c). v15s has full n=3 (§24).
