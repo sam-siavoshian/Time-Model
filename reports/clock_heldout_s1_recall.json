@@ -1,0 +1,155 @@
+{
+  "summary": {
+    "T1_clock_pearson_r": NaN,
+    "T1_pass": false,
+    "T1b_ood_pearson_r": NaN,
+    "T1b_ood_log_mae": NaN,
+    "T1b_pass": false,
+    "T2_ack_delta": 1.0,
+    "T2_pass": true,
+    "T3_weekend_signal": 0.0,
+    "T3_weekday_signal": 0.0,
+    "T3_pass": false,
+    "T4_mean_pairwise_kl": 0.11164763424959448,
+    "T4_pass": true
+  },
+  "t1": {
+    "n": 0,
+    "pearson_r": NaN,
+    "examples": [
+      [
+        15,
+        "Good day. What can I help with?",
+        NaN
+      ],
+      [
+        15,
+        "Good day. What can I help with?",
+        NaN
+      ],
+      [
+        15,
+        "Good day. What can I help with?",
+        NaN
+      ],
+      [
+        15,
+        "Good day. What can I help with?",
+        NaN
+      ],
+      [
+        15,
+        "Good day. What can I help with?",
+        NaN
+      ],
+      [
+        15,
+        "Good day. What can I help with?",
+        NaN
+      ],
+      [
+        15,
+        "Good day. What can I help with?",
+        NaN
+      ],
+      [
+        15,
+        "Good day. What can I help with?",
+        NaN
+      ]
+    ],
+    "pred": [],
+    "truth": []
+  },
+  "t1b": {
+    "n": 0,
+    "pearson_r": NaN,
+    "log_mae": NaN
+  },
+  "t2": {
+    "n": 30,
+    "ack_rate_small": 0.0,
+    "ack_rate_large": 1.0,
+    "delta": 1.0,
+    "examples": [
+      {
+        "delta_small_resp": "Hi, I am still here. What's next?",
+        "delta_large_resp": "Welcome back, it has been about 1 day. What can I help with?"
+      },
+      {
+        "delta_small_resp": "Hi, I am still here. What's next?",
+        "delta_large_resp": "Welcome back, it has been about 1 day. What can I help with?"
+      },
+      {
+        "delta_small_resp": "Hi, I am still here. What's next?",
+        "delta_large_resp": "Welcome back, it has been about 1 day. What can I help with?"
+      },
+      {
+        "delta_small_resp": "Hi, I am still here. What's next?",
+        "delta_large_resp": "Welcome back, it has been about 1 day. What can I help with?"
+      },
+      {
+        "delta_small_resp": "Hi, I am still here. What's next?",
+        "delta_large_resp": "Welcome back, it has been about 1 day. What can I help with?"
+      },
+      {
+        "delta_small_resp": "Hi, I am still here. What's next?",
+        "delta_large_resp": "Welcome back, it has been about 1 day. What can I help with?"
+      }
+    ]
+  },
+  "t3": {
+    "n": 20,
+    "weekday_word_rate_on_weekday_prompt": 1.0,
+    "weekday_word_rate_on_weekend_prompt": 1.0,
+    "weekend_word_rate_on_weekday_prompt": 0.0,
+    "weekend_word_rate_on_weekend_prompt": 0.0,
+    "weekday_signal": 0.0,
+    "weekend_signal": 0.0,
+    "examples": [
+      {
+        "wkday_resp": "Weekday vibes. What is on your list?",
+        "wkend_resp": "Hope your weekday is going well."
+      },
+      {
+        "wkday_resp": "Weekday vibes. What is on your list?",
+        "wkend_resp": "Hope your weekday is going well."
+      },
+      {
+        "wkday_resp": "Weekday vibes. What is on your list?",
+        "wkend_resp": "Hope your weekday is going well."
+      },
+      {
+        "wkday_resp": "Weekday vibes. What is on your list?",
+        "wkend_resp": "Hope your weekday is going well."
+      },
+      {
+        "wkday_resp": "Weekday vibes. What is on your list?",
+        "wkend_resp": "Hope your weekday is going well."
+      },
+      {
+        "wkday_resp": "Weekday vibes. What is on your list?",
+        "wkend_resp": "Hope your weekday is going well."
+      }
+    ]
+  },
+  "t4": {
+    "n_pairwise_first": 9,
+    "n_pairwise_multi_pos": 72,
+    "n_positions": 8,
+    "mean_pairwise_kl": 0.11164763424959448,
+    "max_pairwise_kl": 0.5096072554588318,
+    "mean_pairwise_kl_multi_pos": 15.042127292205224,
+    "max_pairwise_kl_multi_pos": 43.84375,
+    "per_position_mean_kls": [
+      0.11164763424959448,
+      4.7120844450158375,
+      7.91873524363877,
+      14.869303722587777,
+      22.24001397056162,
+      22.157976364436998,
+      26.39670140134458,
+      21.93055555580662
+    ]
+  }
+}
