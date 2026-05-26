@@ -1,0 +1,179 @@
+{
+  "summary": {
+    "T1_clock_pearson_r": 0.932531052460081,
+    "T1_pass": true,
+    "T1b_ood_pearson_r": 0.9938246306174191,
+    "T1b_ood_log_mae": 0.08357872198963025,
+    "T1b_pass": true,
+    "T2_ack_delta": 1.0,
+    "T2_pass": true,
+    "T3_weekend_signal": 1.0,
+    "T3_weekday_signal": 0.0,
+    "T3_pass": true,
+    "T4_mean_pairwise_kl": 2.271618830090018,
+    "T4_pass": true
+  },
+  "t1": {
+    "n": 64,
+    "pearson_r": 0.932531052460081,
+    "examples": [
+      [
+        15,
+        "It has been 16 seconds.",
+        16.0
+      ],
+      [
+        15,
+        "It has been 16 seconds.",
+        16.0
+      ],
+      [
+        15,
+        "It has been 16 seconds.",
+        16.0
+      ],
+      [
+        15,
+        "It has been 16 seconds.",
+        16.0
+      ],
+      [
+        15,
+        "It has been 16 seconds.",
+        16.0
+      ],
+      [
+        15,
+        "It has been 16 seconds.",
+        16.0
+      ],
+      [
+        15,
+        "It has been 16 seconds.",
+        16.0
+      ],
+      [
+        15,
+        "It has been 16 seconds.",
+        16.0
+      ]
+    ]
+  },
+  "t1b": {
+    "n": 24,
+    "pearson_r": 0.9938246306174191,
+    "log_mae": 0.08357872198963025,
+    "samples": [
+      [
+        105896.87135952018,
+        86400.0
+      ],
+      [
+        2354.801434532446,
+        2280.0
+      ],
+      [
+        999.6363691994552,
+        1020.0
+      ],
+      [
+        4.840221472234116,
+        5.0
+      ],
+      [
+        548.9082401997558,
+        480.0
+      ],
+      [
+        3372.6780550503463,
+        3300.0
+      ]
+    ]
+  },
+  "t2": {
+    "n": 30,
+    "ack_rate_small": 0.0,
+    "ack_rate_large": 1.0,
+    "delta": 1.0,
+    "examples": [
+      {
+        "delta_small_resp": "Hi, I am still here. What's next?",
+        "delta_large_resp": "Welcome back, it has been about 1 day. What can I help with?"
+      },
+      {
+        "delta_small_resp": "Hi, I am still here. What's next?",
+        "delta_large_resp": "Welcome back, it has been about 1 day. What can I help with?"
+      },
+      {
+        "delta_small_resp": "Hi, I am still here. What's next?",
+        "delta_large_resp": "Welcome back, it has been about 1 day. What can I help with?"
+      },
+      {
+        "delta_small_resp": "Hi, I am still here. What's next?",
+        "delta_large_resp": "Welcome back, it has been about 1 day. What can I help with?"
+      },
+      {
+        "delta_small_resp": "Hi, I am still here. What's next?",
+        "delta_large_resp": "Welcome back, it has been about 1 day. What can I help with?"
+      },
+      {
+        "delta_small_resp": "Hi, I am still here. What's next?",
+        "delta_large_resp": "Welcome back, it has been about 1 day. What can I help with?"
+      }
+    ]
+  },
+  "t3": {
+    "n": 20,
+    "weekday_word_rate_on_weekday_prompt": 0.0,
+    "weekday_word_rate_on_weekend_prompt": 0.0,
+    "weekend_word_rate_on_weekday_prompt": 0.0,
+    "weekend_word_rate_on_weekend_prompt": 1.0,
+    "weekday_signal": 0.0,
+    "weekend_signal": 1.0,
+    "examples": [
+      {
+        "wkday_resp": "Good day. What can I help with?",
+        "wkend_resp": "Hope you are enjoying the weekend."
+      },
+      {
+        "wkday_resp": "Good day. What can I help with?",
+        "wkend_resp": "Hope you are enjoying the weekend."
+      },
+      {
+        "wkday_resp": "Good day. What can I help with?",
+        "wkend_resp": "Hope you are enjoying the weekend."
+      },
+      {
+        "wkday_resp": "Good day. What can I help with?",
+        "wkend_resp": "Hope you are enjoying the weekend."
+      },
+      {
+        "wkday_resp": "Good day. What can I help with?",
+        "wkend_resp": "Hope you are enjoying the weekend."
+      },
+      {
+        "wkday_resp": "Good day. What can I help with?",
+        "wkend_resp": "Hope you are enjoying the weekend."
+      }
+    ]
+  },
+  "t4": {
+    "n_pairwise_first": 9,
+    "n_pairwise_multi_pos": 72,
+    "n_positions": 8,
+    "mean_pairwise_kl": 2.271618830090018,
+    "max_pairwise_kl": 5.905536651611328,
+    "mean_pairwise_kl_multi_pos": 13.606078614800607,
+    "max_pairwise_kl_multi_pos": 36.656219482421875,
+    "per_position_mean_kls": [
+      2.271618830090018,
+      12.249598629123486,
+      10.840677357780603,
+      14.245648358350468,
+      15.437439951748173,
+      17.663173618078687,
+      19.195942962671527,
+      16.944529210561896
+    ]
+  }
+}
