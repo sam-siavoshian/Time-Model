@@ -267,6 +267,7 @@ class QwenTime(nn.Module):
                     mlp.up_proj = _IA3Linear(up)
                     n_adapted += 1
         self._n_ia3_modules = n_adapted
+        self._n_lora_modules = 0  # for compatibility with trainer print
 
     def _apply_lora(self):
         cfg = self.cfg
