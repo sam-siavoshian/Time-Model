@@ -197,11 +197,42 @@ def t1_paraphrase_check(model, device, n_per_tau=3):
     }
 
 
+# Prompt-baseline injection support (W3 fix). When INJECT_PROMPT_TAU is
+# set globally from --inject-prompt CLI, each tau gets [elapsed: X]
+# prepended to its prompt. Each tau therefore sees a DIFFERENT prompt
+# string, so we must re-tokenize per tau (cannot share the ids object).
+INJECT_PROMPT_TAU = False
+
+
+def _tau_text(tau: float) -> str:
+    if tau < 60:
+        return f"[elapsed: {tau:.1f}s]"
+    if tau < 3600:
+        return f"[elapsed: {tau/60:.1f}m]"
+    if tau < 86400:
+        h = int(tau // 3600); m = int((tau % 3600) // 60)
+        return f"[elapsed: {h}h {m}m]"
+    d = int(tau // 86400); h = int((tau % 86400) // 3600)
+    return f"[elapsed: {d}d {h}h]"
+
+
+def _maybe_inject_prompt(prompt: str, tau: float) -> str:
+    if not INJECT_PROMPT_TAU:
+        return prompt
+    marker = "<|im_start|>user\n"
+    if marker not in prompt:
+        return prompt
+    return prompt.replace(marker, f"{marker}{_tau_text(float(tau))} ", 1)
+
+
 # Teacher-forced T4
 @torch.no_grad()
 def teacher_forced_kl(model, prompt, taus, n_positions, device):
     tok = model.tokenizer
-    ids = tok.encode(prompt, return_tensors="pt").squeeze(0).to(device)
+    # Anchor uses taus[0]. For prompt-baseline mode, re-tokenize per tau
+    # since each tau gets a different injected prompt string.
+    anchor_prompt = _maybe_inject_prompt(prompt, taus[0])
+    ids = tok.encode(anchor_prompt, return_tensors="pt").squeeze(0).to(device)
     cur = ids
     anchor_trajectory = []
     for _ in range(n_positions):
@@ -217,7 +248,9 @@ def teacher_forced_kl(model, prompt, taus, n_positions, device):
         anchor_dists.append(F.log_softmax(out["logits"][-1].float().cpu(), dim=-1))
         cur_anchor = torch.cat([cur_anchor, torch.tensor([anchor_trajectory[pos]], device=device)])
     for tau in taus[1:]:
-        cur_t = ids
+        # Re-tokenize for this tau's injected prompt (prompt-baseline mode)
+        tau_prompt = _maybe_inject_prompt(prompt, tau)
+        cur_t = tok.encode(tau_prompt, return_tensors="pt").squeeze(0).to(device)
         for pos in range(n_positions):
             out = model(cur_t, tau_t=tau)
             ld = F.log_softmax(out["logits"][-1].float().cpu(), dim=-1)
@@ -255,7 +288,16 @@ def main():
     p.add_argument("--out", type=str, default="reports/extra_controls.json")
     p.add_argument("--base", type=str, default="Qwen/Qwen2.5-3B-Instruct")
     p.add_argument("--timescales", type=str, default="")
+    p.add_argument("--inject-prompt", action="store_true",
+                   help="Prepend [elapsed: X] to each prompt before "
+                        "teacher-forced KL. Use when evaluating "
+                        "prompt-baseline ckpts (W3 fix).")
     args = p.parse_args()
+
+    global INJECT_PROMPT_TAU
+    if args.inject_prompt:
+        INJECT_PROMPT_TAU = True
+        print("  prompt-injection mode: ON (W3 fix for prompt-baseline T4 teacher-forced)")
 
     cfg = QwenTimeConfig()
     cfg.base_model_name = args.base
