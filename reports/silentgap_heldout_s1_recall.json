@@ -1,0 +1,179 @@
+{
+  "summary": {
+    "T1_clock_pearson_r": 0.9999004108351732,
+    "T1_pass": true,
+    "T1b_ood_pearson_r": 0.9940019702088703,
+    "T1b_ood_log_mae": 0.02860410381210833,
+    "T1b_pass": true,
+    "T2_ack_delta": 0.0,
+    "T2_pass": false,
+    "T3_weekend_signal": 0.0,
+    "T3_weekday_signal": 0.0,
+    "T3_pass": false,
+    "T4_mean_pairwise_kl": 0.005653823843204009,
+    "T4_pass": false
+  },
+  "t1": {
+    "n": 64,
+    "pearson_r": 0.9999004108351732,
+    "examples": [
+      [
+        15,
+        "It has been 14 seconds.",
+        14.0
+      ],
+      [
+        15,
+        "It has been 14 seconds.",
+        14.0
+      ],
+      [
+        15,
+        "It has been 14 seconds.",
+        14.0
+      ],
+      [
+        15,
+        "It has been 14 seconds.",
+        14.0
+      ],
+      [
+        15,
+        "It has been 14 seconds.",
+        14.0
+      ],
+      [
+        15,
+        "It has been 14 seconds.",
+        14.0
+      ],
+      [
+        15,
+        "It has been 14 seconds.",
+        14.0
+      ],
+      [
+        15,
+        "It has been 14 seconds.",
+        14.0
+      ]
+    ]
+  },
+  "t1b": {
+    "n": 24,
+    "pearson_r": 0.9940019702088703,
+    "log_mae": 0.02860410381210833,
+    "samples": [
+      [
+        105896.87135952018,
+        86400.0
+      ],
+      [
+        2354.801434532446,
+        2160.0
+      ],
+      [
+        999.6363691994552,
+        1020.0
+      ],
+      [
+        4.840221472234116,
+        5.0
+      ],
+      [
+        548.9082401997558,
+        540.0
+      ],
+      [
+        3372.6780550503463,
+        3360.0
+      ]
+    ]
+  },
+  "t2": {
+    "n": 30,
+    "ack_rate_small": 0.0,
+    "ack_rate_large": 0.0,
+    "delta": 0.0,
+    "examples": [
+      {
+        "delta_small_resp": "Weekday vibes. What can I help with?",
+        "delta_large_resp": "Weekday vibes. What is on your list?"
+      },
+      {
+        "delta_small_resp": "Weekday vibes. What can I help with?",
+        "delta_large_resp": "Weekday vibes. What is on your list?"
+      },
+      {
+        "delta_small_resp": "Weekday vibes. What can I help with?",
+        "delta_large_resp": "Weekday vibes. What is on your list?"
+      },
+      {
+        "delta_small_resp": "Weekday vibes. What can I help with?",
+        "delta_large_resp": "Weekday vibes. What is on your list?"
+      },
+      {
+        "delta_small_resp": "Weekday vibes. What can I help with?",
+        "delta_large_resp": "Weekday vibes. What is on your list?"
+      },
+      {
+        "delta_small_resp": "Weekday vibes. What can I help with?",
+        "delta_large_resp": "Weekday vibes. What is on your list?"
+      }
+    ]
+  },
+  "t3": {
+    "n": 20,
+    "weekday_word_rate_on_weekday_prompt": 1.0,
+    "weekday_word_rate_on_weekend_prompt": 1.0,
+    "weekend_word_rate_on_weekday_prompt": 0.0,
+    "weekend_word_rate_on_weekend_prompt": 0.0,
+    "weekday_signal": 0.0,
+    "weekend_signal": 0.0,
+    "examples": [
+      {
+        "wkday_resp": "Weekday vibes. What is on your list?",
+        "wkend_resp": "Weekday vibes. What is on your list?"
+      },
+      {
+        "wkday_resp": "Weekday vibes. What is on your list?",
+        "wkend_resp": "Weekday vibes. What is on your list?"
+      },
+      {
+        "wkday_resp": "Weekday vibes. What is on your list?",
+        "wkend_resp": "Weekday vibes. What is on your list?"
+      },
+      {
+        "wkday_resp": "Weekday vibes. What is on your list?",
+        "wkend_resp": "Weekday vibes. What is on your list?"
+      },
+      {
+        "wkday_resp": "Weekday vibes. What is on your list?",
+        "wkend_resp": "Weekday vibes. What is on your list?"
+      },
+      {
+        "wkday_resp": "Weekday vibes. What is on your list?",
+        "wkend_resp": "Weekday vibes. What is on your list?"
+      }
+    ]
+  },
+  "t4": {
+    "n_pairwise_first": 9,
+    "n_pairwise_multi_pos": 72,
+    "n_positions": 8,
+    "mean_pairwise_kl": 0.005653823843204009,
+    "max_pairwise_kl": 0.013635839335620403,
+    "mean_pairwise_kl_multi_pos": 3.4070380482587788,
+    "max_pairwise_kl_multi_pos": 26.20009994506836,
+    "per_position_mean_kls": [
+      0.005653823843204009,
+      8.852089678731042e-06,
+      0.01812505374194954,
+      4.517129398219648,
+      7.144717923613774,
+      2.3831350066076538,
+      7.9006417843132635,
+      5.286892543641058
+    ]
+  }
+}
