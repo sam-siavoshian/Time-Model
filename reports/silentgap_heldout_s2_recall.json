@@ -1,0 +1,179 @@
+{
+  "summary": {
+    "T1_clock_pearson_r": 0.9999999999986167,
+    "T1_pass": true,
+    "T1b_ood_pearson_r": 0.9943970909560008,
+    "T1b_ood_log_mae": 0.039693578602892916,
+    "T1b_pass": true,
+    "T2_ack_delta": 0.0,
+    "T2_pass": false,
+    "T3_weekend_signal": 1.0,
+    "T3_weekday_signal": 1.0,
+    "T3_pass": true,
+    "T4_mean_pairwise_kl": 0.07987522491142347,
+    "T4_pass": true
+  },
+  "t1": {
+    "n": 64,
+    "pearson_r": 0.9999999999986167,
+    "examples": [
+      [
+        15,
+        "It has been 16 seconds.",
+        16.0
+      ],
+      [
+        15,
+        "It has been 16 seconds.",
+        16.0
+      ],
+      [
+        15,
+        "It has been 16 seconds.",
+        16.0
+      ],
+      [
+        15,
+        "It has been 16 seconds.",
+        16.0
+      ],
+      [
+        15,
+        "It has been 16 seconds.",
+        16.0
+      ],
+      [
+        15,
+        "It has been 16 seconds.",
+        16.0
+      ],
+      [
+        15,
+        "It has been 16 seconds.",
+        16.0
+      ],
+      [
+        15,
+        "It has been 16 seconds.",
+        16.0
+      ]
+    ]
+  },
+  "t1b": {
+    "n": 24,
+    "pearson_r": 0.9943970909560008,
+    "log_mae": 0.039693578602892916,
+    "samples": [
+      [
+        105896.87135952018,
+        86400.0
+      ],
+      [
+        2354.801434532446,
+        2400.0
+      ],
+      [
+        999.6363691994552,
+        960.0
+      ],
+      [
+        4.840221472234116,
+        4.0
+      ],
+      [
+        548.9082401997558,
+        600.0
+      ],
+      [
+        3372.6780550503463,
+        3360.0
+      ]
+    ]
+  },
+  "t2": {
+    "n": 30,
+    "ack_rate_small": 0.0,
+    "ack_rate_large": 0.0,
+    "delta": 0.0,
+    "examples": [
+      {
+        "delta_small_resp": "Good day.",
+        "delta_large_resp": "Weekday vibes. What is on your list?"
+      },
+      {
+        "delta_small_resp": "Good day.",
+        "delta_large_resp": "Weekday vibes. What is on your list?"
+      },
+      {
+        "delta_small_resp": "Good day.",
+        "delta_large_resp": "Weekday vibes. What is on your list?"
+      },
+      {
+        "delta_small_resp": "Good day.",
+        "delta_large_resp": "Weekday vibes. What is on your list?"
+      },
+      {
+        "delta_small_resp": "Good day.",
+        "delta_large_resp": "Weekday vibes. What is on your list?"
+      },
+      {
+        "delta_small_resp": "Good day.",
+        "delta_large_resp": "Weekday vibes. What is on your list?"
+      }
+    ]
+  },
+  "t3": {
+    "n": 20,
+    "weekday_word_rate_on_weekday_prompt": 1.0,
+    "weekday_word_rate_on_weekend_prompt": 0.0,
+    "weekend_word_rate_on_weekday_prompt": 0.0,
+    "weekend_word_rate_on_weekend_prompt": 1.0,
+    "weekday_signal": 1.0,
+    "weekend_signal": 1.0,
+    "examples": [
+      {
+        "wkday_resp": "Weekday vibes. What is on your list?",
+        "wkend_resp": "Weekend mode. What is up?"
+      },
+      {
+        "wkday_resp": "Weekday vibes. What is on your list?",
+        "wkend_resp": "Weekend mode. What is up?"
+      },
+      {
+        "wkday_resp": "Weekday vibes. What is on your list?",
+        "wkend_resp": "Weekend mode. What is up?"
+      },
+      {
+        "wkday_resp": "Weekday vibes. What is on your list?",
+        "wkend_resp": "Weekend mode. What is up?"
+      },
+      {
+        "wkday_resp": "Weekday vibes. What is on your list?",
+        "wkend_resp": "Weekend mode. What is up?"
+      },
+      {
+        "wkday_resp": "Weekday vibes. What is on your list?",
+        "wkend_resp": "Weekend mode. What is up?"
+      }
+    ]
+  },
+  "t4": {
+    "n_pairwise_first": 9,
+    "n_pairwise_multi_pos": 72,
+    "n_positions": 8,
+    "mean_pairwise_kl": 0.07987522491142347,
+    "max_pairwise_kl": 0.2271566092967987,
+    "mean_pairwise_kl_multi_pos": 13.728409477795838,
+    "max_pairwise_kl_multi_pos": 44.49609375,
+    "per_position_mean_kls": [
+      0.07987522491142347,
+      5.138583968355012,
+      4.992889504543723,
+      14.512823084963758,
+      22.977316385120865,
+      17.980929711146235,
+      30.770067069777717,
+      13.374790873547965
+    ]
+  }
+}
