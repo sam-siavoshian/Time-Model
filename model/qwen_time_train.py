@@ -123,6 +123,10 @@ def main():
     p.add_argument("--lora-rank", type=int, default=8,
                    help="LoRA adapter rank. Default 8 (CI default). Used by W6 fix: "
                         "rank-bumped prompt baseline at matched total trainable params.")
+    p.add_argument("--use-ia3", action="store_true",
+                   help="W9 reviewer fix: use IA3 (Liu 2022) multiplicative-scaling "
+                        "PEFT instead of LoRA. Wraps k_proj, v_proj, and FFN up_proj "
+                        "with per-output-feature learnable scales initialized to one.")
     args = p.parse_args()
 
     torch.manual_seed(args.seed)
@@ -136,6 +140,9 @@ def main():
     if args.lora_rank != 8:
         cfg.lora_rank = args.lora_rank
         print(f"  Override lora_rank: {cfg.lora_rank}")
+    if args.use_ia3:
+        cfg.use_ia3 = True
+        print(f"  Override: using IA3 instead of LoRA (W9 baseline)")
     if args.timescales:
         cfg.timescales = tuple(int(x) for x in args.timescales.split(","))
         print(f"  Override timescales: {cfg.timescales}")

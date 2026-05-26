@@ -63,6 +63,13 @@ class QwenTimeConfig:
     # reviewer concern ("additive ablation tests only one init") is
     # resolved by a sane non-zero beta init. Default 0.0 = original AdaLN-Zero.
     additive_beta_init: float = 0.0
+    # W9 reviewer fix: IA3 (Liu et al. 2022) PEFT baseline. When True,
+    # _apply_lora is skipped and _apply_ia3 wraps k_proj, v_proj, and
+    # the FFN intermediate (up_proj) with multiplicative scaling
+    # vectors initialized to one. Trainable params per layer: dim(k) +
+    # dim(v) + dim(ffn). For Qwen 2.5 3B with 36 layers, head_dim=128,
+    # ffn_dim=11008: 36 * (128 + 128 + 11008) ~ 405K params total.
+    use_ia3: bool = False
 
 
 class _Chronometric(nn.Module):
@@ -103,6 +110,28 @@ class _LoRALinear(nn.Module):
         x_l = x.to(self.lora_A.dtype)
         adapter = F.linear(F.linear(x_l, self.lora_A), self.lora_B) * self.scaling
         return base_out + adapter.to(base_out.dtype)
+
+
+class _IA3Linear(nn.Module):
+    """IA3 (Liu et al. 2022) multiplicative-scaling wrapper.
+
+    Wraps a frozen nn.Linear with a learnable per-output-feature scale
+    vector initialized to one (identity at init). Used as a methodological-
+    sibling PEFT baseline to LoRA (W9 reviewer fix).
+    """
+
+    def __init__(self, base: nn.Linear):
+        super().__init__()
+        self.base = base
+        for p in self.base.parameters():
+            p.requires_grad_(False)
+        # Initialize to ONE so IA3 starts as identity transformation.
+        # (Contrast LoRA which inits to zero / no effect.)
+        self.ia3_l = nn.Parameter(torch.ones(base.out_features))
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        out = self.base(x)
+        return out * self.ia3_l.to(out.dtype)
 
 
 class _ChronoInjector(nn.Module):
@@ -206,12 +235,38 @@ class QwenTime(nn.Module):
         })
         self._inject_layers = inject_layers
 
-        # Apply LoRA.
-        self._apply_lora()
+        # Apply LoRA (default) or IA3 (W9 baseline).
+        if cfg.use_ia3:
+            self._apply_ia3()
+        else:
+            self._apply_lora()
 
         # Register hooks.
         self._hook_handles = []
         self._register_chrono_hooks()
+
+    def _apply_ia3(self):
+        """W9 fix: IA3 multiplicative-scaling PEFT baseline.
+        Wraps k_proj, v_proj of every attention block, plus mlp.up_proj
+        (the FFN intermediate gate) with _IA3Linear scaling vectors
+        initialized to one (identity at init)."""
+        cfg = self.cfg
+        n_adapted = 0
+        for li, block in enumerate(self._layers):
+            attn = getattr(block, "self_attn", None) or getattr(block, "attn", None)
+            if attn is not None:
+                for proj_name in ("k_proj", "v_proj"):
+                    proj = getattr(attn, proj_name, None)
+                    if isinstance(proj, nn.Linear):
+                        setattr(attn, proj_name, _IA3Linear(proj))
+                        n_adapted += 1
+            mlp = getattr(block, "mlp", None)
+            if mlp is not None:
+                up = getattr(mlp, "up_proj", None)
+                if isinstance(up, nn.Linear):
+                    mlp.up_proj = _IA3Linear(up)
+                    n_adapted += 1
+        self._n_ia3_modules = n_adapted
 
     def _apply_lora(self):
         cfg = self.cfg

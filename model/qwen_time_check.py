@@ -385,6 +385,8 @@ def main():
                         "additive ckpts, leave OFF.")
     p.add_argument("--lora-rank", type=int, default=8,
                    help="LoRA adapter rank. Must match training rank.")
+    p.add_argument("--use-ia3", action="store_true",
+                   help="Eval IA3-trained ckpt. Must match training.")
     args = p.parse_args()
 
     global INJECT_PROMPT_TAU
@@ -397,6 +399,9 @@ def main():
     if args.lora_rank != 8:
         cfg.lora_rank = args.lora_rank
         print(f"  Override lora_rank: {cfg.lora_rank}")
+    if args.use_ia3:
+        cfg.use_ia3 = True
+        print(f"  Override: IA3 PEFT (W9 baseline)")
     if args.timescales:
         cfg.timescales = tuple(int(x) for x in args.timescales.split(","))
         print(f"  Override timescales: {cfg.timescales}")
