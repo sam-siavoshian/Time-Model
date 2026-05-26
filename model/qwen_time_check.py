@@ -383,6 +383,8 @@ def main():
                         "Use this to eval prompt-baseline checkpoints "
                         "(trained via qwen_time_data_prompt). For CI/"
                         "additive ckpts, leave OFF.")
+    p.add_argument("--lora-rank", type=int, default=8,
+                   help="LoRA adapter rank. Must match training rank.")
     args = p.parse_args()
 
     global INJECT_PROMPT_TAU
@@ -392,6 +394,9 @@ def main():
 
     cfg = QwenTimeConfig()
     cfg.base_model_name = args.base
+    if args.lora_rank != 8:
+        cfg.lora_rank = args.lora_rank
+        print(f"  Override lora_rank: {cfg.lora_rank}")
     if args.timescales:
         cfg.timescales = tuple(int(x) for x in args.timescales.split(","))
         print(f"  Override timescales: {cfg.timescales}")

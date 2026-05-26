@@ -120,6 +120,9 @@ def main():
                         "encoder + per-layer FiLM gates still train, but the LoRA "
                         "surface capacity is frozen. Used to test whether the "
                         "chrono channel alone (without LoRA) is sufficient.")
+    p.add_argument("--lora-rank", type=int, default=8,
+                   help="LoRA adapter rank. Default 8 (CI default). Used by W6 fix: "
+                        "rank-bumped prompt baseline at matched total trainable params.")
     args = p.parse_args()
 
     torch.manual_seed(args.seed)
@@ -130,6 +133,9 @@ def main():
     cfg.base_model_name = args.base
     cfg.chunk_length = args.chunk_length
     cfg.unfreeze_base = args.unfreeze_base
+    if args.lora_rank != 8:
+        cfg.lora_rank = args.lora_rank
+        print(f"  Override lora_rank: {cfg.lora_rank}")
     if args.timescales:
         cfg.timescales = tuple(int(x) for x in args.timescales.split(","))
         print(f"  Override timescales: {cfg.timescales}")
