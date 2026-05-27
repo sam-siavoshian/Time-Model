@@ -407,7 +407,7 @@ Figure~\ref{fig:t4-labeled} shows the result. On the clock prompt (\emph{``How l
 \section{Critical Controls}
 \label{sec:critical-controls}
 
-Nine controls test whether the chrono channel results survive standard mechanistic-interpretability attacks: causal sign-flip in three variants, paraphrase response-identity, temperature-sampling on T1--T3, teacher-forced T4, and an external behavioral benchmark against a matched prompt baseline. We summarize each.
+Seven control subsections test whether the chrono channel results survive standard mechanistic-interpretability attacks: causal sign-flip in three variants, paraphrase response-identity, temperature-sampling on T1--T3, teacher-forced T4, and an external behavioral benchmark against a matched prompt baseline. We summarize each.
 
 \subsection{All-layer \texorpdfstring{$\alpha$}{alpha} sign-flip}
 Flipping every per-layer $\alpha$ at inference on the T1 clock task (8~unique $\tau$, of which 3~produce parseable outputs in this configuration) yields Pearson $r\,{=}\,-0.9998$. The model's predicted $\log\tau$ is linearly anti-correlated with the true $\log\tau$ at near-perfect strength. A template-matching artifact (e.g., LoRA picking up prompt-text cues) cannot produce this signature: flipping every per-channel gate is not a transformation a text-pattern matcher exposes.
