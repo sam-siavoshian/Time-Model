@@ -2,7 +2,7 @@
 
 **Saam Siavoshian** &middot; Independent research
 
-**Paper:** [PAPER.md](PAPER.md) (preprint, arXiv link forthcoming) &middot; **Pre-registration:** [PREREGISTRATION.md](PREREGISTRATION.md) &middot; **Spec:** [SPEC.tex](SPEC.tex)
+**Paper:** [PAPER.md](PAPER.md) (preprint, arXiv link forthcoming) &middot; **Pre-registration (v2 revision):** [PREREGISTRATION_v2.md](PREREGISTRATION_v2.md) (supersedes [PREREGISTRATION.md](PREREGISTRATION.md), IPCN-era) &middot; **Spec:** [SPEC.tex](SPEC.tex)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Citation](https://img.shields.io/badge/Cite-CITATION.cff-yellow.svg)](CITATION.cff)
@@ -234,12 +234,20 @@ Time-Model/
 │   ├── aggregate_seeds.py                  #   Cross-seed mean ± std
 │   ├── bootstrap_existing.py               #   Bootstrap CIs on existing JSON
 │   └── e2e_smoke.sh                        #   CPU pipeline smoke (~10 min on M-series)
+├── eval/external/                          # MIT-licensed external benchmark (tau_sessions)
+│   ├── generate_tau_sessions.py            #   Deterministic 300-session JSONL builder
+│   ├── eval_tau_bench.py                   #   Adapter-agnostic runner + bootstrap CI scoring
+│   ├── adapters/                           #   vanilla, prompt, ci adapters + TauAdapter ABC
+│   ├── datasets/tau_sessions.jsonl         #   Seed-42 dataset (regenerable byte-for-byte)
+│   └── README.md                           #   Usage + how to contribute new adapters
+├── tests/                                  # Unit tests (run with `uv run python -m pytest tests/`)
 ├── reports/                                # JSON eval results per run
 ├── figures/                                # fig1-fig5 PNGs
 ├── logs/                                   # Training logs (gitignored)
 ├── checkpoints/                            # Checkpoints (gitignored, ~140 MB each LoRA+chrono)
 ├── PAPER.md                                # Full preprint, ~22 K words
-├── PREREGISTRATION.md                      # Locked hypotheses (2026-05-12)
+├── PREREGISTRATION_v2.md                   # Locked hypotheses for v2 revision (2026-05-26, anchor 80ddafc)
+├── PREREGISTRATION.md                      # Original IPCN-era pre-reg (2026-05-12, superseded)
 ├── CITATION.cff
 ├── LICENSE                                 # MIT
 └── pyproject.toml
