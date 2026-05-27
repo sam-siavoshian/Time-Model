@@ -51,7 +51,35 @@ from model.qwen_time import QwenTime, QwenTimeConfig, build_qwen_time
 INJECT_PROMPT_TAU = False
 
 
+PROMPT_FORMAT = "elapsed"  # set from --prompt-format CLI
+
+
 def _tau_text(tau: float) -> str:
+    """Format tau according to global PROMPT_FORMAT setting.
+
+    'elapsed' (default): bracketed relative duration '[elapsed: 3h 42m]'
+    'iso': ISO timestamp '[timestamp: 2024-01-15T14:42:00Z]'
+    'nl': natural language 'About 3 hours and 42 minutes have passed
+          since we started.'
+
+    Format must match the format used in training data.
+    """
+    if PROMPT_FORMAT == "iso":
+        import datetime
+        ref = datetime.datetime(2024, 1, 15, 14, 42, 0, tzinfo=datetime.timezone.utc)
+        t = ref + datetime.timedelta(seconds=float(tau))
+        return f"[timestamp: {t.strftime('%Y-%m-%dT%H:%M:%SZ')}]"
+    if PROMPT_FORMAT == "nl":
+        if tau < 60:
+            return f"About {tau:.0f} seconds have passed since we started."
+        if tau < 3600:
+            return f"About {tau/60:.0f} minutes have passed since we started."
+        if tau < 86400:
+            h = int(tau // 3600); m = int((tau % 3600) // 60)
+            return f"About {h} hours and {m} minutes have passed since we started."
+        d = int(tau // 86400); h = int((tau % 86400) // 3600)
+        return f"About {d} days and {h} hours have passed since we started."
+    # default 'elapsed'
     if tau < 60:
         return f"[elapsed: {tau:.1f}s]"
     if tau < 3600:
@@ -387,7 +415,13 @@ def main():
                    help="LoRA adapter rank. Must match training rank.")
     p.add_argument("--use-ia3", action="store_true",
                    help="Eval IA3-trained ckpt. Must match training.")
+    p.add_argument("--prompt-format", type=str, default="elapsed",
+                   choices=["elapsed","iso","nl"],
+                   help="Format for [elapsed:X]/[timestamp:Z]/natural-language "
+                        "prefix when --inject-prompt is set. Must match training format.")
     args = p.parse_args()
+    global PROMPT_FORMAT
+    PROMPT_FORMAT = args.prompt_format
 
     global INJECT_PROMPT_TAU
     if args.inject_prompt:
