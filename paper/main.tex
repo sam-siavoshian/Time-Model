@@ -274,27 +274,32 @@ Thresholds were declared in \texttt{PREREGISTRATION.md} before training. Falsifi
 Three independent training seeds ($\{0, 1, 2\}$) with the specification: \num{18000} conversations, mix $0.40/0.30/0.30$, \num{18000} training steps, 15-scale chrono encoder, \num{50}/\num{50} weekday-weekend balance within the phase task, seed-fixed.
 
 \begin{table*}[!t]
-  \caption{Cross-seed ($n\,{=}\,3$) performance on the five pre-registered behavioral tests. T3 is reported as a binary outcome per the protocol. $^\dagger$Expanded T1 uses 50 unique $\tau$ drawn fresh log-uniform vs.\ the 8-$\tau$ training-grid set used in the original pre-registration; CIs are per-seed bootstrap 95\% over 50 points (\texttt{reports/t1\_expanded\_50tau.json}). The two rows are reported jointly to show how effective-$n$ affects the headline number. $^\ast$T4 greedy multi-position KL is computed across 72 pairs ($3$ prompts $\times$ $3$ $\tau$-pairs $\times$ $8$ decoded positions) under greedy decoding, so it captures both real chrono routing and autoregressive drift between $\tau$ conditions; the teacher-forced complement (Section~\ref{sec:critical-controls}) holds the first decoded token constant across $\tau$ and gives a smaller mean of $2.79$, which isolates chrono routing from drift.}
+  \caption{Cross-seed ($n\,{=}\,3$) performance on the pre-registered behavioral tests. \textbf{Top block:} T2/T3/T4 --- the tests that hold up as evidence of chrono-channel use beyond format recall (Section~\ref{sec:heldout-supervision}; T2 and T4 survive held-out CLOCK supervision at 3/3, T3 is fragile across seeds even under full supervision). \textbf{Bottom block (wiring-sanity / supervised-format):} T1 and T1b are supervised on the duration-string formatter at training time; a non-LLM linear classifier on $\chi(\tau)$ saturates both metrics tighter than CI (Section~\ref{sec:limitations}, item~10). They are retained for completeness as causal-usability checks for the chrono channel, not headlined. T3 is reported as a binary outcome per the protocol. $^\dagger$Expanded T1 uses 50 unique $\tau$ drawn fresh log-uniform vs.\ the 8-$\tau$ training-grid set used in the original pre-registration. $^\ast$T4 greedy multi-position KL is computed across 72 pairs ($3$ prompts $\times$ $3$ $\tau$-pairs $\times$ $8$ decoded positions) under greedy decoding, so it captures both real chrono routing and autoregressive drift between $\tau$ conditions; the teacher-forced complement (Section~\ref{sec:critical-controls}) gives mean $2.79$ which isolates chrono routing from drift.}
   \label{tab:cross-seed}
   \centering
   \footnotesize
-  \begin{tabular}{lcccc}
+  \begin{tabular}{lccccc}
     \toprule
-    \tabhead{Test} & \tabhead{Mean $\pm$ std ($n{=}3$)} & \tabhead{Range} & \tabhead{Threshold} & \tabhead{Verdict} \\
+    \tabhead{Test} & \tabhead{CI mean $\pm$ std ($n{=}3$)} & \tabhead{Range} & \tabhead{Threshold} & \tabhead{Verdict} & \tabhead{Linear-$\chi(\tau)$ baseline} \\
     \midrule
-    T1 clock $r$, in-dist.\ ($8\,\tau$/seed)     & $0.961 \pm 0.035$  & $[0.932, 1.000]$  & $\ge 0.8$       & PASS, 3/3 \\
-    T1 clock $r$, expanded ($50\,\tau$/seed)$^\dagger$  & $0.898 \pm 0.070$  & $[0.840, 0.996]$  & $\ge 0.8$       & PASS, 3/3 \\
-    T1b clock $r$, $[\SI{1}{\second}, \SI{7}{\day}]$ interp.  & $0.993 \pm 0.003$  & $[0.989, 0.994]$  & $\ge 0.7$       & PASS, 3/3 \\
-    T1b $\log_{10}\!\text{-MAE}$             & $0.044 \pm 0.010$  & $[0.032, 0.052]$  & $< 0.5$         & PASS, 3/3 \\
-    T2 silent-gap $\Delta_{\text{ack}}$      & $1.00  \pm 0.00$   & saturated         & $\ge 0.5$       & PASS, 3/3 \\
-    T3 weekday/weekend (binary)              & 2 of 3 seeds pass  & $\{1, 0, 1\}$     & $\ge 0.3$       & PARTIAL \\
-    T4 first-position pairwise KL            & $0.18  \pm 0.08$   & $[0.121, 0.272]$  & $\ge 0.05$      & PASS, 3/3 \\
-    T4 greedy multi-position pairwise KL$^\ast$ & $14.14 \pm 1.15$   & $[13.31, 15.46]$  & $\ge 0.05$      & PASS, 3/3 \\
+    \multicolumn{6}{l}{\textbf{Tests of chrono-channel use beyond format recall (load-bearing for the contribution):}} \\
+    T2 silent-gap $\Delta_{\text{ack}}$      & $1.00  \pm 0.00$   & saturated         & $\ge 0.5$       & PASS, 3/3   & cannot apply (text gen)   \\
+    T3 weekday/weekend (binary)              & 2 of 3 seeds pass  & $\{1, 0, 1\}$     & $\ge 0.3$       & PARTIAL     & cannot apply (text gen)   \\
+    T4 first-position pairwise KL            & $0.18  \pm 0.08$   & $[0.121, 0.272]$  & $\ge 0.05$      & PASS, 3/3   & cannot apply (LLM-internal) \\
+    T4 greedy multi-position KL$^\ast$       & $14.14 \pm 1.15$   & $[13.31, 15.46]$  & $\ge 0.05$      & PASS, 3/3   & cannot apply (LLM-internal) \\
+    \midrule
+    \multicolumn{6}{l}{\textbf{Wiring-sanity / supervised-format checks (not headlined; non-LLM linear classifier on $\chi(\tau)$ is tighter):}} \\
+    T1 clock $r$, in-dist.\ ($8\,\tau$/seed)             & $0.961 \pm 0.035$  & $[0.932, 1.000]$  & $\ge 0.8$       & PASS, 3/3   & $r\,{=}\,0.9965$ \\
+    T1 clock $r$, expanded ($50\,\tau$/seed)$^\dagger$   & $0.898 \pm 0.070$  & $[0.840, 0.996]$  & $\ge 0.8$       & PASS, 3/3   & (same baseline)  \\
+    T1b clock $r$, $[\SI{1}{\second}, \SI{7}{\day}]$     & $0.993 \pm 0.003$  & $[0.989, 0.994]$  & $\ge 0.7$       & PASS, 3/3   & $r\,{=}\,0.9965$ \\
+    T1b $\log_{10}\!\text{-MAE}$                         & $0.044 \pm 0.010$  & $[0.032, 0.052]$  & $< 0.5$         & PASS, 3/3   & \textbf{0.0267 (tighter)} \\
     \bottomrule
   \end{tabular}
 \end{table*}
 
-Table~\ref{tab:cross-seed} reports the cross-seed mean, standard deviation, and pre-registered verdict. T1, T1b, T2, and T4 (both metrics) pass with tight variance bars across all three seeds. T3 splits 2-of-3: two seeds pass with weekend-signal $\,{=}\,1.00$ and weekday-signal $\,{=}\,1.00$; one seed mode-collapses to a fixed response. We report this honestly as a binary outcome, not as $0.667 \pm 0.577$ with implied Gaussianity. The scale ablation (Section~\ref{sec:ablations}, Row~7) resolves T3 fragility: Qwen 2.5 7B trained for \num{24000} steps (single seed, $\sim$\SI{33}{\percent} more steps than the 3B seeds; see Section~\ref{sec:results} and Limitations) passes T3 bidirectionally with weekday-signal~$\,{=}\,$ weekend-signal $\,{=}\,1.00$.
+Table~\ref{tab:cross-seed} is split into two blocks to keep the framing of the Abstract and Section~\ref{sec:heldout-supervision} consistent throughout. The top block (T2, T3, T4) reports the tests that the held-out-supervision experiments demonstrate are doing chrono-channel work, not just executing a supervised mapping (\S\ref{sec:heldout-supervision}: T2 and T4 survive at 3/3 when CLOCK supervision is removed entirely). The bottom block (T1 and T1b) reports the tests the linear-classifier baseline on $\chi(\tau)$ saturates tighter than CI; we keep them in the table because they are still informative as wiring-sanity checks (\emph{the chrono channel is causally usable by the LLM at all}), but they are not the contribution.
+
+T3 splits 2-of-3 across seeds: two pass bidirectionally (weekend-signal $\,{=}\,$ weekday-signal $\,{=}\,1.00$), one mode-collapses. We report this as a binary outcome rather than as $0.667 \pm 0.577$ with implied Gaussianity. Cross-seed CI mean $r$ on the expanded 50-$\tau$ T1 is more conservative than on the original 8-$\tau$ grid; we report both rows so the reader can see how effective-$n$ affects the headline number. The matched-budget 3B-at-24k run (Limitations item~14) passes T3 but loses T4 ($\text{KL}\,{=}\,0.015$), and the matched-budget 7B-at-18k run (Limitations item~14) also fails T3, isolating T3 fragility to training-step count rather than parameter scale.
 
 Figure~\ref{fig:cross-seed} visualizes the variance bars on the higher-is-better metrics with individual-seed points overlaid and the pre-registered thresholds drawn as dashed lines. The right panel is T1b $\log_{10}\!\text{-MAE}$ on its own (lower-is-better) axis.
 
