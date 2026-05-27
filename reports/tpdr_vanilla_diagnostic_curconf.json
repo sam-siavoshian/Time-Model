@@ -1,0 +1,1186 @@
+{
+  "taus": [
+    1.0,
+    4.389361086906539,
+    19.266490751249357,
+    84.56758478477866,
+    371.197665867977,
+    1629.3205901114338,
+    7151.676396330727,
+    31391.29008020211,
+    137787.70714583428,
+    604799.9999999995
+  ],
+  "n_scenarios": 10,
+  "scenarios": [
+    "Your laptop starts glitching mid-presentation in front of the CEO. What do you do?",
+    "You notice a friend's reputation being hurt by a rumor. How do you handle it?",
+    "A small leak is forming under the kitchen sink. What's your next move?",
+    "Your child is upset and refusing to talk about why. What's your approach?",
+    "An employee asks for a raise during a 1-on-1. What do you say?",
+    "A package on your porch looks suspicious. What do you do?",
+    "Your dog is acting strange and lethargic. What's your plan?",
+    "A close friend hasn't returned your calls in days. What do you do?",
+    "You spot a typo in a contract right before signing. What happens next?",
+    "Your phone overheats and shuts down before a flight. What now?"
+  ],
+  "adapters": {
+    "vanilla": {
+      "per_scenario_results": [
+        {
+          "scenario_idx": 0,
+          "metrics_per_tau": [
+            {
+              "length_chars": 713,
+              "length_words": 115,
+              "urgency_score": 1,
+              "deliberative_score": 1,
+              "hedge_score": 1,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "In a situation like this, it's important to stay calm and handle the situation professionally. Here\u2019s a step-by-step approach you can take:\n\n1. **Stay Calm**: Try to remain composed and avoid panicking. This will help you think more clearly and respond more effectively.\n\n2. **Assess the Situation**:",
+              "tau": 1.0
+            },
+            {
+              "length_chars": 713,
+              "length_words": 115,
+              "urgency_score": 1,
+              "deliberative_score": 1,
+              "hedge_score": 1,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "In a situation like this, it's important to stay calm and handle the situation professionally. Here\u2019s a step-by-step approach you can take:\n\n1. **Stay Calm**: Try to remain composed and avoid panicking. This will help you think more clearly and respond more effectively.\n\n2. **Assess the Situation**:",
+              "tau": 4.389361086906539
+            },
+            {
+              "length_chars": 713,
+              "length_words": 115,
+              "urgency_score": 1,
+              "deliberative_score": 1,
+              "hedge_score": 1,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "In a situation like this, it's important to stay calm and handle the situation professionally. Here\u2019s a step-by-step approach you can take:\n\n1. **Stay Calm**: Try to remain composed and avoid panicking. This will help you think more clearly and respond more effectively.\n\n2. **Assess the Situation**:",
+              "tau": 19.266490751249357
+            },
+            {
+              "length_chars": 713,
+              "length_words": 115,
+              "urgency_score": 1,
+              "deliberative_score": 1,
+              "hedge_score": 1,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "In a situation like this, it's important to stay calm and handle the situation professionally. Here\u2019s a step-by-step approach you can take:\n\n1. **Stay Calm**: Try to remain composed and avoid panicking. This will help you think more clearly and respond more effectively.\n\n2. **Assess the Situation**:",
+              "tau": 84.56758478477866
+            },
+            {
+              "length_chars": 713,
+              "length_words": 115,
+              "urgency_score": 1,
+              "deliberative_score": 1,
+              "hedge_score": 1,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "In a situation like this, it's important to stay calm and handle the situation professionally. Here\u2019s a step-by-step approach you can take:\n\n1. **Stay Calm**: Try to remain composed and avoid panicking. This will help you think more clearly and respond more effectively.\n\n2. **Assess the Situation**:",
+              "tau": 371.197665867977
+            },
+            {
+              "length_chars": 713,
+              "length_words": 115,
+              "urgency_score": 1,
+              "deliberative_score": 1,
+              "hedge_score": 1,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "In a situation like this, it's important to stay calm and handle the situation professionally. Here\u2019s a step-by-step approach you can take:\n\n1. **Stay Calm**: Try to remain composed and avoid panicking. This will help you think more clearly and respond more effectively.\n\n2. **Assess the Situation**:",
+              "tau": 1629.3205901114338
+            },
+            {
+              "length_chars": 713,
+              "length_words": 115,
+              "urgency_score": 1,
+              "deliberative_score": 1,
+              "hedge_score": 1,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "In a situation like this, it's important to stay calm and handle the situation professionally. Here\u2019s a step-by-step approach you can take:\n\n1. **Stay Calm**: Try to remain composed and avoid panicking. This will help you think more clearly and respond more effectively.\n\n2. **Assess the Situation**:",
+              "tau": 7151.676396330727
+            },
+            {
+              "length_chars": 713,
+              "length_words": 115,
+              "urgency_score": 1,
+              "deliberative_score": 1,
+              "hedge_score": 1,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "In a situation like this, it's important to stay calm and handle the situation professionally. Here\u2019s a step-by-step approach you can take:\n\n1. **Stay Calm**: Try to remain composed and avoid panicking. This will help you think more clearly and respond more effectively.\n\n2. **Assess the Situation**:",
+              "tau": 31391.29008020211
+            },
+            {
+              "length_chars": 713,
+              "length_words": 115,
+              "urgency_score": 1,
+              "deliberative_score": 1,
+              "hedge_score": 1,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "In a situation like this, it's important to stay calm and handle the situation professionally. Here\u2019s a step-by-step approach you can take:\n\n1. **Stay Calm**: Try to remain composed and avoid panicking. This will help you think more clearly and respond more effectively.\n\n2. **Assess the Situation**:",
+              "tau": 137787.70714583428
+            },
+            {
+              "length_chars": 713,
+              "length_words": 115,
+              "urgency_score": 1,
+              "deliberative_score": 1,
+              "hedge_score": 1,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "In a situation like this, it's important to stay calm and handle the situation professionally. Here\u2019s a step-by-step approach you can take:\n\n1. **Stay Calm**: Try to remain composed and avoid panicking. This will help you think more clearly and respond more effectively.\n\n2. **Assess the Situation**:",
+              "tau": 604799.9999999995
+            }
+          ]
+        },
+        {
+          "scenario_idx": 1,
+          "metrics_per_tau": [
+            {
+              "length_chars": 732,
+              "length_words": 120,
+              "urgency_score": 2,
+              "deliberative_score": 2,
+              "hedge_score": 0,
+              "conditional_clauses": 1,
+              "imperative_count": 0,
+              "response": "When a rumor starts to hurt a friend's reputation, it's important to address the situation with care and consideration. Here are some steps you can take:\n\n1. **Assess the Situation**: First, try to understand the context and the source of the rumor. Is it a well-intentioned mistake or a malicious on",
+              "tau": 1.0
+            },
+            {
+              "length_chars": 732,
+              "length_words": 120,
+              "urgency_score": 2,
+              "deliberative_score": 2,
+              "hedge_score": 0,
+              "conditional_clauses": 1,
+              "imperative_count": 0,
+              "response": "When a rumor starts to hurt a friend's reputation, it's important to address the situation with care and consideration. Here are some steps you can take:\n\n1. **Assess the Situation**: First, try to understand the context and the source of the rumor. Is it a well-intentioned mistake or a malicious on",
+              "tau": 4.389361086906539
+            },
+            {
+              "length_chars": 732,
+              "length_words": 120,
+              "urgency_score": 2,
+              "deliberative_score": 2,
+              "hedge_score": 0,
+              "conditional_clauses": 1,
+              "imperative_count": 0,
+              "response": "When a rumor starts to hurt a friend's reputation, it's important to address the situation with care and consideration. Here are some steps you can take:\n\n1. **Assess the Situation**: First, try to understand the context and the source of the rumor. Is it a well-intentioned mistake or a malicious on",
+              "tau": 19.266490751249357
+            },
+            {
+              "length_chars": 732,
+              "length_words": 120,
+              "urgency_score": 2,
+              "deliberative_score": 2,
+              "hedge_score": 0,
+              "conditional_clauses": 1,
+              "imperative_count": 0,
+              "response": "When a rumor starts to hurt a friend's reputation, it's important to address the situation with care and consideration. Here are some steps you can take:\n\n1. **Assess the Situation**: First, try to understand the context and the source of the rumor. Is it a well-intentioned mistake or a malicious on",
+              "tau": 84.56758478477866
+            },
+            {
+              "length_chars": 732,
+              "length_words": 120,
+              "urgency_score": 2,
+              "deliberative_score": 2,
+              "hedge_score": 0,
+              "conditional_clauses": 1,
+              "imperative_count": 0,
+              "response": "When a rumor starts to hurt a friend's reputation, it's important to address the situation with care and consideration. Here are some steps you can take:\n\n1. **Assess the Situation**: First, try to understand the context and the source of the rumor. Is it a well-intentioned mistake or a malicious on",
+              "tau": 371.197665867977
+            },
+            {
+              "length_chars": 732,
+              "length_words": 120,
+              "urgency_score": 2,
+              "deliberative_score": 2,
+              "hedge_score": 0,
+              "conditional_clauses": 1,
+              "imperative_count": 0,
+              "response": "When a rumor starts to hurt a friend's reputation, it's important to address the situation with care and consideration. Here are some steps you can take:\n\n1. **Assess the Situation**: First, try to understand the context and the source of the rumor. Is it a well-intentioned mistake or a malicious on",
+              "tau": 1629.3205901114338
+            },
+            {
+              "length_chars": 732,
+              "length_words": 120,
+              "urgency_score": 2,
+              "deliberative_score": 2,
+              "hedge_score": 0,
+              "conditional_clauses": 1,
+              "imperative_count": 0,
+              "response": "When a rumor starts to hurt a friend's reputation, it's important to address the situation with care and consideration. Here are some steps you can take:\n\n1. **Assess the Situation**: First, try to understand the context and the source of the rumor. Is it a well-intentioned mistake or a malicious on",
+              "tau": 7151.676396330727
+            },
+            {
+              "length_chars": 732,
+              "length_words": 120,
+              "urgency_score": 2,
+              "deliberative_score": 2,
+              "hedge_score": 0,
+              "conditional_clauses": 1,
+              "imperative_count": 0,
+              "response": "When a rumor starts to hurt a friend's reputation, it's important to address the situation with care and consideration. Here are some steps you can take:\n\n1. **Assess the Situation**: First, try to understand the context and the source of the rumor. Is it a well-intentioned mistake or a malicious on",
+              "tau": 31391.29008020211
+            },
+            {
+              "length_chars": 732,
+              "length_words": 120,
+              "urgency_score": 2,
+              "deliberative_score": 2,
+              "hedge_score": 0,
+              "conditional_clauses": 1,
+              "imperative_count": 0,
+              "response": "When a rumor starts to hurt a friend's reputation, it's important to address the situation with care and consideration. Here are some steps you can take:\n\n1. **Assess the Situation**: First, try to understand the context and the source of the rumor. Is it a well-intentioned mistake or a malicious on",
+              "tau": 137787.70714583428
+            },
+            {
+              "length_chars": 732,
+              "length_words": 120,
+              "urgency_score": 2,
+              "deliberative_score": 2,
+              "hedge_score": 0,
+              "conditional_clauses": 1,
+              "imperative_count": 0,
+              "response": "When a rumor starts to hurt a friend's reputation, it's important to address the situation with care and consideration. Here are some steps you can take:\n\n1. **Assess the Situation**: First, try to understand the context and the source of the rumor. Is it a well-intentioned mistake or a malicious on",
+              "tau": 604799.9999999995
+            }
+          ]
+        },
+        {
+          "scenario_idx": 2,
+          "metrics_per_tau": [
+            {
+              "length_chars": 653,
+              "length_words": 126,
+              "urgency_score": 1,
+              "deliberative_score": 1,
+              "hedge_score": 1,
+              "conditional_clauses": 1,
+              "imperative_count": 1,
+              "response": "If you notice a small leak under the kitchen sink, here are some steps you can take:\n\n1. **Turn Off the Water Supply**: The first step is to turn off the water supply to the sink. This can usually be done by turning the valves under the sink clockwise to close them.\n\n2. **Identify the Source of the ",
+              "tau": 1.0
+            },
+            {
+              "length_chars": 653,
+              "length_words": 126,
+              "urgency_score": 1,
+              "deliberative_score": 1,
+              "hedge_score": 1,
+              "conditional_clauses": 1,
+              "imperative_count": 1,
+              "response": "If you notice a small leak under the kitchen sink, here are some steps you can take:\n\n1. **Turn Off the Water Supply**: The first step is to turn off the water supply to the sink. This can usually be done by turning the valves under the sink clockwise to close them.\n\n2. **Identify the Source of the ",
+              "tau": 4.389361086906539
+            },
+            {
+              "length_chars": 653,
+              "length_words": 126,
+              "urgency_score": 1,
+              "deliberative_score": 1,
+              "hedge_score": 1,
+              "conditional_clauses": 1,
+              "imperative_count": 1,
+              "response": "If you notice a small leak under the kitchen sink, here are some steps you can take:\n\n1. **Turn Off the Water Supply**: The first step is to turn off the water supply to the sink. This can usually be done by turning the valves under the sink clockwise to close them.\n\n2. **Identify the Source of the ",
+              "tau": 19.266490751249357
+            },
+            {
+              "length_chars": 653,
+              "length_words": 126,
+              "urgency_score": 1,
+              "deliberative_score": 1,
+              "hedge_score": 1,
+              "conditional_clauses": 1,
+              "imperative_count": 1,
+              "response": "If you notice a small leak under the kitchen sink, here are some steps you can take:\n\n1. **Turn Off the Water Supply**: The first step is to turn off the water supply to the sink. This can usually be done by turning the valves under the sink clockwise to close them.\n\n2. **Identify the Source of the ",
+              "tau": 84.56758478477866
+            },
+            {
+              "length_chars": 653,
+              "length_words": 126,
+              "urgency_score": 1,
+              "deliberative_score": 1,
+              "hedge_score": 1,
+              "conditional_clauses": 1,
+              "imperative_count": 1,
+              "response": "If you notice a small leak under the kitchen sink, here are some steps you can take:\n\n1. **Turn Off the Water Supply**: The first step is to turn off the water supply to the sink. This can usually be done by turning the valves under the sink clockwise to close them.\n\n2. **Identify the Source of the ",
+              "tau": 371.197665867977
+            },
+            {
+              "length_chars": 653,
+              "length_words": 126,
+              "urgency_score": 1,
+              "deliberative_score": 1,
+              "hedge_score": 1,
+              "conditional_clauses": 1,
+              "imperative_count": 1,
+              "response": "If you notice a small leak under the kitchen sink, here are some steps you can take:\n\n1. **Turn Off the Water Supply**: The first step is to turn off the water supply to the sink. This can usually be done by turning the valves under the sink clockwise to close them.\n\n2. **Identify the Source of the ",
+              "tau": 1629.3205901114338
+            },
+            {
+              "length_chars": 653,
+              "length_words": 126,
+              "urgency_score": 1,
+              "deliberative_score": 1,
+              "hedge_score": 1,
+              "conditional_clauses": 1,
+              "imperative_count": 1,
+              "response": "If you notice a small leak under the kitchen sink, here are some steps you can take:\n\n1. **Turn Off the Water Supply**: The first step is to turn off the water supply to the sink. This can usually be done by turning the valves under the sink clockwise to close them.\n\n2. **Identify the Source of the ",
+              "tau": 7151.676396330727
+            },
+            {
+              "length_chars": 653,
+              "length_words": 126,
+              "urgency_score": 1,
+              "deliberative_score": 1,
+              "hedge_score": 1,
+              "conditional_clauses": 1,
+              "imperative_count": 1,
+              "response": "If you notice a small leak under the kitchen sink, here are some steps you can take:\n\n1. **Turn Off the Water Supply**: The first step is to turn off the water supply to the sink. This can usually be done by turning the valves under the sink clockwise to close them.\n\n2. **Identify the Source of the ",
+              "tau": 31391.29008020211
+            },
+            {
+              "length_chars": 653,
+              "length_words": 126,
+              "urgency_score": 1,
+              "deliberative_score": 1,
+              "hedge_score": 1,
+              "conditional_clauses": 1,
+              "imperative_count": 1,
+              "response": "If you notice a small leak under the kitchen sink, here are some steps you can take:\n\n1. **Turn Off the Water Supply**: The first step is to turn off the water supply to the sink. This can usually be done by turning the valves under the sink clockwise to close them.\n\n2. **Identify the Source of the ",
+              "tau": 137787.70714583428
+            },
+            {
+              "length_chars": 653,
+              "length_words": 126,
+              "urgency_score": 1,
+              "deliberative_score": 1,
+              "hedge_score": 1,
+              "conditional_clauses": 1,
+              "imperative_count": 1,
+              "response": "If you notice a small leak under the kitchen sink, here are some steps you can take:\n\n1. **Turn Off the Water Supply**: The first step is to turn off the water supply to the sink. This can usually be done by turning the valves under the sink clockwise to close them.\n\n2. **Identify the Source of the ",
+              "tau": 604799.9999999995
+            }
+          ]
+        },
+        {
+          "scenario_idx": 3,
+          "metrics_per_tau": [
+            {
+              "length_chars": 734,
+              "length_words": 116,
+              "urgency_score": 2,
+              "deliberative_score": 0,
+              "hedge_score": 1,
+              "conditional_clauses": 1,
+              "imperative_count": 0,
+              "response": "When a child is upset and refusing to talk about why, it can be challenging to navigate. Here are some strategies you can try:\n\n1. **Create a Safe Space**: Ensure your child feels safe and comfortable. This might mean finding a quiet place where they feel secure.\n\n2. **Use Open-Ended Questions**: As",
+              "tau": 1.0
+            },
+            {
+              "length_chars": 734,
+              "length_words": 116,
+              "urgency_score": 2,
+              "deliberative_score": 0,
+              "hedge_score": 1,
+              "conditional_clauses": 1,
+              "imperative_count": 0,
+              "response": "When a child is upset and refusing to talk about why, it can be challenging to navigate. Here are some strategies you can try:\n\n1. **Create a Safe Space**: Ensure your child feels safe and comfortable. This might mean finding a quiet place where they feel secure.\n\n2. **Use Open-Ended Questions**: As",
+              "tau": 4.389361086906539
+            },
+            {
+              "length_chars": 734,
+              "length_words": 116,
+              "urgency_score": 2,
+              "deliberative_score": 0,
+              "hedge_score": 1,
+              "conditional_clauses": 1,
+              "imperative_count": 0,
+              "response": "When a child is upset and refusing to talk about why, it can be challenging to navigate. Here are some strategies you can try:\n\n1. **Create a Safe Space**: Ensure your child feels safe and comfortable. This might mean finding a quiet place where they feel secure.\n\n2. **Use Open-Ended Questions**: As",
+              "tau": 19.266490751249357
+            },
+            {
+              "length_chars": 734,
+              "length_words": 116,
+              "urgency_score": 2,
+              "deliberative_score": 0,
+              "hedge_score": 1,
+              "conditional_clauses": 1,
+              "imperative_count": 0,
+              "response": "When a child is upset and refusing to talk about why, it can be challenging to navigate. Here are some strategies you can try:\n\n1. **Create a Safe Space**: Ensure your child feels safe and comfortable. This might mean finding a quiet place where they feel secure.\n\n2. **Use Open-Ended Questions**: As",
+              "tau": 84.56758478477866
+            },
+            {
+              "length_chars": 734,
+              "length_words": 116,
+              "urgency_score": 2,
+              "deliberative_score": 0,
+              "hedge_score": 1,
+              "conditional_clauses": 1,
+              "imperative_count": 0,
+              "response": "When a child is upset and refusing to talk about why, it can be challenging to navigate. Here are some strategies you can try:\n\n1. **Create a Safe Space**: Ensure your child feels safe and comfortable. This might mean finding a quiet place where they feel secure.\n\n2. **Use Open-Ended Questions**: As",
+              "tau": 371.197665867977
+            },
+            {
+              "length_chars": 734,
+              "length_words": 116,
+              "urgency_score": 2,
+              "deliberative_score": 0,
+              "hedge_score": 1,
+              "conditional_clauses": 1,
+              "imperative_count": 0,
+              "response": "When a child is upset and refusing to talk about why, it can be challenging to navigate. Here are some strategies you can try:\n\n1. **Create a Safe Space**: Ensure your child feels safe and comfortable. This might mean finding a quiet place where they feel secure.\n\n2. **Use Open-Ended Questions**: As",
+              "tau": 1629.3205901114338
+            },
+            {
+              "length_chars": 734,
+              "length_words": 116,
+              "urgency_score": 2,
+              "deliberative_score": 0,
+              "hedge_score": 1,
+              "conditional_clauses": 1,
+              "imperative_count": 0,
+              "response": "When a child is upset and refusing to talk about why, it can be challenging to navigate. Here are some strategies you can try:\n\n1. **Create a Safe Space**: Ensure your child feels safe and comfortable. This might mean finding a quiet place where they feel secure.\n\n2. **Use Open-Ended Questions**: As",
+              "tau": 7151.676396330727
+            },
+            {
+              "length_chars": 734,
+              "length_words": 116,
+              "urgency_score": 2,
+              "deliberative_score": 0,
+              "hedge_score": 1,
+              "conditional_clauses": 1,
+              "imperative_count": 0,
+              "response": "When a child is upset and refusing to talk about why, it can be challenging to navigate. Here are some strategies you can try:\n\n1. **Create a Safe Space**: Ensure your child feels safe and comfortable. This might mean finding a quiet place where they feel secure.\n\n2. **Use Open-Ended Questions**: As",
+              "tau": 31391.29008020211
+            },
+            {
+              "length_chars": 734,
+              "length_words": 116,
+              "urgency_score": 2,
+              "deliberative_score": 0,
+              "hedge_score": 1,
+              "conditional_clauses": 1,
+              "imperative_count": 0,
+              "response": "When a child is upset and refusing to talk about why, it can be challenging to navigate. Here are some strategies you can try:\n\n1. **Create a Safe Space**: Ensure your child feels safe and comfortable. This might mean finding a quiet place where they feel secure.\n\n2. **Use Open-Ended Questions**: As",
+              "tau": 137787.70714583428
+            },
+            {
+              "length_chars": 734,
+              "length_words": 116,
+              "urgency_score": 2,
+              "deliberative_score": 0,
+              "hedge_score": 1,
+              "conditional_clauses": 1,
+              "imperative_count": 0,
+              "response": "When a child is upset and refusing to talk about why, it can be challenging to navigate. Here are some strategies you can try:\n\n1. **Create a Safe Space**: Ensure your child feels safe and comfortable. This might mean finding a quiet place where they feel secure.\n\n2. **Use Open-Ended Questions**: As",
+              "tau": 604799.9999999995
+            }
+          ]
+        },
+        {
+          "scenario_idx": 4,
+          "metrics_per_tau": [
+            {
+              "length_chars": 795,
+              "length_words": 117,
+              "urgency_score": 1,
+              "deliberative_score": 0,
+              "hedge_score": 1,
+              "conditional_clauses": 1,
+              "imperative_count": 0,
+              "response": "When an employee asks for a raise during a 1-on-1 meeting, it's important to handle the conversation professionally and constructively. Here\u2019s a suggested way to approach it:\n\n1. **Start with Positive Feedback**: Begin by acknowledging the employee's contributions and the value they bring to the tea",
+              "tau": 1.0
+            },
+            {
+              "length_chars": 795,
+              "length_words": 117,
+              "urgency_score": 1,
+              "deliberative_score": 0,
+              "hedge_score": 1,
+              "conditional_clauses": 1,
+              "imperative_count": 0,
+              "response": "When an employee asks for a raise during a 1-on-1 meeting, it's important to handle the conversation professionally and constructively. Here\u2019s a suggested way to approach it:\n\n1. **Start with Positive Feedback**: Begin by acknowledging the employee's contributions and the value they bring to the tea",
+              "tau": 4.389361086906539
+            },
+            {
+              "length_chars": 795,
+              "length_words": 117,
+              "urgency_score": 1,
+              "deliberative_score": 0,
+              "hedge_score": 1,
+              "conditional_clauses": 1,
+              "imperative_count": 0,
+              "response": "When an employee asks for a raise during a 1-on-1 meeting, it's important to handle the conversation professionally and constructively. Here\u2019s a suggested way to approach it:\n\n1. **Start with Positive Feedback**: Begin by acknowledging the employee's contributions and the value they bring to the tea",
+              "tau": 19.266490751249357
+            },
+            {
+              "length_chars": 795,
+              "length_words": 117,
+              "urgency_score": 1,
+              "deliberative_score": 0,
+              "hedge_score": 1,
+              "conditional_clauses": 1,
+              "imperative_count": 0,
+              "response": "When an employee asks for a raise during a 1-on-1 meeting, it's important to handle the conversation professionally and constructively. Here\u2019s a suggested way to approach it:\n\n1. **Start with Positive Feedback**: Begin by acknowledging the employee's contributions and the value they bring to the tea",
+              "tau": 84.56758478477866
+            },
+            {
+              "length_chars": 795,
+              "length_words": 117,
+              "urgency_score": 1,
+              "deliberative_score": 0,
+              "hedge_score": 1,
+              "conditional_clauses": 1,
+              "imperative_count": 0,
+              "response": "When an employee asks for a raise during a 1-on-1 meeting, it's important to handle the conversation professionally and constructively. Here\u2019s a suggested way to approach it:\n\n1. **Start with Positive Feedback**: Begin by acknowledging the employee's contributions and the value they bring to the tea",
+              "tau": 371.197665867977
+            },
+            {
+              "length_chars": 795,
+              "length_words": 117,
+              "urgency_score": 1,
+              "deliberative_score": 0,
+              "hedge_score": 1,
+              "conditional_clauses": 1,
+              "imperative_count": 0,
+              "response": "When an employee asks for a raise during a 1-on-1 meeting, it's important to handle the conversation professionally and constructively. Here\u2019s a suggested way to approach it:\n\n1. **Start with Positive Feedback**: Begin by acknowledging the employee's contributions and the value they bring to the tea",
+              "tau": 1629.3205901114338
+            },
+            {
+              "length_chars": 795,
+              "length_words": 117,
+              "urgency_score": 1,
+              "deliberative_score": 0,
+              "hedge_score": 1,
+              "conditional_clauses": 1,
+              "imperative_count": 0,
+              "response": "When an employee asks for a raise during a 1-on-1 meeting, it's important to handle the conversation professionally and constructively. Here\u2019s a suggested way to approach it:\n\n1. **Start with Positive Feedback**: Begin by acknowledging the employee's contributions and the value they bring to the tea",
+              "tau": 7151.676396330727
+            },
+            {
+              "length_chars": 795,
+              "length_words": 117,
+              "urgency_score": 1,
+              "deliberative_score": 0,
+              "hedge_score": 1,
+              "conditional_clauses": 1,
+              "imperative_count": 0,
+              "response": "When an employee asks for a raise during a 1-on-1 meeting, it's important to handle the conversation professionally and constructively. Here\u2019s a suggested way to approach it:\n\n1. **Start with Positive Feedback**: Begin by acknowledging the employee's contributions and the value they bring to the tea",
+              "tau": 31391.29008020211
+            },
+            {
+              "length_chars": 795,
+              "length_words": 117,
+              "urgency_score": 1,
+              "deliberative_score": 0,
+              "hedge_score": 1,
+              "conditional_clauses": 1,
+              "imperative_count": 0,
+              "response": "When an employee asks for a raise during a 1-on-1 meeting, it's important to handle the conversation professionally and constructively. Here\u2019s a suggested way to approach it:\n\n1. **Start with Positive Feedback**: Begin by acknowledging the employee's contributions and the value they bring to the tea",
+              "tau": 137787.70714583428
+            },
+            {
+              "length_chars": 795,
+              "length_words": 117,
+              "urgency_score": 1,
+              "deliberative_score": 0,
+              "hedge_score": 1,
+              "conditional_clauses": 1,
+              "imperative_count": 0,
+              "response": "When an employee asks for a raise during a 1-on-1 meeting, it's important to handle the conversation professionally and constructively. Here\u2019s a suggested way to approach it:\n\n1. **Start with Positive Feedback**: Begin by acknowledging the employee's contributions and the value they bring to the tea",
+              "tau": 604799.9999999995
+            }
+          ]
+        },
+        {
+          "scenario_idx": 5,
+          "metrics_per_tau": [
+            {
+              "length_chars": 761,
+              "length_words": 126,
+              "urgency_score": 1,
+              "deliberative_score": 2,
+              "hedge_score": 2,
+              "conditional_clauses": 2,
+              "imperative_count": 0,
+              "response": "If you find a package on your porch that looks suspicious, it's important to handle the situation carefully and safely. Here are some steps you can take:\n\n1. **Do Not Open the Package**: Avoid opening the package yourself. This can help prevent tampering or contamination.\n\n2. **Do Not Touch the Pack",
+              "tau": 1.0
+            },
+            {
+              "length_chars": 761,
+              "length_words": 126,
+              "urgency_score": 1,
+              "deliberative_score": 2,
+              "hedge_score": 2,
+              "conditional_clauses": 2,
+              "imperative_count": 0,
+              "response": "If you find a package on your porch that looks suspicious, it's important to handle the situation carefully and safely. Here are some steps you can take:\n\n1. **Do Not Open the Package**: Avoid opening the package yourself. This can help prevent tampering or contamination.\n\n2. **Do Not Touch the Pack",
+              "tau": 4.389361086906539
+            },
+            {
+              "length_chars": 761,
+              "length_words": 126,
+              "urgency_score": 1,
+              "deliberative_score": 2,
+              "hedge_score": 2,
+              "conditional_clauses": 2,
+              "imperative_count": 0,
+              "response": "If you find a package on your porch that looks suspicious, it's important to handle the situation carefully and safely. Here are some steps you can take:\n\n1. **Do Not Open the Package**: Avoid opening the package yourself. This can help prevent tampering or contamination.\n\n2. **Do Not Touch the Pack",
+              "tau": 19.266490751249357
+            },
+            {
+              "length_chars": 761,
+              "length_words": 126,
+              "urgency_score": 1,
+              "deliberative_score": 2,
+              "hedge_score": 2,
+              "conditional_clauses": 2,
+              "imperative_count": 0,
+              "response": "If you find a package on your porch that looks suspicious, it's important to handle the situation carefully and safely. Here are some steps you can take:\n\n1. **Do Not Open the Package**: Avoid opening the package yourself. This can help prevent tampering or contamination.\n\n2. **Do Not Touch the Pack",
+              "tau": 84.56758478477866
+            },
+            {
+              "length_chars": 761,
+              "length_words": 126,
+              "urgency_score": 1,
+              "deliberative_score": 2,
+              "hedge_score": 2,
+              "conditional_clauses": 2,
+              "imperative_count": 0,
+              "response": "If you find a package on your porch that looks suspicious, it's important to handle the situation carefully and safely. Here are some steps you can take:\n\n1. **Do Not Open the Package**: Avoid opening the package yourself. This can help prevent tampering or contamination.\n\n2. **Do Not Touch the Pack",
+              "tau": 371.197665867977
+            },
+            {
+              "length_chars": 761,
+              "length_words": 126,
+              "urgency_score": 1,
+              "deliberative_score": 2,
+              "hedge_score": 2,
+              "conditional_clauses": 2,
+              "imperative_count": 0,
+              "response": "If you find a package on your porch that looks suspicious, it's important to handle the situation carefully and safely. Here are some steps you can take:\n\n1. **Do Not Open the Package**: Avoid opening the package yourself. This can help prevent tampering or contamination.\n\n2. **Do Not Touch the Pack",
+              "tau": 1629.3205901114338
+            },
+            {
+              "length_chars": 761,
+              "length_words": 126,
+              "urgency_score": 1,
+              "deliberative_score": 2,
+              "hedge_score": 2,
+              "conditional_clauses": 2,
+              "imperative_count": 0,
+              "response": "If you find a package on your porch that looks suspicious, it's important to handle the situation carefully and safely. Here are some steps you can take:\n\n1. **Do Not Open the Package**: Avoid opening the package yourself. This can help prevent tampering or contamination.\n\n2. **Do Not Touch the Pack",
+              "tau": 7151.676396330727
+            },
+            {
+              "length_chars": 761,
+              "length_words": 126,
+              "urgency_score": 1,
+              "deliberative_score": 2,
+              "hedge_score": 2,
+              "conditional_clauses": 2,
+              "imperative_count": 0,
+              "response": "If you find a package on your porch that looks suspicious, it's important to handle the situation carefully and safely. Here are some steps you can take:\n\n1. **Do Not Open the Package**: Avoid opening the package yourself. This can help prevent tampering or contamination.\n\n2. **Do Not Touch the Pack",
+              "tau": 31391.29008020211
+            },
+            {
+              "length_chars": 761,
+              "length_words": 126,
+              "urgency_score": 1,
+              "deliberative_score": 2,
+              "hedge_score": 2,
+              "conditional_clauses": 2,
+              "imperative_count": 0,
+              "response": "If you find a package on your porch that looks suspicious, it's important to handle the situation carefully and safely. Here are some steps you can take:\n\n1. **Do Not Open the Package**: Avoid opening the package yourself. This can help prevent tampering or contamination.\n\n2. **Do Not Touch the Pack",
+              "tau": 137787.70714583428
+            },
+            {
+              "length_chars": 761,
+              "length_words": 126,
+              "urgency_score": 1,
+              "deliberative_score": 2,
+              "hedge_score": 2,
+              "conditional_clauses": 2,
+              "imperative_count": 0,
+              "response": "If you find a package on your porch that looks suspicious, it's important to handle the situation carefully and safely. Here are some steps you can take:\n\n1. **Do Not Open the Package**: Avoid opening the package yourself. This can help prevent tampering or contamination.\n\n2. **Do Not Touch the Pack",
+              "tau": 604799.9999999995
+            }
+          ]
+        },
+        {
+          "scenario_idx": 6,
+          "metrics_per_tau": [
+            {
+              "length_chars": 712,
+              "length_words": 118,
+              "urgency_score": 1,
+              "deliberative_score": 3,
+              "hedge_score": 3,
+              "conditional_clauses": 2,
+              "imperative_count": 1,
+              "response": "If your dog is acting strange and lethargic, it's important to take it seriously and consider the following steps:\n\n1. **Observe the Symptoms**: Note any other symptoms your dog might be exhibiting, such as vomiting, diarrhea, fever, or changes in appetite. This information can be helpful for a vet.",
+              "tau": 1.0
+            },
+            {
+              "length_chars": 712,
+              "length_words": 118,
+              "urgency_score": 1,
+              "deliberative_score": 3,
+              "hedge_score": 3,
+              "conditional_clauses": 2,
+              "imperative_count": 1,
+              "response": "If your dog is acting strange and lethargic, it's important to take it seriously and consider the following steps:\n\n1. **Observe the Symptoms**: Note any other symptoms your dog might be exhibiting, such as vomiting, diarrhea, fever, or changes in appetite. This information can be helpful for a vet.",
+              "tau": 4.389361086906539
+            },
+            {
+              "length_chars": 712,
+              "length_words": 118,
+              "urgency_score": 1,
+              "deliberative_score": 3,
+              "hedge_score": 3,
+              "conditional_clauses": 2,
+              "imperative_count": 1,
+              "response": "If your dog is acting strange and lethargic, it's important to take it seriously and consider the following steps:\n\n1. **Observe the Symptoms**: Note any other symptoms your dog might be exhibiting, such as vomiting, diarrhea, fever, or changes in appetite. This information can be helpful for a vet.",
+              "tau": 19.266490751249357
+            },
+            {
+              "length_chars": 712,
+              "length_words": 118,
+              "urgency_score": 1,
+              "deliberative_score": 3,
+              "hedge_score": 3,
+              "conditional_clauses": 2,
+              "imperative_count": 1,
+              "response": "If your dog is acting strange and lethargic, it's important to take it seriously and consider the following steps:\n\n1. **Observe the Symptoms**: Note any other symptoms your dog might be exhibiting, such as vomiting, diarrhea, fever, or changes in appetite. This information can be helpful for a vet.",
+              "tau": 84.56758478477866
+            },
+            {
+              "length_chars": 712,
+              "length_words": 118,
+              "urgency_score": 1,
+              "deliberative_score": 3,
+              "hedge_score": 3,
+              "conditional_clauses": 2,
+              "imperative_count": 1,
+              "response": "If your dog is acting strange and lethargic, it's important to take it seriously and consider the following steps:\n\n1. **Observe the Symptoms**: Note any other symptoms your dog might be exhibiting, such as vomiting, diarrhea, fever, or changes in appetite. This information can be helpful for a vet.",
+              "tau": 371.197665867977
+            },
+            {
+              "length_chars": 712,
+              "length_words": 118,
+              "urgency_score": 1,
+              "deliberative_score": 3,
+              "hedge_score": 3,
+              "conditional_clauses": 2,
+              "imperative_count": 1,
+              "response": "If your dog is acting strange and lethargic, it's important to take it seriously and consider the following steps:\n\n1. **Observe the Symptoms**: Note any other symptoms your dog might be exhibiting, such as vomiting, diarrhea, fever, or changes in appetite. This information can be helpful for a vet.",
+              "tau": 1629.3205901114338
+            },
+            {
+              "length_chars": 712,
+              "length_words": 118,
+              "urgency_score": 1,
+              "deliberative_score": 3,
+              "hedge_score": 3,
+              "conditional_clauses": 2,
+              "imperative_count": 1,
+              "response": "If your dog is acting strange and lethargic, it's important to take it seriously and consider the following steps:\n\n1. **Observe the Symptoms**: Note any other symptoms your dog might be exhibiting, such as vomiting, diarrhea, fever, or changes in appetite. This information can be helpful for a vet.",
+              "tau": 7151.676396330727
+            },
+            {
+              "length_chars": 712,
+              "length_words": 118,
+              "urgency_score": 1,
+              "deliberative_score": 3,
+              "hedge_score": 3,
+              "conditional_clauses": 2,
+              "imperative_count": 1,
+              "response": "If your dog is acting strange and lethargic, it's important to take it seriously and consider the following steps:\n\n1. **Observe the Symptoms**: Note any other symptoms your dog might be exhibiting, such as vomiting, diarrhea, fever, or changes in appetite. This information can be helpful for a vet.",
+              "tau": 31391.29008020211
+            },
+            {
+              "length_chars": 712,
+              "length_words": 118,
+              "urgency_score": 1,
+              "deliberative_score": 3,
+              "hedge_score": 3,
+              "conditional_clauses": 2,
+              "imperative_count": 1,
+              "response": "If your dog is acting strange and lethargic, it's important to take it seriously and consider the following steps:\n\n1. **Observe the Symptoms**: Note any other symptoms your dog might be exhibiting, such as vomiting, diarrhea, fever, or changes in appetite. This information can be helpful for a vet.",
+              "tau": 137787.70714583428
+            },
+            {
+              "length_chars": 712,
+              "length_words": 118,
+              "urgency_score": 1,
+              "deliberative_score": 3,
+              "hedge_score": 3,
+              "conditional_clauses": 2,
+              "imperative_count": 1,
+              "response": "If your dog is acting strange and lethargic, it's important to take it seriously and consider the following steps:\n\n1. **Observe the Symptoms**: Note any other symptoms your dog might be exhibiting, such as vomiting, diarrhea, fever, or changes in appetite. This information can be helpful for a vet.",
+              "tau": 604799.9999999995
+            }
+          ]
+        },
+        {
+          "scenario_idx": 7,
+          "metrics_per_tau": [
+            {
+              "length_chars": 680,
+              "length_words": 119,
+              "urgency_score": 1,
+              "deliberative_score": 1,
+              "hedge_score": 2,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "When a close friend doesn't return your calls, it can be a bit unsettling. Here are a few steps you can take:\n\n1. **Check Your Communication**: Make sure you have the correct contact information and that you're calling the right number. Sometimes, a simple mix-up can cause confusion.\n\n2. **Send a Me",
+              "tau": 1.0
+            },
+            {
+              "length_chars": 680,
+              "length_words": 119,
+              "urgency_score": 1,
+              "deliberative_score": 1,
+              "hedge_score": 2,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "When a close friend doesn't return your calls, it can be a bit unsettling. Here are a few steps you can take:\n\n1. **Check Your Communication**: Make sure you have the correct contact information and that you're calling the right number. Sometimes, a simple mix-up can cause confusion.\n\n2. **Send a Me",
+              "tau": 4.389361086906539
+            },
+            {
+              "length_chars": 680,
+              "length_words": 119,
+              "urgency_score": 1,
+              "deliberative_score": 1,
+              "hedge_score": 2,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "When a close friend doesn't return your calls, it can be a bit unsettling. Here are a few steps you can take:\n\n1. **Check Your Communication**: Make sure you have the correct contact information and that you're calling the right number. Sometimes, a simple mix-up can cause confusion.\n\n2. **Send a Me",
+              "tau": 19.266490751249357
+            },
+            {
+              "length_chars": 680,
+              "length_words": 119,
+              "urgency_score": 1,
+              "deliberative_score": 1,
+              "hedge_score": 2,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "When a close friend doesn't return your calls, it can be a bit unsettling. Here are a few steps you can take:\n\n1. **Check Your Communication**: Make sure you have the correct contact information and that you're calling the right number. Sometimes, a simple mix-up can cause confusion.\n\n2. **Send a Me",
+              "tau": 84.56758478477866
+            },
+            {
+              "length_chars": 680,
+              "length_words": 119,
+              "urgency_score": 1,
+              "deliberative_score": 1,
+              "hedge_score": 2,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "When a close friend doesn't return your calls, it can be a bit unsettling. Here are a few steps you can take:\n\n1. **Check Your Communication**: Make sure you have the correct contact information and that you're calling the right number. Sometimes, a simple mix-up can cause confusion.\n\n2. **Send a Me",
+              "tau": 371.197665867977
+            },
+            {
+              "length_chars": 680,
+              "length_words": 119,
+              "urgency_score": 1,
+              "deliberative_score": 1,
+              "hedge_score": 2,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "When a close friend doesn't return your calls, it can be a bit unsettling. Here are a few steps you can take:\n\n1. **Check Your Communication**: Make sure you have the correct contact information and that you're calling the right number. Sometimes, a simple mix-up can cause confusion.\n\n2. **Send a Me",
+              "tau": 1629.3205901114338
+            },
+            {
+              "length_chars": 680,
+              "length_words": 119,
+              "urgency_score": 1,
+              "deliberative_score": 1,
+              "hedge_score": 2,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "When a close friend doesn't return your calls, it can be a bit unsettling. Here are a few steps you can take:\n\n1. **Check Your Communication**: Make sure you have the correct contact information and that you're calling the right number. Sometimes, a simple mix-up can cause confusion.\n\n2. **Send a Me",
+              "tau": 7151.676396330727
+            },
+            {
+              "length_chars": 680,
+              "length_words": 119,
+              "urgency_score": 1,
+              "deliberative_score": 1,
+              "hedge_score": 2,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "When a close friend doesn't return your calls, it can be a bit unsettling. Here are a few steps you can take:\n\n1. **Check Your Communication**: Make sure you have the correct contact information and that you're calling the right number. Sometimes, a simple mix-up can cause confusion.\n\n2. **Send a Me",
+              "tau": 31391.29008020211
+            },
+            {
+              "length_chars": 680,
+              "length_words": 119,
+              "urgency_score": 1,
+              "deliberative_score": 1,
+              "hedge_score": 2,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "When a close friend doesn't return your calls, it can be a bit unsettling. Here are a few steps you can take:\n\n1. **Check Your Communication**: Make sure you have the correct contact information and that you're calling the right number. Sometimes, a simple mix-up can cause confusion.\n\n2. **Send a Me",
+              "tau": 137787.70714583428
+            },
+            {
+              "length_chars": 680,
+              "length_words": 119,
+              "urgency_score": 1,
+              "deliberative_score": 1,
+              "hedge_score": 2,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "When a close friend doesn't return your calls, it can be a bit unsettling. Here are a few steps you can take:\n\n1. **Check Your Communication**: Make sure you have the correct contact information and that you're calling the right number. Sometimes, a simple mix-up can cause confusion.\n\n2. **Send a Me",
+              "tau": 604799.9999999995
+            }
+          ]
+        },
+        {
+          "scenario_idx": 8,
+          "metrics_per_tau": [
+            {
+              "length_chars": 762,
+              "length_words": 127,
+              "urgency_score": 1,
+              "deliberative_score": 5,
+              "hedge_score": 3,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "If you spot a typo in a contract right before signing, it's important to handle the situation carefully to avoid any legal complications. Here are the steps you should consider taking:\n\n1. **Review the Contract Thoroughly**: Ensure that the typo is indeed a typo and not a more significant error that",
+              "tau": 1.0
+            },
+            {
+              "length_chars": 762,
+              "length_words": 127,
+              "urgency_score": 1,
+              "deliberative_score": 5,
+              "hedge_score": 3,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "If you spot a typo in a contract right before signing, it's important to handle the situation carefully to avoid any legal complications. Here are the steps you should consider taking:\n\n1. **Review the Contract Thoroughly**: Ensure that the typo is indeed a typo and not a more significant error that",
+              "tau": 4.389361086906539
+            },
+            {
+              "length_chars": 762,
+              "length_words": 127,
+              "urgency_score": 1,
+              "deliberative_score": 5,
+              "hedge_score": 3,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "If you spot a typo in a contract right before signing, it's important to handle the situation carefully to avoid any legal complications. Here are the steps you should consider taking:\n\n1. **Review the Contract Thoroughly**: Ensure that the typo is indeed a typo and not a more significant error that",
+              "tau": 19.266490751249357
+            },
+            {
+              "length_chars": 762,
+              "length_words": 127,
+              "urgency_score": 1,
+              "deliberative_score": 5,
+              "hedge_score": 3,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "If you spot a typo in a contract right before signing, it's important to handle the situation carefully to avoid any legal complications. Here are the steps you should consider taking:\n\n1. **Review the Contract Thoroughly**: Ensure that the typo is indeed a typo and not a more significant error that",
+              "tau": 84.56758478477866
+            },
+            {
+              "length_chars": 762,
+              "length_words": 127,
+              "urgency_score": 1,
+              "deliberative_score": 5,
+              "hedge_score": 3,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "If you spot a typo in a contract right before signing, it's important to handle the situation carefully to avoid any legal complications. Here are the steps you should consider taking:\n\n1. **Review the Contract Thoroughly**: Ensure that the typo is indeed a typo and not a more significant error that",
+              "tau": 371.197665867977
+            },
+            {
+              "length_chars": 762,
+              "length_words": 127,
+              "urgency_score": 1,
+              "deliberative_score": 5,
+              "hedge_score": 3,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "If you spot a typo in a contract right before signing, it's important to handle the situation carefully to avoid any legal complications. Here are the steps you should consider taking:\n\n1. **Review the Contract Thoroughly**: Ensure that the typo is indeed a typo and not a more significant error that",
+              "tau": 1629.3205901114338
+            },
+            {
+              "length_chars": 762,
+              "length_words": 127,
+              "urgency_score": 1,
+              "deliberative_score": 5,
+              "hedge_score": 3,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "If you spot a typo in a contract right before signing, it's important to handle the situation carefully to avoid any legal complications. Here are the steps you should consider taking:\n\n1. **Review the Contract Thoroughly**: Ensure that the typo is indeed a typo and not a more significant error that",
+              "tau": 7151.676396330727
+            },
+            {
+              "length_chars": 762,
+              "length_words": 127,
+              "urgency_score": 1,
+              "deliberative_score": 5,
+              "hedge_score": 3,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "If you spot a typo in a contract right before signing, it's important to handle the situation carefully to avoid any legal complications. Here are the steps you should consider taking:\n\n1. **Review the Contract Thoroughly**: Ensure that the typo is indeed a typo and not a more significant error that",
+              "tau": 31391.29008020211
+            },
+            {
+              "length_chars": 762,
+              "length_words": 127,
+              "urgency_score": 1,
+              "deliberative_score": 5,
+              "hedge_score": 3,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "If you spot a typo in a contract right before signing, it's important to handle the situation carefully to avoid any legal complications. Here are the steps you should consider taking:\n\n1. **Review the Contract Thoroughly**: Ensure that the typo is indeed a typo and not a more significant error that",
+              "tau": 137787.70714583428
+            },
+            {
+              "length_chars": 762,
+              "length_words": 127,
+              "urgency_score": 1,
+              "deliberative_score": 5,
+              "hedge_score": 3,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "If you spot a typo in a contract right before signing, it's important to handle the situation carefully to avoid any legal complications. Here are the steps you should consider taking:\n\n1. **Review the Contract Thoroughly**: Ensure that the typo is indeed a typo and not a more significant error that",
+              "tau": 604799.9999999995
+            }
+          ]
+        },
+        {
+          "scenario_idx": 9,
+          "metrics_per_tau": [
+            {
+              "length_chars": 687,
+              "length_words": 119,
+              "urgency_score": 2,
+              "deliberative_score": 1,
+              "hedge_score": 3,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "If your phone overheats and shuts down before a flight, here are some steps you can take:\n\n1. **Check the Battery**: Ensure that your phone is not damaged. If the battery is swollen or damaged, it could be a safety concern. Contact the airline immediately and follow their instructions.\n\n2. **Cool th",
+              "tau": 1.0
+            },
+            {
+              "length_chars": 687,
+              "length_words": 119,
+              "urgency_score": 2,
+              "deliberative_score": 1,
+              "hedge_score": 3,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "If your phone overheats and shuts down before a flight, here are some steps you can take:\n\n1. **Check the Battery**: Ensure that your phone is not damaged. If the battery is swollen or damaged, it could be a safety concern. Contact the airline immediately and follow their instructions.\n\n2. **Cool th",
+              "tau": 4.389361086906539
+            },
+            {
+              "length_chars": 687,
+              "length_words": 119,
+              "urgency_score": 2,
+              "deliberative_score": 1,
+              "hedge_score": 3,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "If your phone overheats and shuts down before a flight, here are some steps you can take:\n\n1. **Check the Battery**: Ensure that your phone is not damaged. If the battery is swollen or damaged, it could be a safety concern. Contact the airline immediately and follow their instructions.\n\n2. **Cool th",
+              "tau": 19.266490751249357
+            },
+            {
+              "length_chars": 687,
+              "length_words": 119,
+              "urgency_score": 2,
+              "deliberative_score": 1,
+              "hedge_score": 3,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "If your phone overheats and shuts down before a flight, here are some steps you can take:\n\n1. **Check the Battery**: Ensure that your phone is not damaged. If the battery is swollen or damaged, it could be a safety concern. Contact the airline immediately and follow their instructions.\n\n2. **Cool th",
+              "tau": 84.56758478477866
+            },
+            {
+              "length_chars": 687,
+              "length_words": 119,
+              "urgency_score": 2,
+              "deliberative_score": 1,
+              "hedge_score": 3,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "If your phone overheats and shuts down before a flight, here are some steps you can take:\n\n1. **Check the Battery**: Ensure that your phone is not damaged. If the battery is swollen or damaged, it could be a safety concern. Contact the airline immediately and follow their instructions.\n\n2. **Cool th",
+              "tau": 371.197665867977
+            },
+            {
+              "length_chars": 687,
+              "length_words": 119,
+              "urgency_score": 2,
+              "deliberative_score": 1,
+              "hedge_score": 3,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "If your phone overheats and shuts down before a flight, here are some steps you can take:\n\n1. **Check the Battery**: Ensure that your phone is not damaged. If the battery is swollen or damaged, it could be a safety concern. Contact the airline immediately and follow their instructions.\n\n2. **Cool th",
+              "tau": 1629.3205901114338
+            },
+            {
+              "length_chars": 687,
+              "length_words": 119,
+              "urgency_score": 2,
+              "deliberative_score": 1,
+              "hedge_score": 3,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "If your phone overheats and shuts down before a flight, here are some steps you can take:\n\n1. **Check the Battery**: Ensure that your phone is not damaged. If the battery is swollen or damaged, it could be a safety concern. Contact the airline immediately and follow their instructions.\n\n2. **Cool th",
+              "tau": 7151.676396330727
+            },
+            {
+              "length_chars": 687,
+              "length_words": 119,
+              "urgency_score": 2,
+              "deliberative_score": 1,
+              "hedge_score": 3,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "If your phone overheats and shuts down before a flight, here are some steps you can take:\n\n1. **Check the Battery**: Ensure that your phone is not damaged. If the battery is swollen or damaged, it could be a safety concern. Contact the airline immediately and follow their instructions.\n\n2. **Cool th",
+              "tau": 31391.29008020211
+            },
+            {
+              "length_chars": 687,
+              "length_words": 119,
+              "urgency_score": 2,
+              "deliberative_score": 1,
+              "hedge_score": 3,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "If your phone overheats and shuts down before a flight, here are some steps you can take:\n\n1. **Check the Battery**: Ensure that your phone is not damaged. If the battery is swollen or damaged, it could be a safety concern. Contact the airline immediately and follow their instructions.\n\n2. **Cool th",
+              "tau": 137787.70714583428
+            },
+            {
+              "length_chars": 687,
+              "length_words": 119,
+              "urgency_score": 2,
+              "deliberative_score": 1,
+              "hedge_score": 3,
+              "conditional_clauses": 3,
+              "imperative_count": 0,
+              "response": "If your phone overheats and shuts down before a flight, here are some steps you can take:\n\n1. **Check the Battery**: Ensure that your phone is not damaged. If the battery is swollen or damaged, it could be a safety concern. Contact the airline immediately and follow their instructions.\n\n2. **Cool th",
+              "tau": 604799.9999999995
+            }
+          ]
+        }
+      ],
+      "aggregate": {
+        "per_metric_elasticity": {}
+      }
+    }
+  }
+}
