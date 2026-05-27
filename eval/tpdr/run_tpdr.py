@@ -118,20 +118,21 @@ def main():
 
     out = {"taus": taus, "n_scenarios": len(scenarios), "scenarios": scenarios, "adapters": {}}
 
-    # adapters to run
-    adapters = []
-    print("\n[setup] loading vanilla...")
-    adapters.append(("vanilla", load_vanilla(args.base, args.device), None))
-    print("[setup] loading CI...")
-    adapters.append(("ci", load_ci(args.ci_ckpt, args.base, args.device), None))
+    # adapter specs (load sequentially to fit 16GB RAM)
+    adapter_specs = [("vanilla", "vanilla", None, None),
+                     ("ci", "ci", args.ci_ckpt, None)]
     if args.prompt_ckpt and Path(args.prompt_ckpt).exists():
-        print(f"[setup] loading prompt baseline {args.prompt_ckpt}...")
-        adapters.append(("prompt", load_ci(args.prompt_ckpt, args.base, args.device), "prompt"))
+        adapter_specs.append(("prompt", "prompt", args.prompt_ckpt, "prompt"))
     else:
-        print(f"[setup] no prompt ckpt -- using base + prompt-prefix only")
-        adapters.append(("prompt", load_vanilla(args.base, args.device), "prompt"))
+        adapter_specs.append(("prompt", "vanilla", None, "prompt"))
 
-    for adapter_name, model, prompt_mode in adapters:
+    for adapter_name, adapter_type, ckpt, prompt_mode in adapter_specs:
+        print(f"\n[setup] loading {adapter_name} ({adapter_type})...")
+        if adapter_type == "vanilla":
+            model = load_vanilla(args.base, args.device)
+        else:
+            model = load_ci(ckpt, args.base, args.device)
+
         print(f"\n=== adapter: {adapter_name} ===")
         per_scenario_results = []
         for s_i, scenario in enumerate(scenarios):
@@ -179,10 +180,18 @@ def main():
             "per_scenario_results": per_scenario_results,
             "aggregate": agg,
         }
-        # print summary
         print(f"  AGGREGATE {adapter_name}:")
         for k, v in agg["per_metric_elasticity"].items():
             print(f"    {k:24} mean_r={v['mean_r']:+.3f}  std={v['std_r']:.3f}  n={v['n_scenarios_with_finite_r']}")
+        # save partial state and unload to free memory
+        Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+        Path(args.out).write_text(json.dumps(out, indent=2, default=str))
+        del model
+        if torch.cuda.is_available(): torch.cuda.empty_cache()
+        elif hasattr(torch, "mps"): 
+            try: torch.mps.empty_cache()
+            except: pass
+        import gc; gc.collect()
 
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     Path(args.out).write_text(json.dumps(out, indent=2, default=str))
