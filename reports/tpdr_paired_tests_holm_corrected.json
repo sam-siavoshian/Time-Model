@@ -1,0 +1,90 @@
+{
+  "method": "scipy.stats.ttest_rel (paired Student's t) with Holm-Bonferroni step-down across m=7 metrics",
+  "per_metric": [
+    {
+      "metric": "length_chars",
+      "n_paired": 50,
+      "t": -0.20431042477216732,
+      "df": 49,
+      "p_exact_two_sided": 0.8389571769564993,
+      "ci_mean": -0.08375881556896557,
+      "pr_mean": -0.0614921567795076,
+      "mean_diff": -0.022266658789457976,
+      "sd_diff": 0.7706364196516352,
+      "p_holm": 1.0
+    },
+    {
+      "metric": "length_words",
+      "n_paired": 48,
+      "t": 0.25284609757246834,
+      "df": 47,
+      "p_exact_two_sided": 0.8014897678751203,
+      "ci_mean": -0.08160898770190772,
+      "pr_mean": -0.10879870514134625,
+      "mean_diff": 0.027189717439438547,
+      "sd_diff": 0.7450219323246862,
+      "p_holm": 1.0
+    },
+    {
+      "metric": "urgency_score",
+      "n_paired": 11,
+      "t": -1.9821724701612415,
+      "df": 10,
+      "p_exact_two_sided": 0.07559897616270526,
+      "ci_mean": -0.358309966933416,
+      "pr_mean": -0.0477945088557039,
+      "mean_diff": -0.3105154580777121,
+      "sd_diff": 0.519562894527199,
+      "p_holm": 0.45359385697623156
+    },
+    {
+      "metric": "deliberative_score",
+      "n_paired": 11,
+      "t": -5.174978926173915,
+      "df": 10,
+      "p_exact_two_sided": 0.00041609235536194306,
+      "ci_mean": -0.47569360701851116,
+      "pr_mean": 0.24733280762541385,
+      "mean_diff": -0.7230264146439249,
+      "sd_diff": 0.46338494612243264,
+      "p_holm": 0.0029126464875336017
+    },
+    {
+      "metric": "hedge_score",
+      "n_paired": 21,
+      "t": -0.9475214530698531,
+      "df": 20,
+      "p_exact_two_sided": 0.35468209466490414,
+      "ci_mean": -0.23507765291316063,
+      "pr_mean": -0.14735545491051558,
+      "mean_diff": -0.08772219800264505,
+      "sd_diff": 0.42425805893113566,
+      "p_holm": 1.0
+    },
+    {
+      "metric": "conditional_clauses",
+      "n_paired": 18,
+      "t": -1.5228406418395346,
+      "df": 17,
+      "p_exact_two_sided": 0.14618321511507645,
+      "ci_mean": -0.2696524751877014,
+      "pr_mean": -0.03690691339773903,
+      "mean_diff": -0.23274556178996236,
+      "sd_diff": 0.6484301528777956,
+      "p_holm": 0.7309160755753823
+    },
+    {
+      "metric": "imperative_count",
+      "n_paired": 5,
+      "t": 0.1733690816962893,
+      "df": 4,
+      "p_exact_two_sided": 0.8707810232683323,
+      "ci_mean": -0.3931839373146918,
+      "pr_mean": -0.43806905657260964,
+      "mean_diff": 0.04488511925791785,
+      "sd_diff": 0.5789162453701651,
+      "p_holm": 1.0
+    }
+  ],
+  "n_metrics_tested": 7
+}
