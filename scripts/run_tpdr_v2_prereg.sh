@@ -45,10 +45,13 @@ for SPEC in "${PAIRS[@]}"; do
     echo "  prompt ckpt: $PR_CKPT" | tee -a "$LOG"
     echo "  out:        $OUT" | tee -a "$LOG"
 
-    uv run python eval/tpdr/run_tpdr.py \
+    # python -u + stdbuf -oL force per-line flush of stdout under heavy
+    # GPU contention; required to see scenario-level progress without
+    # waiting for adapter completion. Does NOT change result content.
+    stdbuf -oL -eL uv run python -u eval/tpdr/run_tpdr.py \
         --device cuda --n-scenarios 200 --n-tau 10 --max-new 150 \
         --ci-ckpt "$CI_CKPT" --prompt-ckpt "$PR_CKPT" --out "$OUT" \
-        2>&1 | tee -a "$LOG"
+        2>&1 | stdbuf -oL -eL tee -a "$LOG"
 
     if [ -s "$OUT" ]; then
         echo "[done] $OUT written" | tee -a "$LOG"
