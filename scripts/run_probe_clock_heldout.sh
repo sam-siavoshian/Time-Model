@@ -2,11 +2,11 @@
 # Pre-registered (PREREGISTRATION_v2.md section 2): per-layer probe on
 # the clock-heldout checkpoints (seeds 0, 1, 2).
 #
-# Same probe code as reports/probe_per_layer_v15s_s0.json
-# (model/qwen_time_probe.py). Three conditions per checkpoint:
+# Uses model/qwen_time_probe_within.py — SAME script that produced
+# reports/probe_per_layer_v15s_s0.json (within-dist 80/20 random split,
+# not OOD). Two conditions:
 #   A: trained model (the load-bearing line)
-#   B: alpha=0 (chrono off)
-#   C: shuffled tau labels
+#   B: alpha=0 (chrono off; control)
 #
 # Output: reports/probe_per_layer_clock_heldout_s{0,1,2}.json
 set -euo pipefail
@@ -32,10 +32,10 @@ for SEED in 0 1 2; do
         continue
     fi
 
-    echo "=== probe seed $SEED on $CKPT ===" | tee -a "$LOG"
-    uv run python -m model.qwen_time_probe \
+    echo "=== within-dist probe seed $SEED on $CKPT ===" | tee -a "$LOG"
+    uv run python -m model.qwen_time_probe_within \
         --checkpoint "$CKPT" --device cuda \
-        --timescales "$TIMESCALES" --n-samples 400 --seed 4242 \
+        --timescales "$TIMESCALES" --n-samples 600 --seed 4242 \
         --out "$OUT" 2>&1 | tee -a "$LOG"
 done
 
