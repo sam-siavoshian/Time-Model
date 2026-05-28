@@ -1,0 +1,19 @@
+Uninstalled 1 package in 0.56ms
+Installed 1 package in 4ms
+== TPS sweep: vanilla|base ==
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 10755.71it/s]
+loaded in 23.2s
+  [200/2592] 5.08 item/s, eta 7.8 min
+  [400/2592] 5.17 item/s, eta 7.1 min
+  [600/2592] 5.21 item/s, eta 6.4 min
+  [800/2592] 5.21 item/s, eta 5.7 min
+  [1000/2592] 5.22 item/s, eta 5.1 min
+  [1200/2592] 5.22 item/s, eta 4.4 min
+  [1400/2592] 5.23 item/s, eta 3.8 min
+  [1600/2592] 5.24 item/s, eta 3.2 min
+  [1800/2592] 5.23 item/s, eta 2.5 min
+  [2000/2592] 5.24 item/s, eta 1.9 min
+  [2200/2592] 5.24 item/s, eta 1.2 min
+  [2400/2592] 5.24 item/s, eta 0.6 min
+wrote 2592 results to reports/tps/vanilla.json (total 518.1s)

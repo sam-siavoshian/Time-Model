@@ -1,0 +1,71 @@
+\subsection{Temporal Policy Switching: an identical-prompt falsification test}
+
+TPDR measures response shape, not decision quality. As a stronger behavioral test, we introduce the \emph{Temporal Policy Switching (TPS)} benchmark, in which the visible prompt is held byte-identical and only the hidden $\Tau$ scalar varies. Each item asks an agent to choose exactly one of four labelled actions (REUSE, REFRESH, ASK, SUMMARIZE). Six policy families with different freshness thresholds (cache reuse, session continuation, API freshness, safety advice, calendar planning, market data) prevent a single global rule from solving the benchmark. Templates 8--11 of each family form a held-out prompt split; the entire \texttt{market\_data} family is fully held out for compositional generalization. Items are evaluated at nine $\Tau$ values from $10\,\mathrm{s}$ to $7\,\mathrm{d}$. The principal test is the \emph{hidden-only} condition: no time text appears in the prompt, so any above-vanilla accuracy must come from the hidden channel.
+
+We pre-specified three hypotheses. \textbf{H1}: under hidden-only prompts, \CI{} raises policy accuracy above vanilla. \textbf{H2}: refresh probability rises monotonically with $\log\Tau$ under \CI{} on hidden-only items. \textbf{H3}: under prompt/\CI{} conflict, \CI{} alters the channel-follow rate. All three hypotheses are \emph{falsifiable}: if they fail, the behavioral claim narrows accordingly.
+
+\textbf{Baselines and ceilings.} The benchmark is solvable from $(\Tau, \text{family})$ alone: a logistic regression on $\chi(\Tau)$ plus a family one-hot achieves 1.000 on held-in templates and 1.000 on held-out templates, but drops to 0.556 on the held-out \texttt{market\_data} family. A $\chi(\Tau)$-only classifier (no family) achieves 0.622, confirming that family identity carries most of the discriminative signal. The rule oracle attains $1.000$ by construction. These anchor the LLM results.
+
+\textbf{Result (H1: hidden-only).} \emph{H1 fails for \CI{} v15s and is only weakly supported by the chrono-only ablation.} Vanilla Qwen 2.5 3B reaches 0.349 on hidden-only items. \CI{} v15s seed~0 reaches 0.340 (\emph{below} vanilla); across three seeds the cross-seed mean is $0.344\pm0.012$, indistinguishable from vanilla. The chrono-only ablation (chrono channel trained, LoRA frozen at zero) reaches 0.387, a modest $+0.039$ over vanilla. This pattern suggests that the LoRA surface trained alongside the chrono channel during v15 training does not help, and may interfere, when the task is policy selection without any visible time string.
+
+\textbf{Result (H2: monotonicity).} \emph{H2 fails: refresh probability does not rise with $\log\Tau$ under \CI{} v15s.} The Pearson correlation between $\log\Tau$ and $P(\text{REFRESH})$ on hidden-only items is $r=-0.184$ for seed 0, $r=-0.329$ for seed 1, $r=-0.299$ for seed 2 (cross-seed mean $r=-0.270$), all negative. Vanilla is essentially flat ($r=-0.000$), confirming the absence of a time signal. The negative slope under \CI{} suggests the chrono channel, as trained on CLOCK + SILENT-GAP + PHASE, does not transfer to a cache/session/freshness policy axis without task-specific supervision.
+
+\textbf{Result (H3: conflict).} \emph{H3 also fails: \CI{} does not preferentially follow the hidden scalar.} Under prompt/\CI{} conflict, \CI{} v15s seed~0 follows the hidden scalar at rate 0.338 and the visible timestamp at 0.423; vanilla follows the visible timestamp at 0.455 (the only signal it has). \CI{} does not clearly elevate scalar-follow over vanilla in any seed.
+
+Tables~\ref{tab:tps-main} and \ref{tab:tps-conflict} report the full numbers and Figure~\ref{fig:tps-mono} plots $P(\text{REFRESH})$ versus $\log_{10}\Tau$ for each adapter.
+
+\begin{table}[t]
+\centering
+\caption{TPS hidden-only policy accuracy and monotonicity. \emph{Hidden-only}: visible prompt has no time text; only the hidden $\Tau$ varies. \emph{Both-agree}: time written in prompt AND supplied to \CI{}. \emph{Held-out templates}: prompts 8--11 of each family (kept out of any in-paper fitting). \emph{Held-out family}: \texttt{market\_data} held out from the $\chi(\Tau)$ classifier training. $r$ is Pearson correlation between $\log\Tau$ and $P(\text{REFRESH})$ on hidden-only items.}
+\label{tab:tps-main}
+\footnotesize
+\begin{tabular}{lccccc}
+\toprule
+Model & Hidden-only & Both-agree & H/O templ. & H/O fam. & $r(\log\Tau,P_R)$ \\
+\midrule
+Vanilla & 0.349 & 0.335 & 0.296 & 0.088 & -0.000 \\
+Prompt-timestamp & 0.363 & 0.364 & 0.337 & 0.188 & 0.014 \\
+chrono-only (s0) & 0.387 & 0.421 & 0.382 & 0.264 & -0.055 \\
+\CI{} v15s (s0) & 0.340 & 0.361 & 0.383 & 0.095 & -0.184 \\
+\CI{} v15s (s1) & 0.349 & 0.333 & 0.392 & 0.225 & -0.329 \\
+\CI{} v15s (s2) & 0.343 & 0.327 & 0.365 & 0.116 & -0.299 \\
+\midrule
+$\chi(\Tau)$ only (LR) & 0.622 & -- & 0.622 & 0.556 & -- \\
+$\chi(\Tau)$+family (LR) & 1.000 & -- & 1.000 & 0.556 & -- \\
+Rule oracle & 1.000 & 1.000 & 1.000 & 1.000 & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\columnwidth]{figures/fig_tps_monotonicity.png}
+\caption{TPS hidden-only: $P(\text{REFRESH})$ as a function of $\log_{10}\Tau$. Vanilla is flat (no signal). \CI{} v15s shows a slight negative slope (refresh becomes less likely as $\Tau$ grows, opposite of expected). chrono-only is closer to flat. None of the adapters tested produce the expected monotonic increase, so the hidden channel does not transfer zero-shot to this policy axis.}
+\label{fig:tps-mono}
+\end{figure}
+
+\begin{table}[t]
+\centering
+\caption{TPS conflict condition: visible prompt timestamp disagrees with hidden \CI{} scalar. \emph{Scalar-follow}: $P(\text{action matches hidden gold})$. \emph{Prompt-follow}: $P(\text{action matches visible gold})$. None of the \CI{} adapters meaningfully elevate scalar-follow over vanilla.}
+\label{tab:tps-conflict}
+\footnotesize
+\begin{tabular}{lcc}
+\toprule
+Model & Scalar-follow & Prompt-follow \\
+\midrule
+Vanilla & 0.309 & 0.455 \\
+Prompt-timestamp & 0.307 & 0.465 \\
+chrono-only (s0) & 0.352 & 0.407 \\
+\CI{} v15s (s0) & 0.338 & 0.423 \\
+\CI{} v15s (s1) & 0.316 & 0.330 \\
+\CI{} v15s (s2) & 0.284 & 0.265 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Interpretation.} The TPS hidden-only condition tests whether the residual time channel changes downstream action selection under identical visible text. The cross-seed result is negative: \CI{} v15s does not outperform vanilla, and refresh probability does not rise monotonically with $\Tau$. The chrono-only ablation shows a small positive signal on the held-out family, suggesting that some compositional generalization is possible without the LoRA surface, but the effect size is too small to claim a behavioral contribution. This result is consistent with the mechanistic finding that $\Tau$ becomes linearly recoverable from hidden states without becoming a behavioral feature: the channel is \emph{transmitted} but not, in the zero-shot setting tested here, \emph{used} by the model's output policy. We report this negative result because it is the most honest statement of the limits of zero-shot transfer for \CI{}.
+
+\textbf{What this rules out.} TPS rules out the claim that \CI{}, as trained on CLOCK + SILENT-GAP + PHASE, yields a behavior-shaping policy channel that generalizes zero-shot to cache/session/freshness decisions. It does \emph{not} rule out the mechanistic transmission result (Sec.~VI-A), the causal interventions (Sec.~VI-B), or the response-shape result on TPDR (Sec.~VI-F), all of which remain intact. It also does \emph{not} rule out that a \CI{} model retrained on policy-labelled data would pass TPS; that experiment is left to future work.
+
+\textbf{Limitations.} TPS uses templated synthetic prompts and rule-based oracle labels: a natural-language production benchmark remains open. Soft-prompt and matched-parameter scalar-embedding baselines are also future work. All TPS results are zero-shot evaluations of checkpoints trained without policy-task supervision.
+

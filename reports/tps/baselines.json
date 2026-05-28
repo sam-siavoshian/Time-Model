@@ -1,0 +1,21 @@
+{
+  "rule_oracle": {
+    "all": 0.8287037037037037,
+    "hidden_only": 1.0
+  },
+  "chi_tau_only": {
+    "in_sample_acc": 0.6222222222222222,
+    "held_in_template_acc": 0.6222222222222222,
+    "held_out_template_acc": 0.6222222222222222,
+    "held_out_family_acc": 0.5555555555555556
+  },
+  "chi_tau_plus_family": {
+    "in_sample_acc": 1.0,
+    "held_in_template_acc": 1.0,
+    "held_out_template_acc": 1.0,
+    "held_out_family_acc": 0.5555555555555556
+  },
+  "n_train": 720,
+  "n_held_out_template": 360,
+  "n_held_out_family": 216
+}

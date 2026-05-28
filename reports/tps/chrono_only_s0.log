@@ -1,0 +1,21 @@
+Uninstalled 1 package in 0.78ms
+Installed 1 package in 3ms
+== TPS sweep: ci|chrono_only_s0.pt ==
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 7554.70it/s]
+  loaded 175 trainable tensors
+loaded in 36.7s
+  [200/2592] 4.07 item/s, eta 9.8 min
+  [400/2592] 4.10 item/s, eta 8.9 min
+  [600/2592] 4.15 item/s, eta 8.0 min
+  [800/2592] 4.17 item/s, eta 7.2 min
+  [1000/2592] 4.19 item/s, eta 6.3 min
+  [1200/2592] 4.20 item/s, eta 5.5 min
+  [1400/2592] 4.20 item/s, eta 4.7 min
+  [1600/2592] 4.21 item/s, eta 3.9 min
+  [1800/2592] 4.22 item/s, eta 3.1 min
+  [2000/2592] 4.22 item/s, eta 2.3 min
+  [2200/2592] 4.23 item/s, eta 1.5 min
+  [2400/2592] 4.23 item/s, eta 0.8 min
+wrote 2592 results to reports/tps/chrono_only_s0.json (total 648.7s)
