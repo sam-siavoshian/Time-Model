@@ -1,0 +1,36 @@
+\paragraph{Pre-registered 200-scenario headline (v2 revision).} The pre-registered TPDR replication (PREREGISTRATION\_v2.md \S 1, anchor \texttt{80ddafc}). Sample: all 200 scenarios as committed at the anchor, with the 7 metrics and their lexicons frozen. Primary endpoint: one-tailed paired-$t$ on per-scenario $r(\text{deliberative score}, \log\tau)$ CI minus Prompt, at $\alpha = 0.005$. Inclusion: scenarios where neither adapter is constant across $\tau$. Verdict: \textbf{CONFIRM}. The pre-registered headline survives the planned analysis: the paired-$t$ on the per-scenario rank correlation of \texttt{deliberative\_score} against $\log\tau$, CI vs.\ Prompt, is $t = -5.167$ on $df = 45$ with one-tailed $p = 2.633e-06$ at $\alpha = 0.005$, $n_{\text{paired}} = 46$. Mean diff $-0.4480$ with 95\% CI $[-0.6227, -0.2734]$.
+
+\begin{table}[!t]
+  \caption{Pre-registered TPDR v2 replication: secondary endpoints (Holm-corrected family $m=6$, $\alpha = 0.05$ family-wise, two-tailed paired-$t$). Headline pair $(\text{ci}_0, \text{prompt}_0)$.}
+  \label{tab:tpdr-v2-secondary}
+  \centering
+  \footnotesize
+  \begin{tabular}{lrrrr}
+    \toprule
+    \tabhead{Metric} & \tabhead{$n_{\text{paired}}$} & \tabhead{$t$} & \tabhead{raw $p$} & \tabhead{Holm $p$} \\
+    \midrule
+    \texttt{length\_chars} & 200 & $-2.254$ & $2.529e-02$ & $7.586e-02$ \\
+    \texttt{length\_words} & 188 & $-0.892$ & $3.736e-01$ & $6.291e-01$ \\
+    \texttt{urgency\_score} & 39 & $-4.529$ & $5.718e-05$ & $3.431e-04$ \\
+    \texttt{hedge\_score} & 73 & $-2.544$ & $1.311e-02$ & $5.243e-02$ \\
+    \texttt{conditional\_clauses} & 63 & $-4.222$ & $8.048e-05$ & $4.024e-04$ \\
+    \texttt{imperative\_count} & 23 & $-1.029$ & $3.146e-01$ & $6.291e-01$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[!t]
+  \caption{Cross-seed replication of the pre-registered TPDR primary endpoint on \texttt{deliberative\_score}. Per pre-reg, the headline is seed pair $(0,0)$; seed pairs $(1,1)$ and $(2,2)$ are cross-seed replications reported alongside.}
+  \label{tab:tpdr-v2-crossseed}
+  \centering
+  \footnotesize
+  \begin{tabular}{lrrrr}
+    \toprule
+    \tabhead{Pair} & \tabhead{$n_{\text{paired}}$} & \tabhead{$t$} & \tabhead{df} & \tabhead{1-tailed $p$} \\
+    \midrule
+    seed pair $(0,0)$ \textbf{(HEADLINE)} & 46 & $-5.167$ & $45$ & $2.633e-06$ \\
+    seed pair $(1,1)$ & 5 & $0.129$ & $4$ & $5.482e-01$ \\
+    seed pair $(2,2)$ & 48 & $6.112$ & $47$ & $1.000e+00$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
