@@ -4,8 +4,10 @@
 #
 # Used so the both-heldout queue doesn't OOM when launched alongside
 # the other concurrent jobs.
-set +e
-cd "$HOME/ipcn"
+set -euo pipefail
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$REPO_ROOT"
 export PATH="$HOME/.local/bin:$PATH"
 export PYTHONUNBUFFERED=1
 mkdir -p logs

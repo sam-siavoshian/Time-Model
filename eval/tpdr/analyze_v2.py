@@ -1,7 +1,7 @@
 """Pre-registered TPDR v2 analysis script.
 
-Reads the saved sweep JSONs:
-  reports/tpdr_crossseed/tpdr_v2_seed{0,1,2}_pair{0,1,2}.json
+Reads the saved sweep JSONs from an explicit sweep directory or
+`runs/<run-id>/reports/tpdr_crossseed/`.
 where each file holds the sweep for ci_seed=k, prompt_seed=k.
 
 Computes the pre-registered primary endpoint:
@@ -13,18 +13,20 @@ Computes the pre-registered primary endpoint:
 Plus the pre-registered secondary endpoints (Holm-Bonferroni over the
 remaining 6 metrics, two-tailed paired-t, family-wise alpha=0.05).
 
-Writes the consolidated result to reports/tpdr_v2_headline.json.
+Writes the consolidated result to an explicit output path or
+`runs/<run-id>/reports/tpdr_v2_headline.json`.
 
-Inclusion rule per scenario per metric (PREREGISTRATION_v2.md section 1.3):
+Inclusion rule per scenario per metric
+(docs/experiments/current/PREREGISTRATION_v2.md section 1.3):
   scenario contributes a pair iff the per-tau series for that metric has
   non-zero variance on BOTH adapters; otherwise Pearson r is nan and
   the scenario is excluded.
 
 Usage:
   uv run python eval/tpdr/analyze_v2.py \\
-    --sweep-dir reports/tpdr_crossseed \\
+    --sweep-dir runs/tpdr_v2/reports/tpdr_crossseed \\
     --pattern 'tpdr_v2_seed{seed}_pair{seed}.json' \\
-    --out reports/tpdr_v2_headline.json
+    --out runs/tpdr_v2/reports/tpdr_v2_headline.json
 """
 from __future__ import annotations
 import argparse, json, math, sys
@@ -149,12 +151,21 @@ def load_pair(sweep_dir, pattern, seed):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--sweep-dir", default="reports/tpdr_crossseed")
+    ap.add_argument("--sweep-dir", default=None)
     ap.add_argument("--pattern", default="tpdr_v2_seed{seed}_pair{seed}.json")
-    ap.add_argument("--out", default="reports/tpdr_v2_headline.json")
+    ap.add_argument("--out", default=None)
+    ap.add_argument("--run-id", default=None,
+                    help="Use runs/<run-id>/reports/tpdr_crossseed and write the headline under the same run.")
     args = ap.parse_args()
+    if args.run_id:
+        if args.sweep_dir is None:
+            args.sweep_dir = str(Path("runs") / args.run_id / "reports" / "tpdr_crossseed")
+        if args.out is None:
+            args.out = str(Path("runs") / args.run_id / "reports" / "tpdr_v2_headline.json")
+    if args.sweep_dir is None or args.out is None:
+        raise SystemExit("output scope required: pass --run-id, or pass both --sweep-dir and --out")
 
-    full = {"pre_registration": "PREREGISTRATION_v2.md",
+    full = {"pre_registration": "docs/experiments/current/PREREGISTRATION_v2.md",
             "primary_metric": PRIMARY_METRIC,
             "primary_alpha": ALPHA_PRIMARY,
             "primary_alternative": "less (one-tailed, H1: mu_diff < 0)",

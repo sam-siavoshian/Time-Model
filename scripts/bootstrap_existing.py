@@ -6,10 +6,10 @@ to the existing JSON outputs. Addresses reviewer attack on missing CIs.
 
 from __future__ import annotations
 
+import argparse
 import json
 import random
 import statistics
-import sys
 from pathlib import Path
 
 
@@ -54,8 +54,21 @@ def bootstrap_mean(xs, n_boot=5000, seed=0):
 
 
 def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--out", default=None,
+                    help="Explicit output path, preferably under runs/<run_id>/reports/.")
+    args = ap.parse_args()
+    if args.out is None:
+        raise SystemExit("output scope required: pass --out")
     root = Path(__file__).resolve().parent.parent
     out = {}
+
+    def report_path(name: str) -> Path:
+        current = root / "reports" / name
+        if current.exists():
+            return current
+        archived = root / "reports" / "archive" / "model_versions_v10_v14" / name
+        return archived
 
     # Falsify Pearson r values from disproof
     f = root / "reports" / "disproof_20260522_224016_falsify.json"
@@ -94,7 +107,7 @@ def main():
         out["pressure_bootstrap_CIs"] = pressure
 
     # v11 T1 OOD
-    v11 = root / "reports" / "qwen_time_v10_20260516_032348_recall.json"
+    v11 = report_path("qwen_time_v10_20260516_032348_recall.json")
     if v11.exists():
         with open(v11) as g:
             r = json.load(g)
@@ -105,7 +118,10 @@ def main():
             pred = [s[1] for s in samples]
             out["v11_T1b_OOD_bootstrap"] = bootstrap_pearson(pred, truth)
 
-    out_path = root / "reports" / "bootstrap_CIs.json"
+    out_path = Path(args.out)
+    if not out_path.is_absolute():
+        out_path = root / out_path
+    out_path.parent.mkdir(parents=True, exist_ok=True)
     with open(out_path, "w") as f:
         json.dump(out, f, indent=2)
     print(f"Saved -> {out_path}")

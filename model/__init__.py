@@ -10,7 +10,7 @@ Current modules (post-v15 reframe to Track C: QwenTime FiLM injection):
   qwen_time_pressure_v2  Deadline-pressure adaptive-length tests
   qwen_time_extra_controls  Paraphrase + half-flip + teacher-forced T4 controls
 
-Legacy IPCN (Track A 102M from-scratch / Track B memory routing) is fully
-removed as of v15 (see PAPER.md §22 for the negative result). This package
-no longer exposes any top-level symbols; import submodules directly.
+Legacy IPCN (Track A 102M from-scratch / Track B memory routing) is archived
+under `docs/history/` and `reports/archive/`. This package no longer exposes
+any top-level symbols; import submodules directly.
 """

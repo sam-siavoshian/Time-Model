@@ -2,7 +2,7 @@
 
 Loads the dataset built by generate_tau_sessions.py, runs a chosen
 adapter on every session (or a sampled subset for a quick smoke), and
-emits a JSON report under reports/external_tau_bench_<adapter>.json.
+emits a JSON report to an explicit output path or `runs/<run-id>/reports/`.
 
 Scoring (per eval_protocol):
   exact_match    -- staleness yes/no. Score in {0, 1}.
@@ -41,6 +41,7 @@ import statistics
 import sys
 import time
 from collections import defaultdict
+from pathlib import Path
 from typing import Any
 
 # Reuse the parser from the internal check harness so MAE numbers are
@@ -344,7 +345,9 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--data", default=DEFAULT_DATA,
                    help="JSONL produced by generate_tau_sessions.py")
     p.add_argument("--out", default=None,
-                   help="Report path. Default: reports/external_tau_bench_<adapter>.json")
+                   help="Explicit report path")
+    p.add_argument("--run-id", default=None,
+                   help="Write report under runs/<run-id>/reports/external/ when --out is omitted")
     p.add_argument("--checkpoint", default=None,
                    help="CI adapter checkpoint (.pt) from the v15.0 release")
     p.add_argument("--timescales", default="",
@@ -365,6 +368,13 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--n-boot", type=int, default=1000,
                    help="Bootstrap iterations for CIs")
     args = p.parse_args(argv)
+    if args.out is None:
+        if args.run_id is None:
+            print("error: output scope required: pass --out or --run-id",
+                  file=sys.stderr)
+            return 2
+        args.out = str(Path("runs") / args.run_id / "reports" / "external" /
+                       f"ext_bench_{args.adapter}.json")
 
     sessions = load_sessions(args.data)
     if args.n > 0:
@@ -409,9 +419,8 @@ def main(argv: list[str] | None = None) -> int:
         "sessions": rows,
     }
 
-    out_path = args.out or f"reports/external_tau_bench_{args.adapter}.json"
-    write_report(out_path, report)
-    print(f"wrote {out_path}")
+    write_report(args.out, report)
+    print(f"wrote {args.out}")
     print(f"composite_score = {summary['composite_score']:.4f}")
     for task, m in summary["per_task"].items():
         print(f"  {task}: {m}")

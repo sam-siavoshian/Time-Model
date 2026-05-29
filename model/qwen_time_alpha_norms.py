@@ -59,7 +59,7 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("--checkpoint", type=str, required=True)
     p.add_argument("--device", type=str, default="cuda")
-    p.add_argument("--out", type=str, default="reports/alpha_norms.json")
+    p.add_argument("--out", type=str, required=True)
     p.add_argument("--base", type=str, default="Qwen/Qwen2.5-3B-Instruct")
     p.add_argument("--timescales", type=str, default="")
     p.add_argument("--top-k", type=int, default=8)

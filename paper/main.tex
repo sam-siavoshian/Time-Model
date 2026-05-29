@@ -41,7 +41,7 @@
 \maketitle
 
 \begin{abstract}
-Large language models can reason about time when time is written in the prompt, but the standard transformer interface gives them no first-class input for elapsed wall-clock duration. This limits interactive and agentic systems in which the same visible text may require different responses depending on whether seconds, hours, or days have passed. This paper studies whether a frozen autoregressive language model can be conditioned on a continuous scalar elapsed-time signal without updating its base weights. We introduce \emph{chronometric injection} (\CI), a residual-stream conditioning channel that encodes elapsed seconds $\Tau$ with sinusoidal and logarithmic features and injects that encoding into Qwen 2.5 3B through zero-initialized AdaLN-style FiLM projectors. The novelty is not FiLM, LoRA, or sinusoidal time encoding individually; it is the causal and mechanistic characterization of an elapsed-time channel inside an otherwise frozen language model. Linear probes show that the channel is transmitted mechanically: recoverability of $\log \Tau$ jumps from chance at layer 0 ($R^2=-0.005$) to near-perfect at layer 1 ($R^2=0.99990$), remains above $0.9995$ through the network, and disappears when the FiLM gates are zeroed. A CLOCK-heldout replication preserves this layer-1 axis ($R^2=0.99984\pm0.00007$), showing that the representation is not merely induced by duration-string supervision. Causal ablations further show that LoRA alone cannot explain the results, that sign-flipping the learned gates reverses or disrupts parsed time behavior, and that the pathway is distributed with mid-depth dominance. Behavioral results are narrower: simple clock-readout tests are best treated as supervised wiring checks, prompt-injected time beats \CI{} on direct recall tasks, and the exploratory TPDR benchmark yields one corrected response-shape effect on deliberative wording.  An identical-prompt Temporal Policy Switching benchmark, in which only the hidden $\Tau$ scalar varies, returns a negative behavioral result: \CI{} v15s reaches hidden-only policy accuracy $0.344\pm0.012$ across three seeds (vanilla 0.349), and refresh probability does not rise monotonically with $\log\Tau$ (mean $r=-0.270$), confirming that the channel is transmitted but not, in the zero-shot setting tested here, used by the output policy. Overall, \CI{} is best understood as a traceable residual-stream time-conditioning channel, not as evidence of subjective time perception and not as a universal replacement for prompt-based timestamps.
+Large language models can reason about time when time is written in the prompt, but the standard transformer interface gives them no first-class input for elapsed wall-clock duration. This limits interactive and agentic systems in which the same visible text may require different responses depending on whether seconds, hours, or days have passed. This paper studies whether a frozen autoregressive language model can be conditioned on a continuous scalar elapsed-time signal without updating its base weights. We introduce \emph{chronometric injection} (\CI), a residual-stream conditioning channel that encodes elapsed seconds $\Tau$ with sinusoidal and logarithmic features and injects that encoding into Qwen 2.5 3B through zero-initialized AdaLN-style FiLM projectors. The novelty is not FiLM, LoRA, or sinusoidal time encoding individually; it is the causal and mechanistic characterization of an elapsed-time channel inside an otherwise frozen language model. Linear probes show that the channel is transmitted mechanically: recoverability of $\log \Tau$ jumps from chance at layer 0 ($R^2=-0.005$) to near-perfect at layer 1 ($R^2=0.99990$), remains above $0.9995$ through the network, and disappears when the FiLM gates are zeroed. A CLOCK-heldout replication preserves this layer-1 axis ($R^2=0.99984\pm0.00007$), showing that the representation is not merely induced by duration-string supervision. Causal ablations further show that LoRA alone cannot explain the results, that sign-flipping the learned gates reverses or disrupts parsed time behavior, and that the pathway is distributed with mid-depth dominance. Behavioral results are narrower: simple clock-readout tests are best treated as supervised wiring checks, prompt-injected time beats \CI{} on direct recall tasks, and the pre-registered TPDR v2 benchmark yields a corrected response-shape effect on deliberative wording for the headline seed pair. An identical-prompt Temporal Policy Switching benchmark, in which only the hidden $\Tau$ scalar varies, returns a negative behavioral result: \CI{} v15s reaches hidden-only policy accuracy $0.344\pm0.005$ across three seeds (vanilla 0.349), and refresh probability does not rise monotonically with $\log\Tau$ (mean $r=-0.270$), confirming that the channel is transmitted but not, in the zero-shot setting tested here, used by the output policy. Overall, \CI{} is best understood as a traceable residual-stream time-conditioning channel, not as evidence of subjective time perception and not as a universal replacement for prompt-based timestamps.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -67,7 +67,7 @@ The paper makes four contributions:
   \item It formulates elapsed-time conditioning for a frozen autoregressive LLM as an input-channel problem rather than as a prompt-formatting problem.
   \item It implements a simple chronometric channel using a sinusoidal-plus-log encoding of $\Tau$ and AdaLN-Zero FiLM modulation of the residual stream.
   \item It provides causal evidence that the channel is transmitted and used: probe recovery, zero-gate controls, LoRA-only collapse, sign-flip interventions, and held-out-supervision tests.
-  \item It narrows the behavioral claim by showing where \CI{} helps, where prompt injection is stronger, and why the in-house clock-readout tasks should be interpreted as wiring checks rather than evidence of time perception.
+  \item It narrows the behavioral claim by showing where prompt injection is stronger, where \CI{} only produces exploratory response-shape evidence, and why the in-house clock-readout tasks should be interpreted as wiring checks rather than evidence of time perception.
 \end{itemize}
 
 The remainder of the paper is organized as follows. Section~II summarizes related work. Section~III defines the problem and scope. Section~IV describes the chronometric channel. Section~V gives the evaluation setup. Section~VI reports results. Section~VII discusses implications and limitations. Section~VIII concludes with future work.
@@ -144,21 +144,21 @@ hidden-state probes and behavioral tests
 
 \subsection{Chronometric encoder}
 
-The chronometric encoder maps elapsed seconds into sinusoidal features at multiple periods plus a monotone logarithmic coordinate:
+The chronometric encoder maps elapsed seconds into sinusoidal features at multiple scales plus a monotone logarithmic coordinate:
 \begin{equation}
 \begin{aligned}
-\chi(\Tau)=\big[&\sin(\omega_1\Tau),\cos(\omega_1\Tau),\ldots,\\
-&\sin(\omega_{15}\Tau),\cos(\omega_{15}\Tau),\log(1+\Tau)\big]^\top .
+\chi(\Tau)=\big[&\sin(\Tau/T_1),\cos(\Tau/T_1),\ldots,\\
+&\sin(\Tau/T_{15}),\cos(\Tau/T_{15}),\log(1+\Tau)\big]^\top .
 \end{aligned}
 \end{equation}
-The frequencies satisfy $\omega_k=2\pi/T_k$, with
+The scale divisors are
 \begin{equation}
 \begin{aligned}
 T\in\{&2,4,8,16,32,64,128,256,512,1024,\nonumber\\
 &4096,16384,65536,86400,604800\}\ \text{seconds}.
 \end{aligned}
 \end{equation}
-The sinusoidal terms represent phase at several temporal scales, including day and week periods. The $\log(1+\Tau)$ coordinate provides a nonperiodic monotone direction. The encoder has 31 output dimensions and no learned parameters.
+The implementation uses $\sin(\Tau/T_k)$ and $\cos(\Tau/T_k)$ directly, without a $2\pi$ multiplier; therefore $T_k$ is a radian-scale divisor and the mathematical sinusoid period is $2\pi T_k$. The largest divisors include day and week scales. The $\log(1+\Tau)$ coordinate provides a nonperiodic monotone direction. The encoder has 31 output dimensions and no learned parameters.
 
 \subsection{Residual-stream injection}
 
@@ -252,8 +252,8 @@ For external submission, the following implementation details should be reported
 Transmission & Per-layer probe of $\log\Tau$; $\alpha=0$ control; CLOCK-heldout probe & L0 chance; L1 near-perfect; CLOCK-heldout preserves the axis & Probe is in-distribution over the trained time range \\
 Causality & LoRA-only collapse; all-layer and subset sign flips & Time behavior depends on the chrono gate and changes under gate interventions & Some sign-flip analyses have small effective $n$ \\
 Behavioral usability & T1--T4 plus held-out supervision & T2 and T4 survive CLOCK-heldout; T1/T1b reveal usable readout & T1/T1b are supervised format checks, not evidence of time perception \\
-Prompt comparison & Prompt-injected $\Tau$ and \texttt{tau\_sessions} & Prompt wins direct recall; \CI{} is only adapter with positive adaptive length correlation & The advantage is not universal and must be task-specific \\
-Exploratory response shape & TPDR decision prompts without time in text & \texttt{deliberative\_score} survives Holm correction & Author-built benchmark; one corrected metric at current $n$ \\
+Prompt comparison & Prompt-injected $\Tau$ and \texttt{tau\_sessions} & Prompt wins direct recall, staleness, composite score, and adaptive length correlation & Residual conditioning is not a universal replacement for timestamps \\
+Exploratory response shape & TPDR v2 decision prompts without time in text & Pre-registered \texttt{deliberative\_score} endpoint confirms for the headline seed pair & Author-built benchmark; cross-seed TPDR is not stable \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -296,8 +296,8 @@ Chrono-only ablation & Passes in-house tests across three seeds with LoRA frozen
 All-layer sign flip & Parsed T1 predictions invert with $r=-0.9998$ & Gate direction is causal & Small parseable effective $n$ \\
 Half-layer flips & 52 preserve, 18 invert, 23 mixed, 7 nonfinite & Pathway is distributed and signed & Functional importance varies by seed \\
 Held-out CLOCK & T1/T1b fail; T2 and T4 pass 3/3 & Clock readout is format recall; other channel use survives & T2 itself is supervised by SILENT-GAP \\
-Prompt baseline & Prompt wins direct recall and composite external benchmark & \CI{} is not a universal replacement for timestamps & \CI{} may help when response shape is modulated \\
-TPDR & Only \texttt{deliberative\_score} survives Holm correction ($p=2.91\times10^{-3}$) & Exploratory evidence for response-shape modulation & One corrected metric; needs replication \\
+Prompt baseline & Prompt wins direct recall and composite external benchmark & \CI{} is not a universal replacement for timestamps & \texttt{tau\_sessions} does not show a CI advantage over prompt text \\
+TPDR v2 & Headline \texttt{deliberative\_score} pair confirms ($t=-5.167$, one-tailed $p=2.633\times10^{-6}$, $n=46$) & Exploratory evidence for response-shape modulation & Headline seed pair confirms; other seed pairs are not stable \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -308,13 +308,17 @@ Several ablations narrow the architectural claim. L0-only injection matches four
 
 \subsection{Prompt-injected time is stronger for direct recall}
 
-The prompt baseline is a critical negative result. On external \texttt{tau\_sessions}, prompt-injected $\Tau$ wins on staleness accuracy, duration recall, and the composite score. \CI{} performs worse on direct recall tasks, but it is the only adapter with positive correlation between $\log\Tau$ and response length in the adaptive protocol ($r=+0.184$, versus negative correlations for vanilla and prompt). This supports a narrower view: prompt injection is preferable when the task is to read and report time, while residual injection may matter when time should continuously shape generation.
+The prompt baseline is a critical negative result. On external \texttt{tau\_sessions}, prompt-injected $\Tau$ wins on staleness accuracy, duration recall, adaptive length correlation, and the composite score. In the current artifact, \CI{} has lower composite score than prompt injection (0.377 versus 0.520), lower staleness accuracy (0.23 versus 0.51), worse duration-recall log-MAE (0.098 versus 0.064), and a negative adaptive length correlation ($r=-0.050$ versus prompt $r=+0.115$). This supports a narrower view: prompt injection is preferable when the task is to read and report time, while residual injection remains valuable mainly as a mechanistically traceable non-token channel.
 
-\subsection{TPDR is exploratory, not confirmatory}
+\subsection{TPDR v2 is exploratory and seed-pair dependent}
 
-TPDR tests ambiguous decision prompts whose text does not mention time. Each scenario is evaluated across several values of $\Tau$ for vanilla, prompt-injected, and \CI{} adapters. Among seven response-shape metrics, only \texttt{deliberative\_score} survives Holm correction: \CI{} and prompt injection drive the metric in opposite directions across $\Tau$ with paired $t=-5.17$ and Holm-corrected $p=2.91\times10^{-3}$. Urgency, hedging, conditionals, imperative count, and length metrics do not survive correction. The result is therefore a single-metric exploratory signal, not a broad behavioral proof.
+TPDR tests ambiguous decision prompts whose text does not mention time. Each scenario is evaluated across several values of $\Tau$ for vanilla, prompt-injected, and \CI{} adapters. The canonical TPDR result is the pre-registered v2 replication over 200 scenarios. For the headline seed pair $(0,0)$, the primary endpoint confirms: the paired test on per-scenario rank correlation of \texttt{deliberative\_score} against $\log\Tau$, \CI{} minus Prompt, gives $t=-5.167$ on $df=45$ with one-tailed $p=2.633\times10^{-6}$ at $\alpha=0.005$, $n_{\text{paired}}=46$, and mean difference $-0.4480$ with 95\% CI $[-0.6227,-0.2734]$.
+
+Secondary TPDR v2 endpoints are mixed rather than broad confirmation. Urgency and conditional-clause scores survive Holm correction in the secondary table, while length, hedging, and imperative count do not. Cross-seed TPDR is not stable: the pre-registered headline pair confirms, seed pair $(1,1)$ is null, and seed pair $(2,2)$ moves in the opposite direction. TPDR should therefore be read as a seed-pair-dependent response-shape finding, not as general behavioral proof that \CI{} is superior to prompt timestamps.
 
 \input{_6g_tps}
+
+For TPS, all $\pm$ values denote cross-seed sample standard deviations over the three \CI{} v15s seeds. The rule oracle in the TPS table is a label-function ceiling for the synthetic policy rules, not a model baseline and not evidence that an LLM has access to the hidden scalar.
 
 
 \section{Discussion}
@@ -329,7 +333,7 @@ The strongest evidence is not that the model prints accurate durations. It is th
 
 The results do not support claims of subjective time perception. The model does not maintain internal state during silent intervals; it conditions on an externally supplied scalar. The results also do not show that \CI{} is generally better than prompt timestamps. On direct time-recall tasks, prompt injection is simpler and stronger. Finally, T1 and T1b should not be presented as evidence of general time understanding because the same mapping can be approximated by a linear model over the engineered time encoding.
 
-\paragraph{TPS hidden-only test is negative.} The identical-prompt Temporal Policy Switching benchmark (Sec.~VI-G) is the strongest behavioral falsification test in the paper, and \CI{} does not pass it zero-shot. Across three seeds, hidden-only policy accuracy is $0.344\pm0.012$ versus vanilla 0.349, and refresh probability declines slightly with $\log\Tau$ (mean $r=-0.270$). The chrono-only ablation reaches 0.387 on hidden-only items, a modest gain that is not large enough to claim a behavioral contribution. The honest conclusion is that \CI{}, trained on CLOCK + SILENT-GAP + PHASE, transmits $\Tau$ to hidden states (Sec.~VI-A) but does not zero-shot transfer that signal into agent action selection on a cache / session / freshness policy axis. The paper therefore remains a mechanistic side-channel paper with respect to behavioral usefulness: downstream policy use of \CI{} is contingent on policy-specific training, which we leave to future work.
+\paragraph{TPS hidden-only test is negative.} The identical-prompt Temporal Policy Switching benchmark (Sec.~VI-G) is the strongest behavioral falsification test in the paper, and \CI{} does not pass it zero-shot. Across three seeds, hidden-only policy accuracy is $0.344\pm0.005$ versus vanilla 0.349, and refresh probability declines slightly with $\log\Tau$ (mean $r=-0.270$). The chrono-only ablation reaches 0.387 on hidden-only items, a modest gain that is not large enough to claim a behavioral contribution. The honest conclusion is that \CI{}, trained on CLOCK + SILENT-GAP + PHASE, transmits $\Tau$ to hidden states (Sec.~VI-A) but does not zero-shot transfer that signal into agent action selection on a cache / session / freshness policy axis. The paper therefore remains a mechanistic side-channel paper with respect to behavioral usefulness: downstream policy use of \CI{} is contingent on policy-specific training, which we leave to future work.
 
 \subsection{Implications}
 
@@ -339,9 +343,9 @@ The deployment implication is more cautious. Because $\Tau$ is supplied external
 
 \subsection{Limitations and threats to validity}
 
-The evaluation is narrow. Most results use one base-model family, Qwen 2.5, with three seeds on the 3B model and limited scale checks. The training tasks are synthetic and in-distribution over $[1\ \mathrm{s},7\ \mathrm{days}]$; extrapolation beyond this range fails. Some causal sign-flip results have small parseable effective sample sizes. TPDR is author-built and currently supports only one corrected metric.
+The evaluation is narrow. Most results use one base-model family, Qwen 2.5, with three seeds on the 3B model and limited scale checks. The training tasks are synthetic and in-distribution over $[1\ \mathrm{s},7\ \mathrm{days}]$; extrapolation beyond this range fails. Some causal sign-flip results have small parseable effective sample sizes. TPDR and TPS are author-built; TPDR v2 is seed-pair dependent, and TPS is negative for zero-shot policy transfer despite a rule-oracle ceiling.
 
-There are also baseline limitations. Prompt-injected $\Tau$ was tested in multiple formats and is strong on simple recall, but other alternatives such as learned soft prompts, continuous-value embeddings, prefix tuning, recurrent memory, or larger matched adapters remain open. These comparisons are necessary before making strong architectural superiority claims.
+There are also baseline limitations. Prompt-injected $\Tau$ was tested in multiple formats and is strong on simple recall and on the current \texttt{tau\_sessions} composite, but other alternatives such as learned soft prompts, continuous-value embeddings, prefix tuning, recurrent state, or larger matched adapters remain open. These comparisons are necessary before making strong architectural superiority claims.
 
 A further limitation is reproducibility. The current paper reports the main result families and ablations, but an external submission should include complete training and evaluation details in an appendix or artifact package. In particular, optimizer settings, seeds, hyperparameters, hardware, prompts, dataset-generation scripts, and probe splits should be released or specified.
 
@@ -349,9 +353,9 @@ A further limitation is reproducibility. The current paper reports the main resu
 
 This paper reframes chronometric injection as a causal elapsed-time conditioning channel for a frozen language model. The channel encodes real elapsed seconds, injects the encoding into the residual stream through zero-initialized FiLM gates, and leaves the base model unchanged. The main evidence is mechanistic: the time signal appears in hidden states only when the channel is active, survives removal of clock-readout supervision, collapses under zero-gate controls, and changes under sign-flip interventions.
 
-The defensible contribution is therefore precise: \CI{} shows that continuous elapsed time can be made into a traceable residual-stream input for a frozen LLM. The contribution is not a new FiLM primitive, not a proof of time perception, and not a universal improvement over prompt timestamps. The in-house behavioral tests show that the model can use the channel under trained conditions; the held-out tests reveal which behaviors are format recall; and TPDR provides one exploratory response-shape effect that requires replication.
+The defensible contribution is therefore precise: \CI{} shows that continuous elapsed time can be made into a traceable residual-stream input for a frozen LLM. The contribution is not a new FiLM primitive, not a proof of time perception, and not a universal improvement over prompt timestamps. The in-house behavioral tests show that the model can use the channel under trained conditions; the held-out tests reveal which behaviors are format recall; TPDR v2 provides a seed-pair-dependent exploratory response-shape effect; and the completed TPS benchmark is negative for zero-shot policy transfer.
 
-Future work should test the channel on more base-model families, larger models, external non-synthetic tasks, and stronger prompt or soft-prompt baselines. A second direction is to combine elapsed-time conditioning with persistent memory or recurrent state so that the model can reason over both externally supplied wall-clock time and internally stored session history. A third direction is to build benchmarks where elapsed time affects policy quality rather than duration reporting, because that is where residual-stream conditioning is most likely to matter.
+Future work should test the channel on more base-model families, larger models, external non-synthetic tasks, and stronger prompt or soft-prompt baselines. A second direction is to combine elapsed-time conditioning with persistent memory or recurrent state so that the model can reason over both externally supplied wall-clock time and internally stored session history. A third direction is to train and evaluate policy-specific elapsed-time tasks directly, because the completed TPS test shows that the current CLOCK + SILENT-GAP + PHASE training mix does not yield zero-shot policy use of the hidden scalar.
 
 \section*{Acknowledgment}
 

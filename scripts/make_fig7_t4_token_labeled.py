@@ -4,7 +4,7 @@ Reads reports/t4_labeled_v15s_seed0.json. Two side-by-side panels:
 left = clock prompt (chrono signal should fire on number+unit tokens),
 right = hello control prompt (chrono signal should be silent).
 
-Used in PAPER.md Section 24.7.16 to visualize that the multi-position KL
+Used by historical drafts to visualize that the multi-position KL
 pattern is mechanistically faithful — the chrono signal lands precisely
 on the tokens that should depend on tau.
 """

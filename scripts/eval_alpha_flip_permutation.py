@@ -3,7 +3,7 @@ For seed-0 checkpoint, run 50 random 17-of-35 subset flips and report
 the distribution of resulting Pearson r values. Also runs the targeted
 top-8 / bottom-8 / random-8 flips on seeds 1 and 2 to test cross-seed
 replication of mid-deep dominance.
-Output: reports/alpha_flip_permutation.json
+Output: pass --out explicitly, preferably under runs/<run_id>/reports/.
 """
 from __future__ import annotations
 import argparse, json, math, random, re, sys
@@ -126,7 +126,7 @@ def main():
     ap.add_argument("--device", default="mps")
     ap.add_argument("--n-tau", type=int, default=6)
     ap.add_argument("--n-permutations", type=int, default=20)
-    ap.add_argument("--out", default="reports/alpha_flip_permutation.json")
+    ap.add_argument("--out", required=True)
     args = ap.parse_args()
     tok = AutoTokenizer.from_pretrained(args.base)
     rng = random.Random(2026)

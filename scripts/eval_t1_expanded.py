@@ -1,7 +1,7 @@
 """W2: T1 effective-n expansion to 50 unique tau + bootstrap CI.
 Loads each cross-seed checkpoint, runs T1 on 50 log-uniform tau,
 reports Pearson r + bootstrap 95% CI per seed.
-Output: reports/t1_expanded_50tau.json
+Output: pass --out explicitly, preferably under runs/<run_id>/reports/.
 """
 from __future__ import annotations
 import argparse, json, math, random, re, sys
@@ -81,7 +81,7 @@ def main():
     ap.add_argument("--device", default="mps")
     ap.add_argument("--n-tau", type=int, default=50)
     ap.add_argument("--ckpt-glob", default="release_ckpts/qwen_time_v15s_*seed*.pt")
-    ap.add_argument("--out", default="reports/t1_expanded_50tau.json")
+    ap.add_argument("--out", required=True)
     args = ap.parse_args()
     tok = AutoTokenizer.from_pretrained(args.base)
     rng = random.Random(2026)

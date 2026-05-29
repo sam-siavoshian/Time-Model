@@ -7,7 +7,7 @@ and vanilla/prompt adapters (which do not).
 Usage:
   uv run python -m eval.tps.run_tps \
     --adapter ci --checkpoint /path/to/v15s_seed0.pt \
-    --items data/tps/items.jsonl --out reports/tps/ci_v15s_s0.json
+    --items runs/tps/data/tps/items.jsonl --out runs/tps/reports/tps/ci_v15s_s0.json
 """
 
 from __future__ import annotations

@@ -3,7 +3,7 @@
 Reads reports/alpha_norms_v15s_seed0.json (output of qwen_time_alpha_norms.py).
 Writes figures/fig6_alpha_norm_per_layer.png.
 
-Used in PAPER.md §24.7.11 to visualize that mid-deep layers L19-L28 dominate
+Used by historical drafts to visualize that mid-deep layers L19-L28 dominate
 the chrono signal and that top-8 inversion (vs bottom-8) is what collapses
 the alpha-flip correlation.
 """

@@ -1,39 +1,21 @@
-"""IPCN Track C: Qwen wrapped to EXPERIENCE TIME.
+"""QwenTime: frozen Qwen with trainable chronometric injection.
 
-Track A (102M from scratch) and Track B (Qwen + memory routing) both
-failed at memory-value retrieval -- the "what specific token" question.
-The paper's actual claim is time experience, not value recall.
+The v15 default architecture uses Qwen 2.5 3B-Instruct, 15 fixed
+timescales, a 31-dimensional chronometric encoder, AdaLN-Zero style FiLM
+injection on every decoder layer except the final layer, and LoRA rank 8.
 
-This module reframes the architecture around the FOUR operational
-properties of time (PAPER.md §1):
-  1. Causal ordering (A before B can influence future, not reverse)
-  2. Duration measurement (Delta-tau is detectable)
-  3. Multi-scale phase (same Delta-tau means different things at
-     different points in a cycle)
-  4. Persistence under no-input (tau advances even with no tokens)
+The implemented chronometric formula is intentionally:
 
-The four behavioral gaps to close (PAPER.md §7):
-  - No clock: model has no tau, only token position.
-  - No silent-gap awareness: gaps between inputs invisible.
-  - No self-rate awareness: model does not know its own throughput.
-  - No behavioral pressure: deadlines do not change behavior.
+    chi(tau) = [sin(tau / T_k), cos(tau / T_k), log1p(tau)]
 
-Architecture:
-  - Qwen 2.5 3B-Instruct (or 7B), frozen + LoRA (all 28 layers + head).
-  - Chronometric encoder: 13-scale sinusoidal + log1p(tau) = 27-dim chi.
-  - Layer-wise chrono injection: at EVERY decoder layer, an additive
-    bias derived from chi gets summed into the layer's hidden state.
-    The bias is per-position (same across all tokens of a chunk because
-    tau is per-chunk). Gate init = sigmoid(0) = 0.5 so the chrono signal
-    is half-strength from step 0.
-  - Memory bank kept for tau_write timestamps so we can also test
-    age-discount retrieval, but memory-to-output routing is no longer
-    the headline claim.
+for each timescale T_k. This code does not multiply by 2*pi; T_k is the
+scale divisor in radians, so the sinusoid's mathematical period is
+2*pi*T_k.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import Optional, Tuple
 
 import torch
@@ -41,21 +23,34 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+V15_BASE_MODEL_NAME = "Qwen/Qwen2.5-3B-Instruct"
+V15_TIMESCALES: Tuple[int, ...] = (
+    2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 4096, 16384, 65536, 86400, 604800
+)
+V15_CHUNK_LENGTH = 512
+V15_LORA_RANK = 8
+V15_INJECTION_TYPE = "film"
+V15_DATA_MIX: Tuple[float, float, float] = (0.40, 0.30, 0.30)
+V15_DEFAULT_SEEDS: Tuple[int, ...] = (0, 1, 2)
+QWEN_TIME_CONFIG_VERSION = 1
+CHRONO_FORMULA = "sin(tau / T), cos(tau / T), log1p(tau)"
+
+
 @dataclass
 class QwenTimeConfig:
-    base_model_name: str = "Qwen/Qwen2.5-3B-Instruct"
-    timescales: Tuple[int, ...] = (2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 4096, 16384, 65536)
-    inject_layers: Tuple[int, ...] = ()                        # () = inject at EVERY layer
-    lora_rank: int = 8
+    base_model_name: str = V15_BASE_MODEL_NAME
+    timescales: Tuple[int, ...] = V15_TIMESCALES
+    inject_layers: Tuple[int, ...] = ()                        # () = v15: all decoder layers except final
+    lora_rank: int = V15_LORA_RANK
     lora_layers: Tuple[int, ...] = ()                          # () = LoRA on ALL layers
     lora_targets: Tuple[str, ...] = ("q_proj", "k_proj", "v_proj", "o_proj")
     lora_lm_head: bool = True
     unfreeze_base: bool = False
-    chunk_length: int = 256
+    chunk_length: int = V15_CHUNK_LENGTH
     # Architectural ablation: "film" (default v15) or "additive".
     # "film" = h + alpha * (gamma * h + beta)        -- DiT AdaLN-Zero pattern
     # "additive" = h + alpha * (W_chi @ chi)         -- pure additive residual
-    injection_type: str = "film"
+    injection_type: str = V15_INJECTION_TYPE
     # When injection_type == "additive" and this is > 0, initialize
     # to_beta.bias to this constant so beta(chi) at step 0 is non-zero,
     # which gives d_out/d_alpha = beta != 0 and lets the additive variant
@@ -72,8 +67,73 @@ class QwenTimeConfig:
     use_ia3: bool = False
 
 
+def qwen_time_config_dict(cfg: QwenTimeConfig) -> dict:
+    """Primitive, checkpoint-safe representation of QwenTimeConfig."""
+    data = asdict(cfg)
+    return {
+        key: list(value) if isinstance(value, tuple) else value
+        for key, value in data.items()
+    }
+
+
+def qwen_time_checkpoint_metadata(
+    cfg: QwenTimeConfig,
+    resolved_inject_layers: Optional[Tuple[int, ...]] = None,
+) -> dict:
+    metadata = {
+        "qwen_time_config_version": QWEN_TIME_CONFIG_VERSION,
+        "chrono_formula": CHRONO_FORMULA,
+        "cfg": qwen_time_config_dict(cfg),
+    }
+    if resolved_inject_layers is not None:
+        metadata["resolved_inject_layers"] = list(resolved_inject_layers)
+    return metadata
+
+
+def resolve_inject_layers(cfg: QwenTimeConfig, n_layers: int) -> Tuple[int, ...]:
+    """Resolve the v15 empty-layer sentinel to all layers except final."""
+    if cfg.inject_layers:
+        return tuple(int(x) for x in cfg.inject_layers)
+    return tuple(range(max(n_layers - 1, 0)))
+
+
+def config_mismatch_report(expected: dict, observed: dict) -> list[str]:
+    """Return human-readable checkpoint config mismatches.
+
+    The loader uses this for checkpoints that include config metadata.
+    Historical checkpoints may only include a partial ``cfg`` dict, so the
+    comparison is intentionally limited to keys that are present in the
+    observed checkpoint.
+    """
+    mismatches: list[str] = []
+    expected_cfg = expected.get("cfg", expected)
+    observed_cfg = observed.get("cfg", observed)
+    for key, observed_value in observed_cfg.items():
+        if key not in expected_cfg:
+            continue
+        expected_value = expected_cfg[key]
+        if isinstance(expected_value, tuple):
+            expected_value = list(expected_value)
+        if isinstance(observed_value, tuple):
+            observed_value = list(observed_value)
+        if expected_value != observed_value:
+            mismatches.append(f"{key}: checkpoint={observed_value!r} current={expected_value!r}")
+
+    expected_layers = expected.get("resolved_inject_layers")
+    observed_layers = observed.get("resolved_inject_layers")
+    if observed_layers is not None and expected_layers is not None and observed_layers != expected_layers:
+        mismatches.append(
+            f"resolved_inject_layers: checkpoint={observed_layers!r} current={expected_layers!r}"
+        )
+    return mismatches
+
+
 class _Chronometric(nn.Module):
-    """Multi-scale sinusoidal + log1p(tau). Output dim = 2*N_scales + 1."""
+    """Multi-scale sin(tau/T), cos(tau/T) + log1p(tau).
+
+    Output dim = 2*N_scales + 1. There is no 2*pi multiplier in this
+    implementation; T is a divisor in radians, so period is 2*pi*T.
+    """
 
     def __init__(self, timescales: Tuple[int, ...]):
         super().__init__()
@@ -221,9 +281,9 @@ class QwenTime(nn.Module):
         except AttributeError:
             self._layers = self.base.transformer.h
         n_layers = len(self._layers)
-        # Skip the LAST layer: RMSNorm + lm_head at the end would attenuate
-        # the injected bias to near-noise. Inject up to penultimate.
-        inject_layers = cfg.inject_layers if cfg.inject_layers else tuple(range(n_layers - 1))
+        # v15 skips the LAST layer: RMSNorm + lm_head at the end would attenuate
+        # the injected bias to near-noise. Inject up to penultimate by default.
+        inject_layers = resolve_inject_layers(cfg, n_layers)
         # One injector per layer (injection_type set per ablation).
         injection_type = getattr(cfg, "injection_type", "film")
         additive_beta_init = float(getattr(cfg, "additive_beta_init", 0.0))
@@ -244,6 +304,9 @@ class QwenTime(nn.Module):
         # Register hooks.
         self._hook_handles = []
         self._register_chrono_hooks()
+
+    def checkpoint_metadata(self) -> dict:
+        return qwen_time_checkpoint_metadata(self.cfg, tuple(self._inject_layers))
 
     def _apply_ia3(self):
         """W9 fix: IA3 multiplicative-scaling PEFT baseline.

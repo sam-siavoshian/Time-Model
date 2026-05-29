@@ -1,13 +1,13 @@
 """TPS analysis.
 
-Reads reports/tps/<adapter>.json (one per adapter), computes:
+Reads an explicit list or run directory of reports/tps/<adapter>.json files, computes:
   - per-adapter policy accuracy (overall, per condition, per family, held-in vs held-out)
   - balanced accuracy across the 4 action classes
   - monotonicity r = corr(log_tau, P_REFRESH) within hidden_only condition
   - conflict scalar-follow rate vs prompt-follow rate vs abstain rate
   - cross-seed mean/std for v15s seeds
 
-Writes reports/tps/headline.json with the consolidated numbers.
+Writes a consolidated headline JSON.
 """
 
 from __future__ import annotations
@@ -18,6 +18,7 @@ import json
 import math
 import os
 from collections import defaultdict
+from pathlib import Path
 from typing import Any, Iterable
 
 
@@ -163,38 +164,96 @@ def aggregate_seeds(runs: list[dict]) -> dict[str, float]:
     n = len(accs)
     if n == 0:
         return {"mean": float("nan"), "std": float("nan"), "n": 0}
-    mean = sum(accs) / n
-    var = sum((a - mean) ** 2 for a in accs) / max(n - 1, 1) if n > 1 else 0.0
-    return {"mean": mean, "std": math.sqrt(var), "n": n,
-            "hidden_only_mean": sum(r["metrics"]["by_condition"]["hidden_only"]["policy_acc"] for r in runs) / n,
-            "monotonicity_mean": sum(r["metrics"]["monotonicity"]["r_log_tau_vs_p_refresh"] for r in runs) / n}
+    hidden_accs = [r["metrics"]["by_condition"]["hidden_only"]["policy_acc"] for r in runs]
+    monotonicities = [r["metrics"]["monotonicity"]["r_log_tau_vs_p_refresh"] for r in runs]
+
+    def mean_std(vals: list[float]) -> tuple[float, float]:
+        mean = sum(vals) / len(vals)
+        var = sum((v - mean) ** 2 for v in vals) / max(len(vals) - 1, 1) if len(vals) > 1 else 0.0
+        return mean, math.sqrt(var)
+
+    mean, std = mean_std(accs)
+    hidden_mean, hidden_std = mean_std(hidden_accs)
+    mono_mean, mono_std = mean_std(monotonicities)
+    return {
+        "mean": mean,
+        "std": std,
+        "n": n,
+        "hidden_only_mean": hidden_mean,
+        "hidden_only_std": hidden_std,
+        "monotonicity_mean": mono_mean,
+        "monotonicity_std": mono_std,
+    }
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--input-glob", default="reports/tps/*.json")
-    ap.add_argument("--out", default="reports/tps/headline.json")
+    src = ap.add_mutually_exclusive_group(required=True)
+    src.add_argument("--inputs", nargs="+",
+                     help="Explicit TPS run JSON files to analyze.")
+    src.add_argument("--run-dir",
+                     help="Directory containing exactly the TPS run JSONs for one run.")
+    src.add_argument("--run-id",
+                     help="Run id under runs/<run-id>/reports/tps/.")
+    src.add_argument("--input-glob",
+                     help="Explicit glob for compatibility. Prefer --inputs or --run-dir.")
+    ap.add_argument("--out",
+                    help="Output headline JSON. Defaults to <run-dir>/headline.json for "
+                         "--run-dir/--run-id; required for --inputs/--input-glob.")
     args = ap.parse_args()
 
-    files = sorted(glob.glob(args.input_glob))
+    root = Path(__file__).resolve().parents[2]
+    if args.inputs:
+        files = args.inputs
+        if args.out is None:
+            raise SystemExit("--out is required when using --inputs")
+    elif args.run_id:
+        run_dir = root / "runs" / args.run_id / "reports" / "tps"
+        if not run_dir.is_dir():
+            raise SystemExit(f"run TPS report directory does not exist: {run_dir}")
+        files = sorted(str(p) for p in run_dir.glob("*.json"))
+        if args.out is None:
+            args.out = str(run_dir / "headline.json")
+    elif args.run_dir:
+        run_dir = Path(args.run_dir)
+        if not run_dir.is_absolute():
+            run_dir = root / run_dir
+        files = sorted(str(p) for p in run_dir.glob("*.json"))
+        if args.out is None:
+            args.out = str(run_dir / "headline.json")
+    else:
+        files = sorted(glob.glob(args.input_glob))
+        if args.out is None:
+            raise SystemExit("--out is required when using --input-glob")
+
+    files = [str(Path(f) if Path(f).is_absolute() else root / f) for f in files]
     files = [f for f in files if os.path.basename(f) not in {"headline.json", "baselines.json"}
              and not os.path.basename(f).startswith("SMOKE_")
              and not os.path.basename(f).startswith("_PARTIAL_")]
     if not files:
-        raise SystemExit(f"no run files matched {args.input_glob}")
+        raise SystemExit("no TPS run files matched the explicit input selection")
+
+    missing = [f for f in files if not Path(f).is_file()]
+    if missing:
+        raise SystemExit("missing input files:\n  " + "\n  ".join(missing))
 
     per_adapter: dict[str, Any] = {}
     for f in files:
         tag = os.path.splitext(os.path.basename(f))[0]
+        if tag in per_adapter:
+            raise SystemExit(f"duplicate TPS tag from input files: {tag}")
         per_adapter[tag] = analyze_run(f)
 
     ci_seeds = [v for k, v in per_adapter.items() if k.startswith("ci_v15s_s")]
     ci_agg = aggregate_seeds(ci_seeds) if ci_seeds else None
 
     headline = {
+        "input_files": [str(Path(f).relative_to(root)) if Path(f).is_relative_to(root) else f
+                        for f in files],
         "per_adapter": per_adapter,
         "ci_v15s_crossseed": ci_agg,
     }
+    Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     with open(args.out, "w") as fh:
         json.dump(headline, fh, indent=2)
     print(f"wrote {args.out}")

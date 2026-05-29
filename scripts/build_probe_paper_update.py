@@ -1,7 +1,7 @@
 """Generate the section 5.2 update paragraph for the paper, using the
 three clock-heldout probe results.
 
-Pre-registered in PREREGISTRATION_v2.md section 2.4. Outputs a LaTeX
+Pre-registered in docs/experiments/current/PREREGISTRATION_v2.md section 2.4. Outputs a LaTeX
 fragment to paper/_5_2_update.tex (intermediate file; the actual
 edits to main.tex are made by hand against this output).
 """

@@ -26,6 +26,8 @@ FIG.mkdir(exist_ok=True)
 def _load(name):
     p = REP / name
     if not p.exists():
+        p = REP / "archive" / "model_versions_v10_v14" / name
+    if not p.exists():
         return None
     with open(p) as f:
         return json.load(f)

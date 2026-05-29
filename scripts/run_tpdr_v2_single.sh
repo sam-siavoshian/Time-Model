@@ -1,20 +1,27 @@
 #!/usr/bin/env bash
 # Single-pair TPDR runner for parallel execution.
-# Usage: bash scripts/run_tpdr_v2_single.sh <CI_SEED> <PR_SEED>
+# Usage: bash scripts/run_tpdr_v2_single.sh --run-id <id> <CI_SEED> <PR_SEED>
 #
 # Same pre-reg parameters as scripts/run_tpdr_v2_prereg.sh
 # (200 scen, 10 tau, max_new=150, greedy) but only runs ONE seed pair.
 # Used to parallelize the headline + cross-seed pairs once GPU clears.
 set -euo pipefail
-cd "$HOME/Time-Model" 2>/dev/null || cd "$HOME/Desktop/Time-Model" 2>/dev/null || cd "$HOME/ipcn"
+SCRIPT_PATH="${BASH_SOURCE[0]}"
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+source "$REPO_ROOT/scripts/lib/run_context.sh"
+time_model_init_run "$@"
+set -- "${RUN_CONTEXT_ARGS[@]}"
+cd "$REPO_ROOT"
 export PATH="$HOME/.local/bin:$PATH"
 export PYTHONUNBUFFERED=1
-mkdir -p logs reports/tpdr_crossseed
+TPDR_REPORT_DIR="$REPORT_DIR/tpdr_crossseed"
+mkdir -p "$TPDR_REPORT_DIR"
 
 CI_SEED=${1:?Usage: $0 CI_SEED PR_SEED}
 PR_SEED=${2:?Usage: $0 CI_SEED PR_SEED}
-OUT="reports/tpdr_crossseed/tpdr_v2_seed${CI_SEED}_pair${CI_SEED}.json"
-LOG="logs/tpdr_v2_seed${CI_SEED}_pair${CI_SEED}.log"
+OUT="$TPDR_REPORT_DIR/tpdr_v2_seed${CI_SEED}_pair${CI_SEED}.json"
+LOG="$LOG_DIR/tpdr_v2_seed${CI_SEED}_pair${CI_SEED}.log"
 
 if [ -s "$OUT" ]; then
     echo "[skip] $OUT already exists"; exit 0
@@ -39,6 +46,7 @@ stdbuf -oL -eL uv run python -u eval/tpdr/run_tpdr.py \
 
 if [ -s "$OUT" ]; then
     echo "[done] $OUT written" | tee -a "$LOG"
+    time_model_manifest "$SCRIPT_PATH" "done"
 else
     echo "[FAIL] $OUT was not written" | tee -a "$LOG"
     exit 1

@@ -5,7 +5,8 @@ Then report:
   per-scenario tau elasticity for each metric and adapter
   pooled correlations across all 50 scenarios
   CI vs prompt vs vanilla on every metric
-Output: reports/tpdr_results.json
+The output path is required so ad-hoc TPDR reruns cannot overwrite the
+archived v1 result name.
 """
 from __future__ import annotations
 import argparse, json, math, re, sys
@@ -103,7 +104,7 @@ def main():
     ap.add_argument("--n-tau", type=int, default=10)
     ap.add_argument("--n-scenarios", type=int, default=50)
     ap.add_argument("--max-new", type=int, default=200)
-    ap.add_argument("--out", default="reports/tpdr_results.json")
+    ap.add_argument("--out", required=True)
     args = ap.parse_args()
 
     scenarios = get_scenarios()[:args.n_scenarios]

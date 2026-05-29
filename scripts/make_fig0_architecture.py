@@ -65,12 +65,12 @@ def main() -> None:
         subtext="wall clock since session start", fontsize=10)
     box(ax, 0.4, 3.5, 2.2, 1.4,
         "chrono encoder", CHRONO,
-        subtext="27-dim: 13 sin + 13 cos + log(1+tau)",
+        subtext="31-dim: 15 sin + 15 cos + log(1+tau)",
         fontsize=11, italic_sub=False)
     arrow(ax, 1.5, 5.18, 1.5, 4.93, color=CHRONO, lw=1.6)
 
     # chi_t label
-    ax.text(1.5, 3.30, r"$\chi_t \in \mathbb{R}^{27}$",
+    ax.text(1.5, 3.30, r"$\chi_t \in \mathbb{R}^{31}$",
             color=CHRONO, ha="center", va="top", fontsize=11, fontweight="bold")
 
     # chi bus vertical down to layer column

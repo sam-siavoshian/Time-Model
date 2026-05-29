@@ -68,7 +68,7 @@ def main():
     ap.add_argument("--n-tau", type=int, default=24)
     ap.add_argument("--n-sample-per-tau", type=int, default=20)
     ap.add_argument("--temperature", type=float, default=0.7)
-    ap.add_argument("--out", default="reports/t1_sampling_v15s_seed0.json")
+    ap.add_argument("--out", required=True)
     args = ap.parse_args()
     tok = AutoTokenizer.from_pretrained(args.base)
     ck = torch.load(args.ckpt, map_location="cpu", weights_only=False)

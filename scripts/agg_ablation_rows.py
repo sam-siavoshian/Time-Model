@@ -1,5 +1,5 @@
 """Aggregate T1-T4 metrics across seeds for the 4 ablation conditions
-in Table 3 (PREREGISTRATION_v2.md section 3.4).
+in Table 3 (docs/experiments/current/PREREGISTRATION_v2.md section 3.4).
 
 Outputs:
   - mean +/- std per metric per condition

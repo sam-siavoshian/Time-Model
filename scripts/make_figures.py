@@ -29,6 +29,8 @@ FIG.mkdir(exist_ok=True)
 def _load(name: str):
     p = REP / name
     if not p.exists():
+        p = REP / "archive" / "model_versions_v10_v14" / name
+    if not p.exists():
         print(f"  missing: {p}")
         return None
     with open(p) as f:

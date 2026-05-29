@@ -1,6 +1,7 @@
 """Stripped TPDR runner for the vanilla-baseline diagnostic ONLY.
 
-Pre-registered in PREREGISTRATION_v2.md section 1.8 as configuration (b).
+Pre-registered in docs/experiments/current/PREREGISTRATION_v2.md section 1.8
+as configuration (b).
 
 Differences from run_tpdr.py:
   - No chat template wrapping. The model receives the raw scenario text

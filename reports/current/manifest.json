@@ -1,0 +1,408 @@
+{
+  "schema_version": 1,
+  "generated_for": "artifact/report centralization",
+  "generated_date": "2026-05-29",
+  "policy": {
+    "moves_performed": true,
+    "source_of_truth": "Use this manifest before citing reports. Historical and superseded files have been moved under docs/history or reports/archive with MANIFEST files.",
+    "status_values": [
+      "current",
+      "current_with_caveat",
+      "superseded",
+      "contaminated",
+      "historical"
+    ]
+  },
+  "current": {
+    "v15_cross_seed": {
+      "status": "current",
+      "claim": "Main v15 3B cross-seed results for T1, T1b, T2, T3, and T4.",
+      "canonical_report": "reports/v15_cross_seed_aggregate.json",
+      "raw_inputs": [
+        "reports/qwen_time_v15s_20260523_141410_seed0_recall.json",
+        "reports/qwen_time_v15s_20260523_141410_seed1_recall.json",
+        "reports/qwen_time_v15s_20260523_141410_seed2_recall.json"
+      ],
+      "generator": "scripts/aggregate_seeds.py",
+      "paper_locations": [
+        "paper/main.tex",
+        "README.md",
+        "docs/history/PAPER.md"
+      ],
+      "caveats": [
+        "T3 is a binary per-seed outcome and should be reported as pass count, not a Gaussian summary."
+      ]
+    },
+    "probes": {
+      "status": "current",
+      "claim": "Tau is recoverable from hidden states when the chrono channel is active, and the within-distribution probe is the preferred probe framing.",
+      "canonical_reports": [
+        "reports/probe_per_layer_v15s_s0.json",
+        "reports/probe_within_dist_v15s_seed0.json"
+      ],
+      "supporting_reports": [
+        "reports/probe_v5_clamped_v15s_seed0.json"
+      ],
+      "paper_locations": [
+        "paper/main.tex",
+        "paper/_5_2_update.tex",
+        "docs/history/PAPER.md",
+        "docs/history/REVIEWER_RESPONSE.md"
+      ],
+      "caveats": [
+        "Older OOD probe iterations with extreme negative R2 are historical and partly reflect ridge-solver pathology."
+      ]
+    },
+    "clock_heldout": {
+      "status": "current",
+      "claim": "CLOCK-heldout training preserves the L1 tau probe axis; T2 and T4 survive CLOCK removal while T1/T1b fail as format recall.",
+      "canonical_reports": [
+        "reports/probe_per_layer_clock_heldout_s0.json",
+        "reports/probe_per_layer_clock_heldout_s1.json",
+        "reports/probe_per_layer_clock_heldout_s2.json"
+      ],
+      "behavior_reports": [
+        "reports/clock_heldout_s0_recall.json",
+        "reports/clock_heldout_s1_recall.json",
+        "reports/clock_heldout_s2_recall.json"
+      ],
+      "generator": "scripts/build_probe_paper_update.py",
+      "figure_inputs": [
+        "reports/probe_per_layer_v15s_s0.json",
+        "reports/probe_per_layer_clock_heldout_s0.json",
+        "reports/probe_per_layer_clock_heldout_s1.json",
+        "reports/probe_per_layer_clock_heldout_s2.json"
+      ],
+      "paper_locations": [
+        "paper/main.tex",
+        "paper/_5_2_update.tex"
+      ]
+    },
+    "tps": {
+      "status": "current_with_caveat",
+      "claim": "Temporal Policy Switching is a negative zero-shot policy-use result for CI v15s.",
+      "canonical_report": "reports/tps/headline.json",
+      "baseline_report": "reports/tps/baselines.json",
+      "raw_inputs": [
+        "reports/tps/vanilla.json",
+        "reports/tps/chrono_only_s0.json",
+        "reports/tps/ci_v15s_s0.json",
+        "reports/tps/ci_v15s_s1.json",
+        "reports/tps/ci_v15s_s2.json"
+      ],
+      "generators": [
+        "eval/tps/run_tps.py",
+        "eval/tps/analyze.py",
+        "eval/tps/classifier_baseline.py",
+        "scripts/build_tps_paper_update.py",
+        "scripts/plot_tps_monotonicity.py"
+      ],
+      "paper_locations": [
+        "paper/_6g_tps.tex",
+        "paper/main.tex"
+      ],
+      "caveats": [
+        "reports/tps/headline.json now stores hidden_only_std separately; cite that for hidden-only uncertainty.",
+        "reports/tps/baselines.json has rule_oracle.hidden_only = 1.0 but rule_oracle.all = 0.8287037037037037; paper table wording should distinguish conceptual effective-tau oracle from implemented tau_ci oracle.",
+        "H2 monotonicity is currently P(REFRESH), not family-specific long-side action."
+      ]
+    },
+    "tpdr_v2": {
+      "status": "current_with_caveat",
+      "claim": "Pre-registered TPDR v2 headline confirms the seed0 primary endpoint; seed1 and seed2 are mixed cross-seed replications.",
+      "canonical_report": "reports/tpdr_v2_headline.json",
+      "raw_inputs": [
+        "reports/tpdr_crossseed/tpdr_v2_seed0_pair0.json",
+        "reports/tpdr_crossseed/tpdr_v2_seed1_pair1.json",
+        "reports/tpdr_crossseed/tpdr_v2_seed2_pair2.json"
+      ],
+      "generators": [
+        "eval/tpdr/analyze_v2.py",
+        "scripts/build_tpdr_paper_update.py"
+      ],
+      "paper_locations": [
+        "paper/_9_update.tex",
+        "paper/main.tex"
+      ],
+      "caveats": [
+        "paper/main.tex now reports TPDR v2 as seed-pair-dependent rather than broad confirmation."
+      ]
+    },
+    "external_tau_sessions": {
+      "status": "current_with_caveat",
+      "claim": "External tau_sessions adapter comparison across vanilla, prompt, and CI.",
+      "canonical_reports": [
+        "reports/ext_bench_vanilla.json",
+        "reports/ext_bench_prompt.json",
+        "reports/ext_bench_ci.json"
+      ],
+      "generator": "scripts/run_external_bench.sh",
+      "dataset": "eval/external/datasets/tau_sessions.jsonl",
+      "paper_locations": [
+        "paper/main.tex",
+        "README.md",
+        "docs/history/PAPER.md"
+      ],
+      "caveats": [
+        "Current report summaries show prompt composite_score 0.5203757556666552, CI composite_score 0.37748896668576826, vanilla composite_score 0.245.",
+        "Current report summaries show adaptive pearson_r prompt 0.11495861211436519, CI -0.049712302807259384, vanilla -0.008026267414747297; paper/main.tex has been updated to treat this as a negative CI result."
+      ]
+    },
+    "ablations_and_controls": {
+      "status": "current",
+      "claim": "Control and ablation artifacts supporting chrono-channel necessity, PEFT interchangeability, and response-shape caveats.",
+      "groups": {
+        "lora_only_zero_alpha": [
+          "reports/qwen_time_lora_only_20260523_182213_recall.json",
+          "reports/qwen_time_lora_only_seeds_20260524_033704_seed1_recall.json",
+          "reports/qwen_time_lora_only_seeds_20260524_033704_seed2_recall.json"
+        ],
+        "chrono_only_no_lora": [
+          "reports/chrono_only_s0_recall.json",
+          "reports/chrono_only_s1_recall.json",
+          "reports/chrono_only_s2_recall.json"
+        ],
+        "l0_only": [
+          "reports/qwen_time_l0_only_20260524_055911_recall.json",
+          "reports/qwen_time_l0_only_seed1_20260524_201545_recall.json",
+          "reports/qwen_time_l0_only_seed2_20260524_212404_recall.json"
+        ],
+        "additive_original": [
+          "reports/qwen_time_additive_20260524_070829_recall.json",
+          "reports/qwen_time_additive_seed1_20260524_223303_recall.json",
+          "reports/qwen_time_additive_seed2_20260524_234340_recall.json"
+        ],
+        "additive_nonzero_beta": [
+          "reports/additive_nonzero_beta_s0_recall.json",
+          "reports/additive_nonzero_beta_s1_recall.json",
+          "reports/additive_nonzero_beta_s2_recall.json"
+        ],
+        "ia3": [
+          "reports/ia3_with_chrono_s0_recall.json",
+          "reports/ia3_with_chrono_s1_recall.json",
+          "reports/ia3_with_chrono_s2_recall.json",
+          "reports/ia3_only_s0_recall.json",
+          "reports/ia3_only_s1_recall.json",
+          "reports/ia3_only_s2_recall.json"
+        ],
+        "alpha_norms_and_flips": [
+          "reports/alpha_norms_cross_seed.json",
+          "reports/alpha_norms_v15s_seed0.json",
+          "reports/alpha_flip_permutation.json",
+          "reports/alpha_flip_permutation_100.json"
+        ],
+        "extra_controls": [
+          "reports/extra_controls_v2_v15s_seed0.json",
+          "reports/extra_controls_v15s_seed0.json",
+          "reports/extra_controls_prompt_baseline_s0_teacher.json",
+          "reports/extra_controls_v15s_s0_teacher.json",
+          "reports/t2t3_sampling_v15s_seed0.json",
+          "reports/t1_expanded_50tau.json",
+          "reports/t1_sampling_v15s_seed0.json",
+          "reports/t4_per_position_crossseed_corrected.json",
+          "reports/t4_labeled_v15s_seed0.json",
+          "reports/mlp_baseline_chi_to_bucket.json",
+          "reports/real_t1_multi_tau.json",
+          "reports/robustness_v15s_seed0.json"
+        ],
+        "prompt_text_baselines": [
+          "reports/prompt_baseline_injected_s0_recall.json",
+          "reports/prompt_baseline_injected_s1_recall.json",
+          "reports/prompt_baseline_injected_s2_recall.json",
+          "reports/prompt_iso_s0_recall.json",
+          "reports/prompt_nl_s0_recall.json"
+        ],
+        "heldout_supervision": [
+          "reports/silentgap_heldout_s0_recall.json",
+          "reports/silentgap_heldout_s1_recall.json",
+          "reports/silentgap_heldout_s2_recall.json",
+          "reports/t3_heldout_s0_recall.json"
+        ],
+        "historical_disproof_battery": [
+          "reports/disproof_20260522_224016_falsify.json",
+          "reports/disproof_20260522_224016_pressure.json",
+          "reports/disproof_20260522_224016_probe.json",
+          "reports/bootstrap_CIs.json"
+        ],
+        "scale_and_budget_checks": [
+          "reports/qwen_time_3b_24k_s0_recall.json",
+          "reports/scale_7b_18k_s0_recall.json",
+          "reports/scale_7b_20260523_010310_recall.json",
+          "reports/scale_7b_24k_20260524_180844_recall.json"
+        ],
+        "negative_ood_and_scale": [
+          "reports/qwen_time_v15_20260523_121811_pressure_v2.json",
+          "reports/qwen_time_v15_20260523_121811_genuine_ood.json",
+          "reports/scale_7b_24k_20260524_180844_recall.json"
+        ]
+      }
+    }
+  },
+  "non_current": {
+    "contaminated": [
+      {
+        "path": "reports/archive/superseded_prompt_baseline/prompt.json",
+        "original_path": "reports/tps/prompt.json",
+        "reason": "TPS standalone PromptAdapter run was double-prefixed and should not be used in paper tables.",
+        "successor": "Use reports/tps/vanilla.json prompt_only condition for the clean prompt-text baseline.",
+        "evidence": [
+          "reports/archive/superseded_prompt_baseline/prompt.log",
+          "scripts/build_tps_paper_update.py"
+        ]
+      }
+    ],
+    "superseded": [
+      {
+        "path": "reports/archive/superseded_prompt_baseline/prompt_baseline_s0_recall.json",
+        "original_path": "reports/prompt_baseline_s0_recall.json",
+        "reason": "Prompt-baseline eval was run without injected prompt time and collapses to canned outputs.",
+        "successor": "reports/prompt_baseline_injected_s0_recall.json"
+      },
+      {
+        "path": "reports/archive/tpdr_v1/tpdr_results.json",
+        "original_path": "reports/tpdr_results.json",
+        "reason": "Older TPDR v1 sweep superseded by pre-registered TPDR v2.",
+        "successor": "reports/tpdr_v2_headline.json"
+      },
+      {
+        "path": "reports/archive/tpdr_v1/tpdr_paired_tests.json",
+        "original_path": "reports/tpdr_paired_tests.json",
+        "reason": "Older TPDR v1 paired tests superseded by corrected Holm file and then TPDR v2.",
+        "successor": "reports/tpdr_v2_headline.json"
+      },
+      {
+        "path": "reports/archive/tpdr_v1/tpdr_paired_tests_holm.json",
+        "original_path": "reports/tpdr_paired_tests_holm.json",
+        "reason": "Earlier Holm pass contained p-value/reporting issues later corrected.",
+        "successor": "reports/archive/tpdr_v1/tpdr_paired_tests_holm_corrected.json"
+      },
+      {
+        "path": "reports/archive/tpdr_v1/tpdr_paired_tests_holm_corrected.json",
+        "original_path": "reports/tpdr_paired_tests_holm_corrected.json",
+        "reason": "Corrected TPDR v1 analysis retained for provenance but superseded by pre-registered TPDR v2.",
+        "successor": "reports/tpdr_v2_headline.json"
+      }
+    ],
+    "historical": [
+      {
+        "glob": "reports/archive/ipcn_memory/qwen_recall*.json",
+        "reason": "Abandoned IPCN/memory-routing track retained as negative-result provenance."
+      },
+      {
+        "glob": "reports/archive/ipcn_memory/alerts_ipcn_*.jsonl",
+        "reason": "Abandoned IPCN/memory-routing diagnostics retained as provenance."
+      },
+      {
+        "glob": "reports/archive/model_versions_v10_v14/qwen_time_v10*_recall.json",
+        "reason": "Early model-version artifact retained for development history."
+      },
+      {
+        "glob": "reports/archive/model_versions_v10_v14/qwen_time_v11_recall.json",
+        "reason": "Historical v11 anchor retained for disproof-battery narrative."
+      },
+      {
+        "glob": "reports/archive/model_versions_v10_v14/qwen_time_v12*_recall.json",
+        "reason": "Historical model-version artifact retained for development history."
+      },
+      {
+        "glob": "reports/archive/model_versions_v10_v14/qwen_time_v13*_recall.json",
+        "reason": "Historical model-version artifact retained for development history."
+      },
+      {
+        "glob": "reports/archive/model_versions_v10_v14/qwen_time_v14*_recall.json",
+        "reason": "Historical model-version artifact retained for development history."
+      },
+      {
+        "path": "reports/qwen_time_v15_20260523_121811_recall.json",
+        "reason": "Single-anchor v15 result retained for narrative, but cross-seed v15s is current."
+      },
+      {
+        "glob": "reports/archive/ipcn_memory/untrained_baseline*",
+        "reason": "Early baseline snapshots retained for provenance."
+      },
+      {
+        "glob": "reports/probe_v2_*.json",
+        "reason": "Earlier probe iteration retained for provenance."
+      },
+      {
+        "glob": "reports/probe_v3_*.json",
+        "reason": "Earlier probe iteration retained for provenance."
+      },
+      {
+        "glob": "reports/probe_v4_*.json",
+        "reason": "Earlier probe iteration retained for provenance."
+      },
+      {
+        "glob": "reports/probe_mlp*.json",
+        "reason": "MLP probe overfit diagnostics retained for provenance."
+      },
+      {
+        "path": "reports/EXPERIMENTS.md",
+        "reason": "Historical experiment ledger retained for provenance; current entrypoint is ARTIFACT.md."
+      },
+      {
+        "path": "reports/feature_importance.md",
+        "reason": "Historical analysis note retained for provenance; not a current paper claim."
+      },
+      {
+        "path": "reports/qwen_recall_baseline.json",
+        "reason": "Early baseline retained for provenance; not a current paper claim."
+      },
+      {
+        "glob": "reports/*_DONE.txt",
+        "reason": "Legacy success sentinels retained for provenance; run-scoped reruns should write under runs/<run_id>/."
+      },
+      {
+        "glob": "reports/tps/*.log",
+        "reason": "TPS sweep logs retained for provenance; current TPS evidence is reports/tps/headline.json and reports/tps/baselines.json."
+      },
+      {
+        "path": "reports/tps/SWEEP_DONE.txt",
+        "reason": "Legacy TPS sweep sentinel retained for provenance."
+      }
+    ]
+  },
+  "archives": [
+    {
+      "target_folder": "reports/archive/ipcn_memory/",
+      "manifest": "reports/archive/ipcn_memory/MANIFEST.md",
+      "include": [
+        "reports/archive/ipcn_memory/qwen_recall*.json",
+        "reports/archive/ipcn_memory/alerts_ipcn_*.jsonl",
+        "reports/archive/ipcn_memory/phase0_baseline.*",
+        "reports/archive/ipcn_memory/untrained_baseline*"
+      ]
+    },
+    {
+      "target_folder": "reports/archive/model_versions_v10_v14/",
+      "manifest": "reports/archive/model_versions_v10_v14/MANIFEST.md",
+      "include": [
+        "reports/archive/model_versions_v10_v14/qwen_time_v10*_recall.json",
+        "reports/archive/model_versions_v10_v14/qwen_time_v11_recall.json",
+        "reports/archive/model_versions_v10_v14/qwen_time_v12*",
+        "reports/archive/model_versions_v10_v14/qwen_time_v13*",
+        "reports/archive/model_versions_v10_v14/qwen_time_v14*"
+      ]
+    },
+    {
+      "target_folder": "reports/archive/tpdr_v1/",
+      "manifest": "reports/archive/tpdr_v1/MANIFEST.md",
+      "include": [
+        "reports/archive/tpdr_v1/tpdr_results.json",
+        "reports/archive/tpdr_v1/tpdr_paired_tests.json",
+        "reports/archive/tpdr_v1/tpdr_paired_tests_holm.json",
+        "reports/archive/tpdr_v1/tpdr_paired_tests_holm_corrected.json",
+        "reports/archive/tpdr_v1/tpdr_vanilla_diagnostic_curconf.json"
+      ]
+    },
+    {
+      "target_folder": "reports/archive/superseded_prompt_baseline/",
+      "manifest": "reports/archive/superseded_prompt_baseline/MANIFEST.md",
+      "include": [
+        "reports/archive/superseded_prompt_baseline/prompt_baseline_s0_recall.json",
+        "reports/archive/superseded_prompt_baseline/prompt.json",
+        "reports/archive/superseded_prompt_baseline/prompt.log"
+      ]
+    }
+  ]
+}

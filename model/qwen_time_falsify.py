@@ -94,7 +94,7 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("--checkpoint", type=str, required=True)
     p.add_argument("--device", type=str, default="cuda")
-    p.add_argument("--out", type=str, default="reports/qwen_time_v11_falsify.json")
+    p.add_argument("--out", type=str, required=True)
     p.add_argument("--base", type=str, default="Qwen/Qwen2.5-3B-Instruct")
     p.add_argument("--seed", type=int, default=99)
     args = p.parse_args()

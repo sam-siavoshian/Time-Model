@@ -19,15 +19,17 @@ Two ceilings to anchor the LLM results:
      alone without seeing the prompt text. If yes, then beating the
      classifier is the bar a real model must clear.
 
-Writes reports/tps/baselines.json.
+Writes to an explicit output path or `runs/<run-id>/reports/tps/baselines.json`.
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import math
 import os
 import sys
+from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
@@ -106,6 +108,16 @@ def rule_oracle(items: list[dict]) -> list[str]:
 
 
 def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--out", default=None)
+    ap.add_argument("--run-id", default=None,
+                    help="Write to runs/<run-id>/reports/tps/baselines.json when --out is omitted.")
+    args = ap.parse_args()
+    if args.out is None:
+        if args.run_id is None:
+            raise SystemExit("output scope required: pass --out or --run-id")
+        args.out = str(Path("runs") / args.run_id / "reports" / "tps" / "baselines.json")
+
     items = [i.to_dict() for i in iter_items()]
     # Train/eval splits: train on held-in templates (0..7), held-in families (excl market_data),
     # condition in {hidden_only, both_agree} so the label is well-defined by tau_ci.
@@ -189,7 +201,7 @@ def main() -> int:
         "n_held_out_template": len(eval_ho_template),
         "n_held_out_family": len(eval_ho_family),
     }
-    out = "reports/tps/baselines.json"
+    out = args.out
     os.makedirs(os.path.dirname(out), exist_ok=True)
     with open(out, "w") as fh:
         json.dump(headline, fh, indent=2)

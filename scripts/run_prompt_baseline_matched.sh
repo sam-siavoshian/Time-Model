@@ -6,24 +6,29 @@
 # matching CI's total trainable budget. Same data distribution
 # (qwen_time_data_prompt), same --freeze-alpha (chrono off), same steps.
 set -euo pipefail
-cd "$HOME/Time-Model" 2>/dev/null || cd "$HOME/Desktop/Time-Model" 2>/dev/null || cd "$HOME/ipcn"
+SCRIPT_PATH="${BASH_SOURCE[0]}"
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+source "$REPO_ROOT/scripts/lib/run_context.sh"
+time_model_init_run "$@"
+set -- "${RUN_CONTEXT_ARGS[@]}"
+cd "$REPO_ROOT"
 export PATH="$HOME/.local/bin:$PATH"
 export PYTHONUNBUFFERED=1
-mkdir -p logs reports checkpoints
 
 STEPS=${STEPS:-18000}
 TIMESCALES="2,4,8,16,32,64,128,256,512,1024,4096,16384,65536,86400,604800"
 LORA_RANK=16
 
 for SEED in 0 1 2; do
-    DATA="data/processed/prompt_baseline_s${SEED}_18k.jsonl"
-    OUT="checkpoints/prompt_baseline_matched_s${SEED}.pt"
-    REC="reports/prompt_baseline_matched_injected_s${SEED}_recall.json"
-    STDOUT="logs/prompt_baseline_matched_s${SEED}.log"
+    DATA="$DATA_DIR/prompt_baseline_s${SEED}_18k.jsonl"
+    OUT="$CKPT_DIR/prompt_baseline_matched_s${SEED}.pt"
+    REC="$REPORT_DIR/prompt_baseline_matched_injected_s${SEED}_recall.json"
+    STDOUT="$LOG_DIR/prompt_baseline_matched_s${SEED}.log"
 
     if [ ! -s "$DATA" ]; then
-        echo "[error] data missing: $DATA" | tee -a "$STDOUT"
-        continue
+        uv run python -m model.qwen_time_data_prompt \
+            --n 18000 --seed "$SEED" --out "$DATA" 2>&1 | tee -a "$STDOUT"
     fi
     if [ ! -f "$OUT" ]; then
         echo "=== seed $SEED train (LoRA rank=$LORA_RANK, freeze-alpha) ===" | tee -a "$STDOUT"
@@ -42,5 +47,5 @@ for SEED in 0 1 2; do
     fi
 done
 
-touch logs/prompt_baseline_matched.done
+time_model_done "$SCRIPT_PATH" "prompt_baseline_matched.done"
 echo "all 3 seeds done"

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Pre-registered (PREREGISTRATION_v2.md §3.1): both-held-out training.
+# Pre-registered (docs/experiments/current/PREREGISTRATION_v2.md §3.1): both-held-out training.
 # Train without ANY CLOCK supervision AND without ANY SILENT-GAP supervision.
 # Only PHASE supervision. Eval the full T1/T1b/T2/T3/T4 protocol.
 #
@@ -10,19 +10,24 @@
 #   T4 mp  -> degraded relative to full supervision (no clock/silent-gap
 #             shape to push the channel through), reported descriptively.
 set -euo pipefail
-cd "$HOME/Time-Model" 2>/dev/null || cd "$HOME/Desktop/Time-Model" 2>/dev/null || cd "$HOME/ipcn"
+SCRIPT_PATH="${BASH_SOURCE[0]}"
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+source "$REPO_ROOT/scripts/lib/run_context.sh"
+time_model_init_run "$@"
+set -- "${RUN_CONTEXT_ARGS[@]}"
+cd "$REPO_ROOT"
 export PATH="$HOME/.local/bin:$PATH"
 export PYTHONUNBUFFERED=1
-mkdir -p logs reports checkpoints data/processed
 
 TIMESCALES="2,4,8,16,32,64,128,256,512,1024,4096,16384,65536,86400,604800"
 STEPS=${STEPS:-18000}
 
 for SEED in 0 1 2; do
-    DATA="data/processed/both_heldout_s${SEED}_18k.jsonl"
-    CKPT="checkpoints/both_heldout_s${SEED}.pt"
-    REC="reports/both_heldout_s${SEED}_recall.json"
-    STDOUT="logs/both_heldout_s${SEED}.log"
+    DATA="$DATA_DIR/both_heldout_s${SEED}_18k.jsonl"
+    CKPT="$CKPT_DIR/both_heldout_s${SEED}.pt"
+    REC="$REPORT_DIR/both_heldout_s${SEED}_recall.json"
+    STDOUT="$LOG_DIR/both_heldout_s${SEED}.log"
 
     echo "=== seed $SEED: gen PHASE-only data (mix 0,0,1) ===" | tee -a "$STDOUT"
     if [ ! -s "$DATA" ]; then
@@ -45,5 +50,5 @@ for SEED in 0 1 2; do
     fi
 done
 
-touch logs/both_heldout.done
+time_model_done "$SCRIPT_PATH" "both_heldout.done"
 echo "all 3 seeds done"

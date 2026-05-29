@@ -1,7 +1,7 @@
 """Generate the section 9 update paragraph + Table 6b for the paper,
 using analyze_v2.py output.
 
-Pre-registered in PREREGISTRATION_v2.md section 1. Reads
+Pre-registered in docs/experiments/current/PREREGISTRATION_v2.md section 1. Reads
 reports/tpdr_v2_headline.json (produced by eval/tpdr/analyze_v2.py)
 and emits a LaTeX fragment to paper/_9_update.tex.
 
@@ -76,8 +76,9 @@ def main():
     for m in ["length_chars", "length_words", "urgency_score",
               "hedge_score", "conditional_clauses", "imperative_count"]:
         em = metrics.get(m, {})
+        metric_label = m.replace("_", r"\_")
         sec_rows.append(
-            f"    \\texttt{{{m.replace('_', r'\_')}}} & "
+            f"    \\texttt{{{metric_label}}} & "
             f"{em.get('n_paired', 0)} & "
             f"${em.get('t', float('nan')):.3f}$ & "
             f"${em.get('p_two', float('nan')):.3e}$ & "

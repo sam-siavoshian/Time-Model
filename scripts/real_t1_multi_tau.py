@@ -2,7 +2,7 @@
 
 Loads a released v15 cross-seed checkpoint and runs greedy decoding on the
 clock prompt at six tau values spanning seconds to days. Dumps the actual
-model outputs to reports/real_t1_multi_tau.json so the dialogue figure can
+model outputs to an explicit JSON path so the dialogue figure can
 quote real model text instead of a synthesized one.
 """
 
@@ -31,7 +31,7 @@ def main() -> None:
     p.add_argument("--checkpoint", required=True)
     p.add_argument("--base", default="Qwen/Qwen2.5-3B-Instruct")
     p.add_argument("--device", default="mps")
-    p.add_argument("--out", default="reports/real_t1_multi_tau.json")
+    p.add_argument("--out", required=True)
     p.add_argument("--max-new", type=int, default=24)
     args = p.parse_args()
 

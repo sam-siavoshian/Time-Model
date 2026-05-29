@@ -11,10 +11,8 @@ Chronometric Injection paper.
 
 ## Authors
 
-1. **Sam Siavoshian** — first author and corresponding author. Independent.
-2. **Omar Ramadan** — co-author. Department of Data Science, Johns Hopkins
-   University.
-3. **JHU faculty advisor co-author** — to be added prior to publication.
+The author block is defined in `main.tex`. Do not add placeholder authors in
+this README; keep it aligned with the manuscript source.
 
 ## Build
 
@@ -41,11 +39,9 @@ pdflatex main.tex
 pdflatex main.tex
 ```
 
-## What is intentionally not included
+## Source-of-truth note
 
-- The pre-pivot IPCN / memory-routing thread (Appendix D in the source
-  manuscript) is omitted. The paper focuses on Chronometric Injection as
-  the load-bearing architectural contribution.
-- Retracted claims (OOD behavioral transfer, single-scalar-dial framing)
-  are noted in `Section~\ref{sec:critical-controls}` and
-  `Section~\ref{sec:limitations}`, not removed silently.
+`main.tex` is the paper source. The pre-pivot IPCN / memory-routing thread is
+not part of this LaTeX manuscript. Current limitations and negative results are
+described directly in the discussion, including the negative TPS result and the
+limits of prompt-vs-residual conditioning.

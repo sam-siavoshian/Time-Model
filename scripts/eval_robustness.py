@@ -1,6 +1,6 @@
 """W15: how robust is CI to wrong / noisy / missing tau?
 Conditions: A clean, B noisy log10(tau), C random tau, D tau=0, E tau=1e9.
-Output: reports/robustness_v15s_seed0.json
+Output: pass --out explicitly, preferably under runs/<run_id>/reports/.
 """
 from __future__ import annotations
 import argparse, json, math, random, re, sys
@@ -71,7 +71,7 @@ def main():
     ap.add_argument("--base", default="Qwen/Qwen2.5-3B-Instruct")
     ap.add_argument("--device", default="mps")
     ap.add_argument("--n-tau", type=int, default=12)
-    ap.add_argument("--out", default="reports/robustness_v15s_seed0.json")
+    ap.add_argument("--out", required=True)
     args = ap.parse_args()
     print(f"loading {args.base}...")
     tok = AutoTokenizer.from_pretrained(args.base)

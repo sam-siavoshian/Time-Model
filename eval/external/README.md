@@ -43,19 +43,21 @@ download.
 # 1. Regenerate the dataset (or use the one checked in)
 uv run python -m eval.external.generate_tau_sessions \
   --seed 42 \
-  --out eval/external/datasets/tau_sessions.jsonl
+  --out runs/external_tau/data/external/tau_sessions.jsonl
 
 # 2. Vanilla baseline (no tau, base Qwen only)
 uv run python -m eval.external.eval_tau_bench \
   --adapter vanilla \
   --base Qwen/Qwen2.5-3B-Instruct \
-  --device auto
+  --device auto \
+  --run-id external_tau
 
 # 3. Prompt baseline (tau injected as text)
 uv run python -m eval.external.eval_tau_bench \
   --adapter prompt \
   --base Qwen/Qwen2.5-3B-Instruct \
-  --device auto
+  --device auto \
+  --run-id external_tau
 
 # 4. Chronometric Injection (v15 release checkpoint)
 curl -L -o seed0.pt \
@@ -64,10 +66,11 @@ uv run python -m eval.external.eval_tau_bench \
   --adapter ci \
   --base Qwen/Qwen2.5-3B-Instruct \
   --checkpoint seed0.pt \
-  --device auto
+  --device auto \
+  --run-id external_tau
 ```
 
-Reports land at `reports/external_tau_bench_<adapter>.json` and contain
+Reports land at `runs/<run-id>/reports/external/ext_bench_<adapter>.json` and contain
 per-bucket metrics, bootstrap 95% CIs (B=1000), a composite score, and
 the full per-session prediction rows so anyone can recompute.
 
@@ -75,7 +78,7 @@ For a fast end-to-end smoke (20 sessions on CPU, ~5 minutes):
 
 ```bash
 uv run python -m eval.external.eval_tau_bench \
-  --adapter vanilla --base Qwen/Qwen2.5-3B-Instruct --n 20
+  --adapter vanilla --base Qwen/Qwen2.5-3B-Instruct --n 20 --run-id external_tau_smoke
 ```
 
 ---
@@ -90,7 +93,7 @@ prompt-injection should be roughly comparable because the model needs
 to do active length control, not just read tau.
 
 Rough ordering we predict (and observe on v15s seed 0 in our internal
-runs, see `reports/external_tau_bench_*.json` once you run them):
+runs, see `runs/<run-id>/reports/external/*.json` once you run them):
 
 | Task              | vanilla     | prompt     | ci         |
 |-------------------|-------------|------------|------------|

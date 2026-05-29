@@ -10,8 +10,8 @@ no cross-chunk memory in this trainer (Track C focuses on time, not
 memory routing).
 
 Usage:
-  uv run python -m model.qwen_time_train --data data/qwen_time/train_v1.jsonl \
-      --steps 8000 --device cuda --out checkpoints/qwen_time_v1.pt
+  uv run python -m model.qwen_time_train --data runs/demo/data/train_v1.jsonl \
+      --steps 8000 --device cuda --out runs/demo/checkpoints/qwen_time_v1.pt
 """
 
 from __future__ import annotations
@@ -27,17 +27,34 @@ from pathlib import Path
 import torch
 import torch.nn.functional as F
 
-from model.qwen_time import QwenTime, QwenTimeConfig, build_qwen_time
+from model.qwen_time import (
+    V15_BASE_MODEL_NAME,
+    V15_INJECTION_TYPE,
+    V15_LORA_RANK,
+    QwenTime,
+    QwenTimeConfig,
+    build_qwen_time,
+    qwen_time_checkpoint_metadata,
+    qwen_time_config_dict,
+)
 
 
-def stream_records(path: str, shuffle: bool = True, seed: int = 0):
+def stream_records(path: str, shuffle: bool = True, seed: int = 0, repeat: bool = True):
     with open(path) as f:
         lines = f.readlines()
-    if shuffle:
-        rng = random.Random(seed)
-        rng.shuffle(lines)
-    for line in lines:
-        yield json.loads(line)
+    if not lines:
+        raise ValueError(f"empty training data: {path}")
+    epoch = 0
+    while True:
+        epoch_lines = list(lines)
+        if shuffle:
+            rng = random.Random(seed + epoch)
+            rng.shuffle(epoch_lines)
+        for line in epoch_lines:
+            yield json.loads(line)
+        if not repeat:
+            break
+        epoch += 1
 
 
 def make_chunk(tokenizer, rec, max_len: int):
@@ -83,15 +100,17 @@ def main():
     p.add_argument("--steps", type=int, default=8000)
     p.add_argument("--lr", type=float, default=1e-4)
     p.add_argument("--device", type=str, default="cuda")
-    p.add_argument("--log-path", type=str, default="logs/qwen_time.jsonl")
+    p.add_argument("--log-path", type=str, default=None)
     p.add_argument("--log-every", type=int, default=50)
-    p.add_argument("--out", type=str, default="checkpoints/qwen_time.pt")
+    p.add_argument("--out", type=str, default=None)
+    p.add_argument("--run-id", type=str, default=None,
+                   help="Write checkpoint/logs under runs/<run-id>/ when --out is omitted.")
     p.add_argument("--chunk-length", type=int, default=512)
     p.add_argument("--seed", type=int, default=0)
-    p.add_argument("--base", type=str, default="Qwen/Qwen2.5-3B-Instruct")
+    p.add_argument("--base", type=str, default=V15_BASE_MODEL_NAME)
     p.add_argument("--unfreeze-base", action="store_true")
     p.add_argument("--timescales", type=str, default="",
-                   help="Comma-separated chrono timescales in seconds. Empty = use QwenTimeConfig default.")
+                   help="Comma-separated chrono timescales in seconds. Empty = use canonical v15 defaults.")
     p.add_argument("--freeze-alpha", action="store_true",
                    help="Lock per-layer chrono alpha gates at 0 throughout training. "
                         "This is the LoRA-only ablation: chrono encoder + projectors "
@@ -100,9 +119,9 @@ def main():
                         "comparing v15 (alpha learns) vs alpha=0-frozen.")
     p.add_argument("--inject-layers", type=str, default="",
                    help="Comma-separated layer indices for chrono injection. "
-                        "Empty = inject at every layer (default v15). "
+                        "Empty = inject at every decoder layer except the final layer (default v15). "
                         "'0' = inject only at layer 0 (L0-only ablation).")
-    p.add_argument("--injection-type", type=str, default="film",
+    p.add_argument("--injection-type", type=str, default=V15_INJECTION_TYPE,
                    choices=["film", "additive"],
                    help="'film' (default v15, DiT AdaLN-Zero) or 'additive' "
                         "(pure residual chi-projected, no h-dependent scaling -- "
@@ -120,7 +139,7 @@ def main():
                         "encoder + per-layer FiLM gates still train, but the LoRA "
                         "surface capacity is frozen. Used to test whether the "
                         "chrono channel alone (without LoRA) is sufficient.")
-    p.add_argument("--lora-rank", type=int, default=8,
+    p.add_argument("--lora-rank", type=int, default=V15_LORA_RANK,
                    help="LoRA adapter rank. Default 8 (CI default). Used by W6 fix: "
                         "rank-bumped prompt baseline at matched total trainable params.")
     p.add_argument("--use-ia3", action="store_true",
@@ -128,6 +147,16 @@ def main():
                         "PEFT instead of LoRA. Wraps k_proj, v_proj, and FFN up_proj "
                         "with per-output-feature learnable scales initialized to one.")
     args = p.parse_args()
+
+    if args.out is None:
+        if args.run_id is None:
+            raise SystemExit("output scope required: pass --out or --run-id")
+        args.out = str(Path("runs") / args.run_id / "checkpoints" / "qwen_time.pt")
+    if args.log_path is None:
+        if args.run_id is not None:
+            args.log_path = str(Path("runs") / args.run_id / "logs" / "qwen_time.jsonl")
+        else:
+            args.log_path = str(Path(args.out).with_suffix(".jsonl"))
 
     torch.manual_seed(args.seed)
     Path(args.log_path).parent.mkdir(parents=True, exist_ok=True)
@@ -137,7 +166,7 @@ def main():
     cfg.base_model_name = args.base
     cfg.chunk_length = args.chunk_length
     cfg.unfreeze_base = args.unfreeze_base
-    if args.lora_rank != 8:
+    if args.lora_rank != V15_LORA_RANK:
         cfg.lora_rank = args.lora_rank
         print(f"  Override lora_rank: {cfg.lora_rank}")
     if args.use_ia3:
@@ -235,9 +264,14 @@ def main():
                             "time": time.time()}) + "\n")
     log_f.close()
 
+    trainable_state = {n: p.detach().cpu() for n, p in model.named_parameters() if p.requires_grad}
+    config_metadata = qwen_time_checkpoint_metadata(cfg, tuple(model._inject_layers))
+    config_metadata["trainable_names"] = sorted(trainable_state)
     save = {
-        "trainable_state": {n: p.detach().cpu() for n, p in model.named_parameters() if p.requires_grad},
-        "cfg": cfg.__dict__,
+        "trainable_state": trainable_state,
+        "cfg": qwen_time_config_dict(cfg),
+        "config_metadata": config_metadata,
+        "train_args": vars(args),
         "train_step": step,
     }
     tmp = Path(args.out).with_name(Path(args.out).name + f".tmp.{os.getpid()}")

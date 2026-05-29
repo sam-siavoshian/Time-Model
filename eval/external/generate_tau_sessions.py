@@ -33,6 +33,7 @@ import os
 import random
 import sys
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Iterator
 
 
@@ -280,10 +281,18 @@ def main(argv: list[str] | None = None) -> int:
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--seed", type=int, default=42,
                    help="PRNG seed for full determinism (default: 42)")
-    p.add_argument("--out", type=str,
-                   default="eval/external/datasets/tau_sessions.jsonl",
-                   help="Output JSONL path")
+    p.add_argument("--out", type=str, default=None,
+                   help="Explicit output JSONL path")
+    p.add_argument("--run-id", type=str, default=None,
+                   help="Write to runs/<run-id>/data/external/tau_sessions.jsonl when --out is omitted")
     args = p.parse_args(argv)
+    if args.out is None:
+        if args.run_id is None:
+            print("error: output scope required: pass --out or --run-id",
+                  file=sys.stderr)
+            return 2
+        args.out = str(Path("runs") / args.run_id / "data" / "external" /
+                       "tau_sessions.jsonl")
 
     sessions = generate(seed=args.seed)
     assert len(sessions) == 300, f"expected 300 sessions, got {len(sessions)}"

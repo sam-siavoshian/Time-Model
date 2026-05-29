@@ -3,18 +3,23 @@
 # Same data distribution as v15 but with tau text-prefixed; chrono
 # channel forced off via --freeze-alpha so tau MUST come from the prompt.
 set -euo pipefail
-cd "$HOME/Time-Model" 2>/dev/null || cd "$HOME/Desktop/Time-Model" 2>/dev/null || cd "$HOME/ipcn"
+SCRIPT_PATH="${BASH_SOURCE[0]}"
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+source "$REPO_ROOT/scripts/lib/run_context.sh"
+time_model_init_run "$@"
+set -- "${RUN_CONTEXT_ARGS[@]}"
+cd "$REPO_ROOT"
 export PATH="$HOME/.local/bin:$PATH"
-mkdir -p logs reports data/processed
 
 STEPS=${STEPS:-18000}
 TIMESCALES="2,4,8,16,32,64,128,256,512,1024,4096,16384,65536,86400,604800"
 
 for SEED in 0 1 2; do
-    DATA="data/processed/prompt_baseline_s${SEED}_18k.jsonl"
-    OUT="checkpoints/prompt_baseline_s${SEED}.pt"
-    STDOUT="logs/prompt_baseline_s${SEED}.log"
-    mkdir -p "$(dirname "$OUT")"
+    DATA="$DATA_DIR/prompt_baseline_s${SEED}_18k.jsonl"
+    OUT="$CKPT_DIR/prompt_baseline_s${SEED}.pt"
+    REC="$REPORT_DIR/prompt_baseline_injected_s${SEED}_recall.json"
+    STDOUT="$LOG_DIR/prompt_baseline_s${SEED}.log"
 
     echo "=== seed $SEED data ===" | tee -a "$STDOUT"
     uv run python -m model.qwen_time_data_prompt \
@@ -28,8 +33,9 @@ for SEED in 0 1 2; do
 
     echo "=== seed $SEED check ===" | tee -a "$STDOUT"
     uv run python -m model.qwen_time_check \
-        --ckpt "$OUT" --tag "prompt_baseline_s${SEED}" 2>&1 | tee -a "$STDOUT"
+        --ckpt "$OUT" --inject-prompt --out "$REC" 2>&1 | tee -a "$STDOUT"
+    test -s "$REC"
 done
 
-touch logs/prompt_baseline.done
+time_model_done "$SCRIPT_PATH" "prompt_baseline.done"
 echo "all 3 seeds done"

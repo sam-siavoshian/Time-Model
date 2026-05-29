@@ -32,16 +32,26 @@ T4 (bonus) MUTABILITY: confirm chrono encoder is causally hooked up.
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import json
 import os
 import random
 import re
 import time
+from pathlib import Path
 
 import torch
 import torch.nn.functional as F
 
-from model.qwen_time import QwenTime, QwenTimeConfig, build_qwen_time
+from model.qwen_time import (
+    V15_BASE_MODEL_NAME,
+    V15_INJECTION_TYPE,
+    V15_LORA_RANK,
+    QwenTime,
+    QwenTimeConfig,
+    build_qwen_time,
+    qwen_time_config_dict,
+)
 
 
 # When True, every prompt fed to the model gets a `[elapsed: X]` prefix
@@ -49,6 +59,8 @@ from model.qwen_time import QwenTime, QwenTimeConfig, build_qwen_time
 # training distribution for prompt_baseline ckpts (trained via
 # qwen_time_data_prompt.inject_tau_in_text). Set from CLI flag --inject-prompt.
 INJECT_PROMPT_TAU = False
+REPO_ROOT = Path(__file__).resolve().parents[1]
+CHECKPOINT_METADATA_REGISTRY = REPO_ROOT / "checkpoints" / "metadata_registry.json"
 
 
 PROMPT_FORMAT = "elapsed"  # set from --prompt-format CLI
@@ -104,14 +116,163 @@ def _maybe_inject_prompt(prompt: str, tau: float) -> str:
     return prompt.replace(marker, f"{marker}{_tau_text(float(tau))} ", 1)
 
 
-def load_trainable(model: QwenTime, ckpt_path: str):
+def _normalize_cfg_value(value):
+    if isinstance(value, list):
+        return tuple(value)
+    return value
+
+
+def _deep_merge_cfg(defaults: dict, overrides: dict | None) -> dict:
+    cfg = dict(defaults)
+    if overrides:
+        cfg.update(overrides)
+    return cfg
+
+
+def _checkpoint_relpath(ckpt_path: str) -> str:
+    path = Path(ckpt_path)
+    try:
+        return path.resolve().relative_to(REPO_ROOT.resolve()).as_posix()
+    except ValueError:
+        return path.as_posix()
+
+
+def _load_checkpoint_registry() -> dict | None:
+    if not CHECKPOINT_METADATA_REGISTRY.exists():
+        return None
+    with CHECKPOINT_METADATA_REGISTRY.open() as f:
+        return json.load(f)
+
+
+def _sidecar_metadata_for_checkpoint(ckpt_path: str) -> dict | None:
+    registry = _load_checkpoint_registry()
+    if not registry:
+        return None
+    rel = _checkpoint_relpath(ckpt_path)
+    defaults = registry.get("defaults", {})
+    for entry in registry.get("entries", []):
+        exact = entry.get("path")
+        pattern = entry.get("glob")
+        if (exact and rel == exact) or (pattern and fnmatch.fnmatch(rel, pattern)):
+            return {
+                "cfg": _deep_merge_cfg(defaults, entry.get("cfg")),
+                "status": entry.get("status"),
+                "layer_policy": entry.get("layer_policy"),
+                "caveat": entry.get("caveat"),
+                "registry_match": exact or pattern,
+            }
+    return None
+
+
+def _extract_checkpoint_cfg(state: dict, ckpt_path: str) -> dict | None:
+    metadata = state.get("config_metadata")
+    if isinstance(metadata, dict) and isinstance(metadata.get("cfg"), dict):
+        return metadata["cfg"]
+    cfg = state.get("cfg")
+    if isinstance(cfg, dict):
+        return cfg
+    sidecar = _sidecar_metadata_for_checkpoint(ckpt_path)
+    if sidecar and isinstance(sidecar.get("cfg"), dict):
+        print(f"  using sidecar checkpoint metadata: {sidecar.get('registry_match')}")
+        if sidecar.get("caveat"):
+            print(f"  sidecar caveat: {sidecar['caveat']}")
+        return sidecar["cfg"]
+    return None
+
+
+def _format_mismatch(field: str, checkpoint_value, model_value) -> str:
+    return f"{field}: checkpoint={checkpoint_value!r} current={model_value!r}"
+
+
+def validate_checkpoint_compatible(
+    model: QwenTime,
+    state: dict,
+    ckpt_path: str,
+    allow_unregistered_legacy_ckpt: bool = False,
+):
+    """Validate checkpoint architecture metadata before copying tensors."""
+    ckpt_cfg = _extract_checkpoint_cfg(state, ckpt_path)
+    if ckpt_cfg is None:
+        if allow_unregistered_legacy_ckpt:
+            print("  warning: checkpoint has no config metadata or sidecar registry entry; validating tensors only")
+        else:
+            raise ValueError(
+                "Checkpoint has no embedded config metadata and no sidecar registry entry: "
+                f"{ckpt_path}. Add it to checkpoints/metadata_registry.json or pass "
+                "--allow-unregistered-legacy-ckpt for manual provenance work."
+            )
+    else:
+        model_cfg = qwen_time_config_dict(model.cfg)
+        fields = (
+            "base_model_name",
+            "timescales",
+            "inject_layers",
+            "lora_rank",
+            "lora_layers",
+            "lora_targets",
+            "lora_lm_head",
+            "unfreeze_base",
+            "chunk_length",
+            "injection_type",
+            "additive_beta_init",
+            "use_ia3",
+        )
+        mismatches = []
+        for field in fields:
+            if field not in ckpt_cfg:
+                continue
+            ckpt_value = _normalize_cfg_value(ckpt_cfg[field])
+            model_value = _normalize_cfg_value(model_cfg[field])
+            if ckpt_value != model_value:
+                mismatches.append(_format_mismatch(field, ckpt_value, model_value))
+        metadata = state.get("config_metadata")
+        if isinstance(metadata, dict) and "resolved_inject_layers" in metadata:
+            ckpt_layers = tuple(metadata["resolved_inject_layers"])
+            model_layers = tuple(getattr(model, "_inject_layers", ()))
+            if ckpt_layers != model_layers:
+                mismatches.append(_format_mismatch("resolved_inject_layers", ckpt_layers, model_layers))
+        if mismatches:
+            joined = "; ".join(mismatches)
+            raise ValueError(f"Checkpoint config mismatch for {ckpt_path}: {joined}")
+
+    trainable_state = state.get("trainable_state")
+    if not isinstance(trainable_state, dict):
+        raise ValueError(f"Checkpoint {ckpt_path} is missing a trainable_state dict")
+
+    current_params = dict(model.named_parameters())
+    unexpected = sorted(name for name in trainable_state if name not in current_params)
+    metadata = state.get("config_metadata")
+    expected_trainable = None
+    if isinstance(metadata, dict) and isinstance(metadata.get("trainable_names"), list):
+        expected_trainable = set(metadata["trainable_names"])
+    missing = sorted(expected_trainable - set(trainable_state)) if expected_trainable is not None else []
+    shape_mismatches = []
+    for name, tensor in trainable_state.items():
+        if name not in current_params:
+            continue
+        if tuple(tensor.shape) != tuple(current_params[name].shape):
+            shape_mismatches.append(
+                f"{name}: checkpoint={tuple(tensor.shape)} current={tuple(current_params[name].shape)}"
+            )
+    if unexpected or missing or shape_mismatches:
+        parts = []
+        if unexpected:
+            parts.append(f"unexpected tensors={unexpected[:8]}")
+        if missing:
+            parts.append(f"missing tensors={missing[:8]}")
+        if shape_mismatches:
+            parts.append(f"shape mismatches={shape_mismatches[:8]}")
+        raise ValueError(f"Checkpoint tensor mismatch for {ckpt_path}: " + "; ".join(parts))
+
+
+def load_trainable(model: QwenTime, ckpt_path: str, allow_unregistered_legacy_ckpt: bool = False):
     state = torch.load(ckpt_path, map_location="cpu", weights_only=False)
+    validate_checkpoint_compatible(model, state, ckpt_path, allow_unregistered_legacy_ckpt)
     cur = dict(model.named_parameters())
     n = 0
     for name, t in state["trainable_state"].items():
-        if name in cur:
-            cur[name].data.copy_(t.to(cur[name].dtype))
-            n += 1
+        cur[name].data.copy_(t.to(cur[name].dtype))
+        n += 1
     print(f"  loaded {n} trainable tensors")
 
 
@@ -396,30 +557,41 @@ def t4_mutability(model, device, n_prompts=3, n_positions=8):
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("--checkpoint", type=str, default=None)
+    p.add_argument("--checkpoint", "--ckpt", dest="checkpoint", type=str, default=None)
+    p.add_argument("--tag", type=str, default=None,
+                   help="Deprecated no-op kept for old launcher compatibility.")
     p.add_argument("--device", type=str, default="cuda")
-    p.add_argument("--out", type=str, default="reports/qwen_time_check.json")
-    p.add_argument("--base", type=str, default="Qwen/Qwen2.5-3B-Instruct")
+    p.add_argument("--out", type=str, default=None)
+    p.add_argument("--run-id", type=str, default=None,
+                   help="Write report under runs/<run-id>/reports/ when --out is omitted.")
+    p.add_argument("--base", type=str, default=V15_BASE_MODEL_NAME)
     p.add_argument("--timescales", type=str, default="",
                    help="Comma-separated chrono timescales in seconds.")
     p.add_argument("--inject-layers", type=str, default="",
                    help="Layer indices for chrono injection (must match training).")
-    p.add_argument("--injection-type", type=str, default="film",
+    p.add_argument("--injection-type", type=str, default=V15_INJECTION_TYPE,
                    choices=["film", "additive"])
     p.add_argument("--inject-prompt", action="store_true",
                    help="Prepend `[elapsed: X]` to every test prompt. "
                         "Use this to eval prompt-baseline checkpoints "
                         "(trained via qwen_time_data_prompt). For CI/"
                         "additive ckpts, leave OFF.")
-    p.add_argument("--lora-rank", type=int, default=8,
+    p.add_argument("--lora-rank", type=int, default=V15_LORA_RANK,
                    help="LoRA adapter rank. Must match training rank.")
     p.add_argument("--use-ia3", action="store_true",
                    help="Eval IA3-trained ckpt. Must match training.")
+    p.add_argument("--allow-unregistered-legacy-ckpt", action="store_true",
+                   help="Allow tensor-only loading for old checkpoints that lack embedded metadata "
+                        "and are not listed in checkpoints/metadata_registry.json.")
     p.add_argument("--prompt-format", type=str, default="elapsed",
                    choices=["elapsed","iso","nl"],
                    help="Format for [elapsed:X]/[timestamp:Z]/natural-language "
                         "prefix when --inject-prompt is set. Must match training format.")
     args = p.parse_args()
+    if args.out is None:
+        if args.run_id is None:
+            raise SystemExit("output scope required: pass --out or --run-id")
+        args.out = str(Path("runs") / args.run_id / "reports" / "qwen_time_check.json")
     global PROMPT_FORMAT
     PROMPT_FORMAT = args.prompt_format
 
@@ -430,7 +602,7 @@ def main():
 
     cfg = QwenTimeConfig()
     cfg.base_model_name = args.base
-    if args.lora_rank != 8:
+    if args.lora_rank != V15_LORA_RANK:
         cfg.lora_rank = args.lora_rank
         print(f"  Override lora_rank: {cfg.lora_rank}")
     if args.use_ia3:
@@ -449,7 +621,7 @@ def main():
     model = model.to(args.device)
     if args.checkpoint:
         print(f"Loading {args.checkpoint}...")
-        load_trainable(model, args.checkpoint)
+        load_trainable(model, args.checkpoint, args.allow_unregistered_legacy_ckpt)
     model.train(False)
 
     print("\n=== T1 clock consistency (in-distribution) ===")
@@ -494,7 +666,7 @@ def main():
     for k, v in summary.items():
         print(f"  {k}: {v}")
     print(f"\nwall: {time.time() - t0:.1f}s")
-    os.makedirs(os.path.dirname(args.out), exist_ok=True)
+    Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     with open(args.out, "w") as f:
         json.dump({"summary": summary, "t1": r1, "t1b": r1b, "t2": r2, "t3": r3, "t4": r4}, f, indent=2)
     print(f"Saved -> {args.out}")

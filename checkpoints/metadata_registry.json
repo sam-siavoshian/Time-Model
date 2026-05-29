@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "defaults": {
+    "base_model_name": "Qwen/Qwen2.5-3B-Instruct",
+    "timescales": [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 4096, 16384, 65536, 86400, 604800],
+    "inject_layers": [],
+    "lora_rank": 8,
+    "lora_layers": 0,
+    "lora_targets": ["q_proj", "k_proj", "v_proj", "o_proj"],
+    "lora_lm_head": true,
+    "unfreeze_base": false,
+    "chunk_length": 512,
+    "injection_type": "film",
+    "additive_beta_init": 0.0,
+    "use_ia3": false
+  },
+  "entries": [
+    {
+      "glob": "release_ckpts/qwen_time_v15s_20260523_141410_seed*.pt",
+      "status": "current",
+      "layer_policy": "all_but_final",
+      "caveat": "Release v15s checkpoints may predate embedded config metadata."
+    },
+    {
+      "glob": "checkpoints/clock_heldout_s*.pt",
+      "status": "current_with_caveat",
+      "layer_policy": "all_but_final",
+      "caveat": "CLOCK-heldout checkpoint family."
+    },
+    {
+      "glob": "checkpoints/prompt_baseline_s*.pt",
+      "status": "current_with_caveat",
+      "layer_policy": "all_but_final",
+      "caveat": "Prompt baseline with chrono gate frozen; eval must use prompt injection."
+    },
+    {
+      "glob": "checkpoints/prompt_baseline_matched_s*.pt",
+      "status": "current_with_caveat",
+      "layer_policy": "all_but_final",
+      "cfg": {"lora_rank": 16},
+      "caveat": "Matched-parameter prompt baseline."
+    },
+    {
+      "glob": "checkpoints/prompt_iso_s0.pt",
+      "status": "current_with_caveat",
+      "layer_policy": "all_but_final",
+      "caveat": "Alternative ISO prompt-format baseline."
+    },
+    {
+      "glob": "checkpoints/prompt_nl_s0.pt",
+      "status": "current_with_caveat",
+      "layer_policy": "all_but_final",
+      "caveat": "Alternative natural-language prompt-format baseline."
+    },
+    {
+      "glob": "checkpoints/chrono_only_s*.pt",
+      "status": "current_with_caveat",
+      "layer_policy": "all_but_final",
+      "caveat": "Chrono-only no-LoRA ablation."
+    },
+    {
+      "glob": "checkpoints/additive_nonzero_beta_s*.pt",
+      "status": "current_with_caveat",
+      "layer_policy": "all_but_final",
+      "cfg": {"injection_type": "additive", "additive_beta_init": 0.01},
+      "caveat": "Additive nonzero-beta ablation."
+    },
+    {
+      "glob": "checkpoints/ia3_*_s*.pt",
+      "status": "current_with_caveat",
+      "layer_policy": "all_but_final",
+      "cfg": {"use_ia3": true},
+      "caveat": "IA3 ablation family."
+    },
+    {
+      "glob": "checkpoints/*heldout_s*.pt",
+      "status": "current_with_caveat",
+      "layer_policy": "all_but_final",
+      "caveat": "Held-out supervision ablation family."
+    },
+    {
+      "glob": "checkpoints/qwen_time_v1*.pt",
+      "status": "historical",
+      "layer_policy": "all_but_final",
+      "caveat": "Historical pre-v15/v15 single-anchor checkpoint; prefer current v15s release checkpoints."
+    }
+  ]
+}

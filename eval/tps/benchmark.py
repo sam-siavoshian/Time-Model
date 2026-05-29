@@ -341,9 +341,19 @@ def write_items(path: str) -> int:
 
 
 if __name__ == "__main__":
-    import sys
-    out = sys.argv[1] if len(sys.argv) > 1 else "data/tps/items.jsonl"
+    import argparse
     import os
-    os.makedirs(os.path.dirname(out), exist_ok=True)
-    n = write_items(out)
-    print(f"wrote {n} items to {out}")
+    from pathlib import Path
+
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--out", default=None)
+    ap.add_argument("--run-id", default=None,
+                    help="Write to runs/<run-id>/data/tps/items.jsonl when --out is omitted.")
+    args = ap.parse_args()
+    if args.out is None:
+        if args.run_id is None:
+            raise SystemExit("output scope required: pass --out or --run-id")
+        args.out = str(Path("runs") / args.run_id / "data" / "tps" / "items.jsonl")
+    os.makedirs(os.path.dirname(args.out), exist_ok=True)
+    n = write_items(args.out)
+    print(f"wrote {n} items to {args.out}")

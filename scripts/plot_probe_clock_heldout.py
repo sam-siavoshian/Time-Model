@@ -1,4 +1,4 @@
-"""Pre-registered figure (PREREGISTRATION_v2.md section 2.4):
+"""Pre-registered figure (docs/experiments/current/PREREGISTRATION_v2.md section 2.4):
 fig_probe_clock_heldout.png overlays the per-layer probe R^2 curves
 for v15s_s0 (full supervision) and clock_heldout_s{0,1,2}.
 

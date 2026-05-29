@@ -5,10 +5,11 @@ If a small MLP on chi(tau) already gives near-perfect r on this task,
 then T1/T1b are largely a learned-tokenizer problem and the LLM is not
 contributing much beyond a 148-class classifier head.
 
-Output: reports/mlp_baseline_chi_to_bucket.json
+Output: pass --out explicitly, preferably under runs/<run_id>/reports/.
 """
 from __future__ import annotations
 
+import argparse
 import json
 import math
 import random
@@ -116,6 +117,10 @@ def log_mae(a: list[float], b: list[float]) -> float:
 
 
 def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--out", required=True)
+    args = ap.parse_args()
+
     torch.manual_seed(0)
     np.random.seed(0)
 
@@ -206,11 +211,12 @@ def main():
             "contributes little. Lower numbers here = the LLM is contributing real work."
         ),
     }
-    Path("reports/mlp_baseline_chi_to_bucket.json").write_text(json.dumps(out, indent=2))
+    Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+    Path(args.out).write_text(json.dumps(out, indent=2))
     print(f"\nMLP r={r:.4f}, log-MAE={mae:.4f}, acc={acc:.3f}")
     print(f"Linear r={r_lin:.4f}, log-MAE={mae_lin:.4f}, acc={acc_lin:.3f}")
     print(f"CI v15 cross-seed r=0.993, log-MAE=0.044")
-    print("saved -> reports/mlp_baseline_chi_to_bucket.json")
+    print(f"saved -> {args.out}")
 
 
 if __name__ == "__main__":

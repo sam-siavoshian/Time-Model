@@ -4,9 +4,11 @@
 # Survives SSH disconnect via tmux + nohup.
 
 set -uo pipefail
-cd "$(cd "$(dirname "$0")/.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$REPO_ROOT"
 export PATH="$HOME/.local/bin:$PATH"
-export IPCN_ROOT="$HOME/ipcn"
+export IPCN_ROOT="$REPO_ROOT"
 export PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True,max_split_size_mb:128"
 
 CKPT="${1:-checkpoints/qwen_time_v11.pt}"

@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "required_top_level": [
+    "schema_version",
+    "generated_for",
+    "generated_date",
+    "policy",
+    "current",
+    "non_current",
+    "archives"
+  ],
+  "status_values": [
+    "current",
+    "current_with_caveat",
+    "superseded",
+    "contaminated",
+    "historical"
+  ],
+  "path_keys": [
+    "canonical_report",
+    "baseline_report",
+    "dataset",
+    "generator",
+    "manifest",
+    "path",
+    "successor"
+  ],
+  "path_list_keys": [
+    "canonical_reports",
+    "raw_inputs",
+    "supporting_reports",
+    "behavior_reports",
+    "figure_inputs",
+    "generators",
+    "paper_locations",
+    "include",
+    "evidence"
+  ]
+}
