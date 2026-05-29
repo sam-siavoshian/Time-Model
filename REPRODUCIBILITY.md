@@ -37,12 +37,22 @@ pre-v15 model artifacts are archived under `reports/archive/`.
 
 The code source of truth for these defaults is `model/qwen_time.py`.
 
+## Training Tracks
+
+- Track A Mechanistic CI: `CLOCK`, `SILENT-GAP`, and `PHASE`. This is the
+  current paper evidence track.
+- Track B Policy CI: TPS forced-choice labels `REUSE`, `REFRESH`, `ASK`, and
+  `SUMMARIZE`. This is an experimental policy-training track until new results
+  are produced.
+
+See `docs/TRAINING_TRACKS.md` for the track map and output layout.
+
 ## Reproduction Commands
 
-Fresh cross-seed run, with outputs isolated under `runs/<RUN_ID>/`:
+Fresh Track A cross-seed run, with outputs isolated under `runs/<RUN_ID>/`:
 
 ```bash
-bash scripts/run_v15_seeds.sh --run-id qwen_time_v15s_rerun
+bash scripts/run_track_a_mechanistic.sh --run-id ci_track_a_v15s
 ```
 
 Aggregate explicit run outputs:
@@ -50,10 +60,16 @@ Aggregate explicit run outputs:
 ```bash
 uv run python scripts/aggregate_seeds.py \
   --inputs \
-  runs/qwen_time_v15s_rerun/reports/qwen_time_v15s_rerun_seed0_recall.json \
-  runs/qwen_time_v15s_rerun/reports/qwen_time_v15s_rerun_seed1_recall.json \
-  runs/qwen_time_v15s_rerun/reports/qwen_time_v15s_rerun_seed2_recall.json \
-  --out runs/qwen_time_v15s_rerun/reports/qwen_time_v15s_rerun_aggregate.json
+  runs/ci_track_a_v15s/reports/track_a/ci_track_a_v15s_seed0_recall.json \
+  runs/ci_track_a_v15s/reports/track_a/ci_track_a_v15s_seed1_recall.json \
+  runs/ci_track_a_v15s/reports/track_a/ci_track_a_v15s_seed2_recall.json \
+  --out runs/ci_track_a_v15s/reports/track_a/ci_track_a_v15s_aggregate.json
+```
+
+Track B TPS policy-training run:
+
+```bash
+bash scripts/run_track_b_policy.sh --run-id ci_track_b_policy
 ```
 
 TPS sweep, isolated under `runs/<RUN_ID>/`:

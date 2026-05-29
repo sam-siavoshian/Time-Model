@@ -1,7 +1,7 @@
-"""Plot fig_tps_monotonicity.png from reports/tps/*.json.
+"""Plot fig_tps_monotonicity.png from TPS run JSON files.
 
-For each adapter, plot P(REFRESH) (over hidden_only items) as a function
-of log_10(tau). One line per adapter. CI should be monotonic; vanilla
+For each adapter, plot P(family long action) over hidden_only items as a
+function of log_10(tau). One line per adapter. CI should be monotonic; vanilla
 should be flat.
 """
 
@@ -17,6 +17,12 @@ import sys
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
+
+from eval.tps.benchmark import FAMILY_BY_NAME  # noqa: E402
 
 matplotlib.rcParams["font.family"] = "DejaVu Sans"
 matplotlib.rcParams["mathtext.fontset"] = "dejavusans"
@@ -57,7 +63,8 @@ def main() -> int:
                 continue
             if r["tau_ci_s"] is None or r["tau_ci_s"] <= 0:
                 continue
-            by_tau[int(r["tau_ci_s"])].append(r["action"] == "REFRESH")
+            long_action = FAMILY_BY_NAME[r["family"]].long_action
+            by_tau[int(r["tau_ci_s"])].append(r["action"] == long_action)
         xs = sorted(by_tau.keys())
         ys = [sum(by_tau[x]) / len(by_tau[x]) for x in xs]
         ax.plot(
@@ -66,11 +73,11 @@ def main() -> int:
         )
 
     ax.set_xlabel(r"$\log_{10}\tau$ (seconds)")
-    ax.set_ylabel(r"$P(\mathrm{REFRESH})$ on hidden-only items")
+    ax.set_ylabel(r"$P(\mathrm{long\ action})$ on hidden-only items")
     ax.set_ylim(-0.02, 1.02)
     ax.grid(True, alpha=0.3)
     ax.legend(fontsize=8, loc="best", frameon=True)
-    ax.set_title("Temporal Policy Switching: refresh rate vs hidden elapsed time")
+    ax.set_title("Temporal Policy Switching: long-action rate vs hidden elapsed time")
 
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     fig.tight_layout()

@@ -90,7 +90,7 @@ FAMILIES: tuple[Family, ...] = (
     ),
     Family(
         name="session_continuation",
-        threshold_s=300,                 # 5m
+        threshold_s=600,                 # 10m; strictly between tau grid points
         short_action="REUSE",
         long_action="SUMMARIZE",
         templates=(
@@ -110,7 +110,7 @@ FAMILIES: tuple[Family, ...] = (
     ),
     Family(
         name="api_freshness",
-        threshold_s=30,                  # 30s
+        threshold_s=60,                  # 1m; strictly between tau grid points
         short_action="REUSE",
         long_action="REFRESH",
         templates=(
@@ -130,7 +130,7 @@ FAMILIES: tuple[Family, ...] = (
     ),
     Family(
         name="safety_advice",
-        threshold_s=7200,                # 2h
+        threshold_s=10800,               # 3h; strictly between tau grid points
         short_action="REUSE",
         long_action="ASK",
         templates=(
@@ -150,7 +150,7 @@ FAMILIES: tuple[Family, ...] = (
     ),
     Family(
         name="calendar_planning",
-        threshold_s=86400,               # 1d
+        threshold_s=129600,              # 1.5d; strictly between tau grid points
         short_action="REUSE",
         long_action="REFRESH",
         templates=(
@@ -170,7 +170,7 @@ FAMILIES: tuple[Family, ...] = (
     ),
     Family(
         name="market_data",
-        threshold_s=10,                  # 10s -- very tight (held-out family)
+        threshold_s=20,                  # 20s -- very tight (held-out family)
         short_action="REUSE",
         long_action="REFRESH",
         templates=(
@@ -192,6 +192,26 @@ FAMILIES: tuple[Family, ...] = (
 
 
 FAMILY_BY_NAME = {f.name: f for f in FAMILIES}
+
+
+def validate_thresholds() -> None:
+    """Fail if a TPS threshold can collapse a short/long conflict.
+
+    Thresholds are intentionally not equal to any tau grid point, and they are
+    strictly inside the grid support. This avoids fake conflicts at endpoints
+    such as the old market_data=10s case.
+    """
+    lo = min(TAU_VALUES_S)
+    hi = max(TAU_VALUES_S)
+    grid = set(TAU_VALUES_S)
+    bad: list[str] = []
+    for family in FAMILIES:
+        if family.threshold_s <= lo or family.threshold_s >= hi:
+            bad.append(f"{family.name}: endpoint threshold {family.threshold_s}")
+        if family.threshold_s in grid:
+            bad.append(f"{family.name}: grid threshold {family.threshold_s}")
+    if bad:
+        raise ValueError("invalid TPS thresholds:\n  " + "\n  ".join(bad))
 
 
 def gold_action(family_name: str, tau_seconds: float) -> str:
@@ -278,6 +298,7 @@ class Item:
 
 
 def iter_items() -> Iterator[Item]:
+    validate_thresholds()
     for family in FAMILIES:
         for t_idx, template_text in enumerate(family.templates):
             for tau_ci in TAU_VALUES_S:

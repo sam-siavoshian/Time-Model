@@ -8,6 +8,8 @@ Root documentation is intentionally small:
 
 Experiment documents:
 
+- `docs/TRAINING_TRACKS.md`: current separation between Track A mechanistic CI,
+  Track B TPS policy CI, and later Track C combined-training work.
 - `docs/experiments/current/PREREGISTRATION_v2.md`: current Chronometric
   Injection preregistration contract.
 

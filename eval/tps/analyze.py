@@ -3,7 +3,7 @@
 Reads an explicit list or run directory of reports/tps/<adapter>.json files, computes:
   - per-adapter policy accuracy (overall, per condition, per family, held-in vs held-out)
   - balanced accuracy across the 4 action classes
-  - monotonicity r = corr(log_tau, P_REFRESH) within hidden_only condition
+  - monotonicity r = corr(log_tau, P(long_action)) within hidden_only condition
   - conflict scalar-follow rate vs prompt-follow rate vs abstain rate
   - cross-seed mean/std for v15s seeds
 
@@ -17,9 +17,16 @@ import glob
 import json
 import math
 import os
+import sys
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Iterable
+
+ROOT_FOR_IMPORT = Path(__file__).resolve().parents[2]
+if str(ROOT_FOR_IMPORT) not in sys.path:
+    sys.path.insert(0, str(ROOT_FOR_IMPORT))
+
+from eval.tps.benchmark import FAMILY_BY_NAME
 
 
 def load_run(path: str) -> dict:
@@ -62,26 +69,54 @@ def corr(xs: list[float], ys: list[float]) -> float:
     return num / (dx * dy)
 
 
-def monotonicity(rows: list[dict]) -> dict[str, float]:
-    """Within hidden_only items, correlate log_tau with indicator(action == 'REFRESH')."""
+def monotonicity(rows: list[dict]) -> dict[str, Any]:
+    """Within hidden_only items, correlate log_tau with each family's long action."""
     rows = [r for r in rows if r["condition"] == "hidden_only" and r["tau_ci_s"] > 0]
     if not rows:
-        return {"r_log_tau_vs_p_refresh": float("nan"), "n": 0}
+        return {
+            "r_log_tau_vs_p_long_action": float("nan"),
+            "r_log_tau_vs_p_refresh": float("nan"),
+            "n": 0,
+            "p_long_action_overall": float("nan"),
+            "per_family": {},
+        }
     xs = [math.log(float(r["tau_ci_s"])) for r in rows]
-    ys = [1.0 if r["action"] == "REFRESH" else 0.0 for r in rows]
+    ys: list[float] = []
+    for r in rows:
+        family = FAMILY_BY_NAME[r["family"]]
+        ys.append(1.0 if r["action"] == family.long_action else 0.0)
+
+    per_family: dict[str, Any] = {}
+    for family_name in sorted(set(r["family"] for r in rows)):
+        fam_rows = [r for r in rows if r["family"] == family_name]
+        family = FAMILY_BY_NAME[family_name]
+        fam_xs = [math.log(float(r["tau_ci_s"])) for r in fam_rows]
+        fam_ys = [1.0 if r["action"] == family.long_action else 0.0 for r in fam_rows]
+        per_family[family_name] = {
+            "long_action": family.long_action,
+            "r_log_tau_vs_p_long_action": corr(fam_xs, fam_ys),
+            "p_long_action": sum(fam_ys) / len(fam_ys),
+            "n": len(fam_rows),
+        }
+    long_action_r = corr(xs, ys)
     return {
-        "r_log_tau_vs_p_refresh": corr(xs, ys),
+        "r_log_tau_vs_p_long_action": long_action_r,
+        # Backward-compatible alias for older plotting/report scripts. New code
+        # should use r_log_tau_vs_p_long_action; this is no longer hard-coded to
+        # REFRESH.
+        "r_log_tau_vs_p_refresh": long_action_r,
         "n": len(rows),
-        "p_refresh_overall": sum(ys) / len(ys),
+        "p_long_action_overall": sum(ys) / len(ys),
+        "per_family": per_family,
     }
 
 
 def conflict_breakdown(rows: list[dict]) -> dict[str, Any]:
     """Conflict scoring with two corrections from review:
 
-    1. Filter out 'fake conflict' items where gold_scalar == gold_prompt
-       (happens in market_data because its threshold equals the short-side
-       tau_prompt of 10s, so both golds collapse to REFRESH).
+    1. Filter out any 'fake conflict' items where gold_scalar == gold_prompt.
+       The current TPS generator avoids known endpoint-threshold cases, but the
+       filter keeps analysis compatible with historical reports.
     2. 'Abstain' should not double-count ASK/SUMMARIZE when those ARE the
        gold action for the family (safety -> ASK, session -> SUMMARIZE).
        Restrict to items whose gold_scalar AND gold_prompt are both in
@@ -106,6 +141,9 @@ def conflict_breakdown(rows: list[dict]) -> dict[str, Any]:
         "scalar_follow_rate": scalar_follow / len(real),
         "prompt_follow_rate": prompt_follow / len(real),
         "abstain_rate_eligible_only": (abstain / len(abstain_eligible)) if abstain_eligible else float("nan"),
+        "detect_revalidate_rate_eligible_only": (
+            abstain / len(abstain_eligible)
+        ) if abstain_eligible else float("nan"),
         "n_abstain_eligible": len(abstain_eligible),
     }
 
@@ -165,7 +203,13 @@ def aggregate_seeds(runs: list[dict]) -> dict[str, float]:
     if n == 0:
         return {"mean": float("nan"), "std": float("nan"), "n": 0}
     hidden_accs = [r["metrics"]["by_condition"]["hidden_only"]["policy_acc"] for r in runs]
-    monotonicities = [r["metrics"]["monotonicity"]["r_log_tau_vs_p_refresh"] for r in runs]
+    monotonicities = [
+        r["metrics"]["monotonicity"].get(
+            "r_log_tau_vs_p_long_action",
+            r["metrics"]["monotonicity"].get("r_log_tau_vs_p_refresh", float("nan")),
+        )
+        for r in runs
+    ]
 
     def mean_std(vals: list[float]) -> tuple[float, float]:
         mean = sum(vals) / len(vals)
@@ -246,12 +290,15 @@ def main() -> int:
 
     ci_seeds = [v for k, v in per_adapter.items() if k.startswith("ci_v15s_s")]
     ci_agg = aggregate_seeds(ci_seeds) if ci_seeds else None
+    ci_policy_seeds = [v for k, v in per_adapter.items() if k.startswith("ci_policy_s")]
+    ci_policy_agg = aggregate_seeds(ci_policy_seeds) if ci_policy_seeds else None
 
     headline = {
         "input_files": [str(Path(f).relative_to(root)) if Path(f).is_relative_to(root) else f
                         for f in files],
         "per_adapter": per_adapter,
         "ci_v15s_crossseed": ci_agg,
+        "ci_policy_crossseed": ci_policy_agg,
     }
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     with open(args.out, "w") as fh:
@@ -264,10 +311,15 @@ def main() -> int:
         m = info["metrics"]
         print(f"{tag}: policy_acc={m['overall_policy_acc']:.3f}  balanced={m['overall_balanced_acc']:.3f}  "
               f"hidden_only={m['by_condition']['hidden_only']['policy_acc']:.3f}  "
-              f"r(logtau,Pref)={m['monotonicity']['r_log_tau_vs_p_refresh']:.3f}  "
+              f"r(logtau,P_long)={m['monotonicity']['r_log_tau_vs_p_long_action']:.3f}  "
               f"conflict.scalar_follow={m['conflict'].get('scalar_follow_rate', float('nan')):.3f}")
     if ci_agg:
         print(f"\nCI v15s cross-seed (n={ci_agg['n']}): mean={ci_agg['mean']:.3f}+-{ci_agg['std']:.3f}")
+    if ci_policy_agg:
+        print(
+            f"\nCI policy cross-seed (n={ci_policy_agg['n']}): "
+            f"mean={ci_policy_agg['mean']:.3f}+-{ci_policy_agg['std']:.3f}"
+        )
     return 0
 
 

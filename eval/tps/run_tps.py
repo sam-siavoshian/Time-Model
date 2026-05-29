@@ -1,8 +1,9 @@
 """TPS forced-choice eval.
 
-Greedy-decode up to N tokens, regex-extract the first letter A/B/C/D.
-This works uniformly for CI adapters (which thread tau_t through forward)
-and vanilla/prompt adapters (which do not).
+By default this greedy-decodes up to N tokens and regex-extracts the first
+letter A/B/C/D. The optional logprob scorer instead evaluates the next-token
+probability of A/B/C/D directly so parsing failures cannot dominate a policy
+accuracy result.
 
 Usage:
   uv run python -m eval.tps.run_tps \
@@ -40,6 +41,40 @@ def letter_to_action(letter: str | None) -> str | None:
     return {"A": "REUSE", "B": "REFRESH", "C": "ASK", "D": "SUMMARIZE"}.get(letter or "", None)
 
 
+@torch.no_grad()
+def score_letters_logprob(adapter, prompt: str, tau_seconds: float) -> tuple[str | None, dict[str, float]]:
+    """Score A/B/C/D as the next generated answer token.
+
+    We score both bare and space-prefixed variants and take the max because
+    tokenizers differ on whether a single-letter answer is represented as
+    ``A`` or `` A`` after the prompt.
+    """
+    if not getattr(adapter, "_loaded", False):
+        raise RuntimeError("call load() before score_letters_logprob()")
+    wrapped = adapter.construct_prompt(prompt, tau_seconds)
+    ids = adapter.tokenizer.encode(wrapped, return_tensors="pt").to(adapter.device)
+    if ids.dim() == 2 and adapter.name == "ci":
+        forward_ids = ids.squeeze(0)
+        out = adapter.model(forward_ids, tau_t=float(tau_seconds))
+    else:
+        out = adapter.model(ids)
+    logits = out["logits"] if isinstance(out, dict) else out.logits
+    if logits.dim() == 3:
+        logits = logits[0]
+    next_logprobs = torch.log_softmax(logits[-1].float(), dim=-1)
+
+    scores: dict[str, float] = {}
+    for letter in "ABCD":
+        variants: list[float] = []
+        for piece in (letter, f" {letter}"):
+            token_ids = adapter.tokenizer.encode(piece, add_special_tokens=False)
+            if token_ids:
+                variants.append(float(next_logprobs[int(token_ids[0])].item()))
+        scores[letter] = max(variants) if variants else float("-inf")
+    best = max(scores, key=scores.get) if scores else None
+    return best, scores
+
+
 def build_adapter(name: str, checkpoint: str | None, base_model: str, max_new_tokens: int):
     from eval.external.adapters.vanilla_adapter import VanillaAdapter
     from eval.external.adapters.prompt_adapter import PromptAdapter
@@ -73,6 +108,7 @@ def main() -> int:
     ap.add_argument("--out", required=True)
     ap.add_argument("--base-model", default="Qwen/Qwen2.5-3B-Instruct")
     ap.add_argument("--max-new-tokens", type=int, default=4)
+    ap.add_argument("--scoring", choices=["generate", "logprob"], default="generate")
     ap.add_argument("--limit", type=int, default=0, help="0 = no limit")
     ap.add_argument("--memory-fraction", type=float, default=0.0,
                     help="if >0, set CUDA per-process memory fraction to avoid Omar contention")
@@ -103,11 +139,20 @@ def main() -> int:
     for idx, item in enumerate(items):
         prompt_text = item["prompt"]
         tau_ci = float(item["tau_ci_s"]) if item["tau_ci_s"] is not None else 0.0
-        try:
-            text = adapter.generate(prompt_text, tau_seconds=tau_ci)
-        except Exception as exc:                                # noqa: BLE001
-            text = f"<ERROR: {exc}>"
-        letter = parse_letter(text)
+        letter_scores: dict[str, float] | None = None
+        if args.scoring == "logprob":
+            try:
+                letter, letter_scores = score_letters_logprob(adapter, prompt_text, tau_ci)
+                text = f"<LOGPROB:{letter}>"
+            except Exception as exc:                            # noqa: BLE001
+                text = f"<ERROR: {exc}>"
+                letter = None
+        else:
+            try:
+                text = adapter.generate(prompt_text, tau_seconds=tau_ci)
+            except Exception as exc:                            # noqa: BLE001
+                text = f"<ERROR: {exc}>"
+            letter = parse_letter(text)
         action = letter_to_action(letter)
         results.append({
             "item_id": item["item_id"],
@@ -123,6 +168,8 @@ def main() -> int:
             "raw_text": text[:200],
             "letter": letter,
             "action": action,
+            "letter_scores": letter_scores,
+            "scoring": args.scoring,
         })
         if (idx + 1) % args.progress_every == 0:
             dt = time.time() - t_eval0
@@ -135,6 +182,7 @@ def main() -> int:
         "adapter": args.adapter,
         "checkpoint": args.checkpoint,
         "base_model": args.base_model,
+        "scoring": args.scoring,
         "n_items": len(results),
         "elapsed_sec": time.time() - t0,
         "results": results,

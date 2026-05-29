@@ -28,14 +28,19 @@ def test_supported_shell_runners_use_run_context_and_no_root_outputs():
 
 
 def test_supported_runner_requires_run_id_before_work():
-    proc = subprocess.run(
-        ["bash", str(ROOT / "scripts" / "run_external_bench.sh")],
-        cwd=ROOT,
-        text=True,
-        capture_output=True,
-    )
-    assert proc.returncode != 0
-    assert "RUN_ID is required" in proc.stderr
+    for script in [
+        "run_external_bench.sh",
+        "run_track_a_mechanistic.sh",
+        "run_track_b_policy.sh",
+    ]:
+        proc = subprocess.run(
+            ["bash", str(ROOT / "scripts" / script)],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+        )
+        assert proc.returncode != 0, script
+        assert "RUN_ID is required" in proc.stderr, script
 
 
 def test_aggregate_refuses_implicit_legacy_glob():
@@ -140,6 +145,10 @@ def test_direct_python_writers_require_output_scope():
         ),
         (
             [sys.executable, "-m", "eval.tps.benchmark"],
+            "output scope required",
+        ),
+        (
+            [sys.executable, "-m", "eval.tps.training_data"],
             "output scope required",
         ),
         (

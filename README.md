@@ -12,6 +12,8 @@ Artifact manifest: [`ARTIFACT.md`](ARTIFACT.md)
 
 Canonical report bundle: [`reports/current`](reports/current)
 
+Training-track map: [`docs/TRAINING_TRACKS.md`](docs/TRAINING_TRACKS.md)
+
 ## Scope
 
 CI is a residual-stream input-channel experiment, not a claim of subjective time
@@ -46,16 +48,22 @@ Training/evaluation against the Qwen base requires Hugging Face access to
 
 ## Reproduce
 
-Main cross-seed run:
+Track A mechanistic CI, the current paper evidence track:
 
 ```bash
-bash scripts/run_v15_seeds.sh --run-id qwen_time_v15s_rerun
+bash scripts/run_track_a_mechanistic.sh --run-id ci_track_a_v15s
 uv run python scripts/aggregate_seeds.py \
   --inputs \
-  runs/qwen_time_v15s_rerun/reports/qwen_time_v15s_rerun_seed0_recall.json \
-  runs/qwen_time_v15s_rerun/reports/qwen_time_v15s_rerun_seed1_recall.json \
-  runs/qwen_time_v15s_rerun/reports/qwen_time_v15s_rerun_seed2_recall.json \
-  --out runs/qwen_time_v15s_rerun/reports/qwen_time_v15s_rerun_aggregate.json
+  runs/ci_track_a_v15s/reports/track_a/ci_track_a_v15s_seed0_recall.json \
+  runs/ci_track_a_v15s/reports/track_a/ci_track_a_v15s_seed1_recall.json \
+  runs/ci_track_a_v15s/reports/track_a/ci_track_a_v15s_seed2_recall.json \
+  --out runs/ci_track_a_v15s/reports/track_a/ci_track_a_v15s_aggregate.json
+```
+
+Track B policy CI, the experimental TPS policy-training track:
+
+```bash
+bash scripts/run_track_b_policy.sh --run-id ci_track_b_policy
 ```
 
 Run a released/checkpointed CI model through the core evaluator:
@@ -114,6 +122,15 @@ External/behavioral benchmarks:
 
 Legacy IPCN and memory-routing reports are preserved under `reports/archive/`
 for provenance, but they are not current CI evidence.
+
+## Training Tracks
+
+- Track A: `CLOCK`, `SILENT-GAP`, and `PHASE`; supports the current paper's
+  mechanistic residual-stream elapsed-time channel claim.
+- Track B: TPS forced-choice policy labels `REUSE`, `REFRESH`, `ASK`, and
+  `SUMMARIZE`; experimental until policy-trained results are produced.
+- Track C: combined Track A+B training is deliberately absent for now. It should
+  only be added after Track B works independently.
 
 ## Checkpoints
 
