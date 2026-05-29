@@ -76,17 +76,36 @@ def monotonicity(rows: list[dict]) -> dict[str, float]:
 
 
 def conflict_breakdown(rows: list[dict]) -> dict[str, Any]:
+    """Conflict scoring with two corrections from review:
+
+    1. Filter out 'fake conflict' items where gold_scalar == gold_prompt
+       (happens in market_data because its threshold equals the short-side
+       tau_prompt of 10s, so both golds collapse to REFRESH).
+    2. 'Abstain' should not double-count ASK/SUMMARIZE when those ARE the
+       gold action for the family (safety -> ASK, session -> SUMMARIZE).
+       Restrict to items whose gold_scalar AND gold_prompt are both in
+       {REUSE, REFRESH}.
+    """
     rows = [r for r in rows if r["condition"] in ("conflict_ps_cl", "conflict_pl_cs")]
-    if not rows:
-        return {"n": 0}
-    scalar_follow = sum(1 for r in rows if r["action"] == r["gold_scalar"])
-    prompt_follow = sum(1 for r in rows if r["gold_prompt"] is not None and r["action"] == r["gold_prompt"])
-    abstain = sum(1 for r in rows if r["action"] == "ASK" or r["action"] == "SUMMARIZE")
+    real = [r for r in rows if r["gold_prompt"] is not None and r["gold_prompt"] != r["gold_scalar"]]
+    if not real:
+        return {"n_raw": len(rows), "n_real": 0}
+    scalar_follow = sum(1 for r in real if r["action"] == r["gold_scalar"])
+    prompt_follow = sum(1 for r in real if r["action"] == r["gold_prompt"])
+    # Restrict abstain to items where ASK/SUMMARIZE are not the gold answer.
+    abstain_eligible = [
+        r for r in real
+        if r["gold_scalar"] in ("REUSE", "REFRESH") and r["gold_prompt"] in ("REUSE", "REFRESH")
+    ]
+    abstain = sum(1 for r in abstain_eligible if r["action"] in ("ASK", "SUMMARIZE"))
     return {
-        "n": len(rows),
-        "scalar_follow_rate": scalar_follow / len(rows),
-        "prompt_follow_rate": prompt_follow / len(rows),
-        "abstain_or_summarize_rate": abstain / len(rows),
+        "n_raw": len(rows),
+        "n_real": len(real),
+        "n_fake_conflicts_excluded": len(rows) - len(real),
+        "scalar_follow_rate": scalar_follow / len(real),
+        "prompt_follow_rate": prompt_follow / len(real),
+        "abstain_rate_eligible_only": (abstain / len(abstain_eligible)) if abstain_eligible else float("nan"),
+        "n_abstain_eligible": len(abstain_eligible),
     }
 
 

@@ -34,10 +34,10 @@ def main() -> int:
     ]
 
     # Display order + colors.
-    order = ["vanilla", "prompt", "chrono_only_s0", "ci_v15s_s0", "ci_v15s_s1", "ci_v15s_s2"]
+    # prompt adapter was contaminated by double-prefix; drop from plot.
+    order = ["vanilla", "chrono_only_s0", "ci_v15s_s0", "ci_v15s_s1", "ci_v15s_s2"]
     color = {
         "vanilla": "#999999",
-        "prompt": "#4477AA",
         "chrono_only_s0": "#EE6677",
         "ci_v15s_s0": "#228833",
         "ci_v15s_s1": "#66CC99",
