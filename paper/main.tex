@@ -268,9 +268,9 @@ The CLOCK-heldout probe strengthens this interpretation. When CLOCK examples are
 
 \subsection{The channel is necessary and causal}
 
-LoRA-only training collapses every behavioral test to $0.000$ across three seeds when the chrono gates are frozen at zero. This rules out the explanation that a matched LoRA adapter can infer elapsed time from prompt artifacts or training distribution leakage. Conversely, chrono-only training with LoRA frozen passes the in-house tests across three seeds, showing that LoRA is useful but not necessary.
+LoRA-only training makes all pass-style behavioral checks fail across three seeds when the chrono gates are frozen at zero. This rules out the explanation that a matched LoRA adapter can infer elapsed time from prompt artifacts or training distribution leakage. Conversely, chrono-only training with LoRA frozen passes the in-house tests across three seeds, showing that LoRA is useful but not necessary.
 
-Gate sign-flip interventions provide a stronger causal test. Flipping all learned $\alpha$ gates at inference inverts parsed time predictions with $r=-0.9998$ in the parseable T1 setting. Randomly flipping 17 of 35 injected layers yields a bimodal distribution over 100 subsets: 52 preserve the signal, 18 invert it, 23 are mixed, and 7 produce nonfinite outputs. This pattern is more consistent with a distributed signed pathway than with either a single scalar axis or a single dominant layer.
+Gate sign-flip interventions provide a stronger causal test. Flipping all learned $\alpha$ gates at inference inverts parsed time predictions with $r=-0.9998$ in the parseable T1 setting. Randomly flipping 17 of 35 injected layers yields a bimodal distribution over 100 subsets; using $|r|>0.5$ as the preserve/invert threshold, 52 preserve the signal, 18 invert it, 23 are mixed, and 7 produce nonfinite outputs. This pattern is more consistent with a distributed signed pathway than with either a single scalar axis or a single dominant layer.
 
 Layer-norm analysis identifies a stable mid-depth band. The top-8 layers by $|\alpha|$ norm are L20--L27 across the three trained seeds. Targeted top-8 flips collapse or invert the signal in two of three seeds, while bottom-8 flips preserve the signal in all three. This supports mid-deep dominance, although the imperfect top-8 result shows that norm ranking is not a complete proxy for functional importance.
 
@@ -291,10 +291,10 @@ T2 and T4 provide more meaningful channel-use evidence, especially under held-ou
 \midrule
 Per-layer probe & L0 $R^2=-0.005$; L1 $R^2=0.99990$; $\geq0.9995$ through L36; zero-gate chance & $\Tau$ is transmitted through the chrono path & In-distribution probe \\
 CLOCK-heldout probe & L1 $R^2=0.99984\pm0.00007$ & Axis is mechanical, not dependent on duration-string supervision & Does not imply behavior without training \\
-LoRA-only ablation & All behavioral tests collapse to $0.000$ across three seeds & Chrono gate is necessary & Synthetic-task setting \\
+LoRA-only ablation & All pass-style behavioral checks fail across three seeds & Chrono gate is necessary & Synthetic-task setting \\
 Chrono-only ablation & Passes in-house tests across three seeds with LoRA frozen & LoRA is not required for sufficiency & LoRA improves precision and stability \\
 All-layer sign flip & Parsed T1 predictions invert with $r=-0.9998$ & Gate direction is causal & Small parseable effective $n$ \\
-Half-layer flips & 52 preserve, 18 invert, 23 mixed, 7 nonfinite & Pathway is distributed and signed & Functional importance varies by seed \\
+Half-layer flips & With $|r|>0.5$: 52 preserve, 18 invert, 23 mixed, 7 nonfinite & Pathway is distributed and signed & Functional importance varies by seed \\
 Held-out CLOCK & T1/T1b fail; T2 and T4 pass 3/3 & Clock readout is format recall; other channel use survives & T2 itself is supervised by SILENT-GAP \\
 Prompt baseline & Prompt wins direct recall and composite external benchmark & \CI{} is not a universal replacement for timestamps & \texttt{tau\_sessions} does not show a CI advantage over prompt text \\
 TPDR v2 & Headline \texttt{deliberative\_score} pair confirms ($t=-5.167$, one-tailed $p=2.633\times10^{-6}$, $n=46$) & Exploratory evidence for response-shape modulation & Headline seed pair confirms; other seed pairs are not stable \\
