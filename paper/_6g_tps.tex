@@ -63,6 +63,27 @@ chrono-only (s0) & 0.363 & 0.430 \\
 
 \textbf{Interpretation.} TPS hidden-only tests whether the residual time channel changes downstream action selection under identical visible text. The cross-seed result is negative: \CI{} v15s does not outperform vanilla, and refresh probability does not rise monotonically with $\Tau$. The chrono-only ablation shows a small positive signal on the held-out family, suggesting that some compositional generalization is possible without the LoRA surface, but the effect size is too small to claim a behavioral contribution. This result is consistent with the mechanistic finding that $\Tau$ becomes linearly recoverable from hidden states without becoming a behavioral feature: the channel is \emph{transmitted} but not, in the zero-shot setting tested here, \emph{used} by the model's output policy. We report this negative result because it is the most honest statement of the limits of zero-shot transfer for \CI{}.
 
-\textbf{What this rules out.} TPS rules out the claim that \CI{}, as trained on CLOCK + SILENT-GAP + PHASE, yields a behavior-shaping policy channel that generalizes zero-shot to cache/session/freshness decisions. It does \emph{not} rule out the mechanistic transmission result (Sec.~VI-A), the causal interventions (Sec.~VI-B), or the response-shape result on TPDR (Sec.~VI-F), all of which remain intact. It also does \emph{not} rule out that a \CI{} model retrained on policy-labelled data would pass TPS; that experiment is left to future work.
+\textbf{What this rules out.} TPS rules out the claim that \CI{}, as trained on CLOCK + SILENT-GAP + PHASE, yields a behavior-shaping policy channel that generalizes zero-shot to cache/session/freshness decisions. It does \emph{not} rule out the mechanistic transmission result (Sec.~VI-A), the causal interventions (Sec.~VI-B), or the response-shape result on TPDR (Sec.~VI-F), all of which remain intact.
 
-\textbf{Limitations.} TPS uses templated synthetic prompts and rule-based oracle labels; a natural-language production benchmark remains open. The conflict numbers in Table~\ref{tab:tps-conflict} exclude 108 fake-conflict items in \texttt{market\_data} where the family threshold equalled the short-side prompt $\Tau$. Several reviewer-requested baselines (prompt-text + LoRA, soft-prompt / prefix tuning, matched-parameter scalar embedding, TPS-specific LoRA-only) are deferred to future work. All TPS results are zero-shot evaluations of checkpoints trained without policy-task supervision.
+\textbf{Policy-trained Track B.} To separate zero-shot transfer from task-specific downstream use, we also trained a distinct Track B family on TPS forced-choice policy labels. Track B uses separate training data, checkpoints, reports, and run directories from the Track A mechanistic \CI{} models; the current artifact is \texttt{runs/ci\_track\_b\_policy\_full\_safe\_20260531/reports/track\_b/headline.json}. This is not a replacement for the zero-shot result above. It asks a narrower question: once policy supervision is provided, can the hidden elapsed-time scalar drive action selection under identical visible prompts?
+
+\begin{table}[t]
+\centering
+\caption{Policy-trained Track B TPS results. \CI{} policy values are cross-seed mean $\pm$ sample standard deviation over seeds 0--2. \emph{Scalar-follow} is measured on prompt/scalar conflict items. $r$ is Spearman correlation between $\log\Tau$ and the probability of the long-delay action on hidden-only items.}
+\label{tab:tps-track-b}
+\footnotesize
+\begin{tabular}{lccccc}
+\toprule
+Model & Overall & Hidden-only & H/O templ. & H/O fam. & Scalar-follow / $r$ \\
+\midrule
+Vanilla policy & 0.401 & 0.418 & 0.366 & 0.181 & 0.377 / -0.000 \\
+LoRA-only policy (s0) & 0.581 & 0.574 & 0.574 & 0.155 & 0.585 / 0.000 \\
+chrono-only policy (s0) & 0.690 & 0.796 & 0.639 & 0.384 & 0.765 / 0.635 \\
+\CI{} policy & $0.756\pm0.023$ & $0.871\pm0.030$ & $0.713\pm0.020$ & $0.391\pm0.084$ & $0.871\pm0.029$ / $0.691\pm0.027$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The Track B result supports a policy-trained behavioral claim: with direct TPS supervision, the hidden elapsed-time channel can control forced-choice action selection, follows the hidden scalar under prompt/scalar conflict, and becomes monotone in the intended direction. The caveat is equally important. Held-out-family transfer to \texttt{market\_data} remains weak for policy-trained \CI{} ($0.391\pm0.084$), so this experiment does not establish broad domain generalization. It shows task-specific downstream use of the hidden channel, not that the Track A model already learned a general freshness policy.
+
+\textbf{Limitations.} TPS uses templated synthetic prompts and rule-based oracle labels; a natural-language production benchmark remains open. The conflict numbers in Table~\ref{tab:tps-conflict} exclude 108 fake-conflict items in \texttt{market\_data} where the family threshold equalled the short-side prompt $\Tau$. Several reviewer-requested baselines (prompt-text + LoRA, soft-prompt / prefix tuning, matched-parameter scalar embedding, and larger matched adapters) are deferred to future work. The Track B policy-trained run is separate from the Track A mechanistic run and remains synthetic; its weak held-out-family transfer is the main reason not to claim broad TPS generalization.

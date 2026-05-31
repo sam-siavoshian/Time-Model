@@ -107,6 +107,21 @@
         "H2 monotonicity is currently P(REFRESH), not family-specific long-side action."
       ]
     },
+    "track_b_policy": {
+      "status": "current_with_caveat",
+      "claim": "Separate Track B policy-trained TPS run: hidden elapsed-time scalar controls forced-choice action selection after direct policy supervision, but held-out-family transfer remains weak.",
+      "canonical_report": "reports/track_b_policy_headline.json",
+      "generator": "scripts/run_track_b_policy.sh",
+      "paper_locations": [
+        "paper/_6g_tps.tex",
+        "paper/main.tex"
+      ],
+      "caveats": [
+        "This is not the Track A mechanistic CI checkpoint family and should not be cited as zero-shot TPS transfer.",
+        "The run writes under runs/ci_track_b_policy_full_safe_20260531/{data,logs,checkpoints,reports}/track_b/ with separate Track B checkpoints.",
+        "CI policy hidden-only accuracy is 0.871+/-0.030 and monotonicity is 0.691+/-0.027 across seeds 0-2, but held-out market_data family accuracy is 0.391+/-0.084."
+      ]
+    },
     "tpdr_v2": {
       "status": "current_with_caveat",
       "claim": "Pre-registered TPDR v2 headline confirms the seed0 primary endpoint; seed1 and seed2 are mixed cross-seed replications.",

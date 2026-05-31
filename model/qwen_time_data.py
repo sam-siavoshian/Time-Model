@@ -29,6 +29,9 @@ import random
 from pathlib import Path
 
 
+V15_DATA_MIX_DEFAULT = "0.40,0.30,0.30"
+
+
 def _fmt_seconds(secs: float) -> str:
     """Grammatical duration string (handles singular vs plural)."""
     if secs < 60:
@@ -190,7 +193,7 @@ def main():
     p.add_argument("--n", type=int, default=6000)
     p.add_argument("--out", type=str, required=True)
     p.add_argument("--seed", type=int, default=0)
-    p.add_argument("--mix", type=str, default="0.4,0.4,0.2",
+    p.add_argument("--mix", type=str, default=V15_DATA_MIX_DEFAULT,
                    help="comma-sep mix of clock/silent_gap/phase probabilities")
     args = p.parse_args()
     rng = random.Random(args.seed)

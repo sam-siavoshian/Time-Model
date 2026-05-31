@@ -42,8 +42,8 @@ The code source of truth for these defaults is `model/qwen_time.py`.
 - Track A Mechanistic CI: `CLOCK`, `SILENT-GAP`, and `PHASE`. This is the
   current paper evidence track.
 - Track B Policy CI: TPS forced-choice labels `REUSE`, `REFRESH`, `ASK`, and
-  `SUMMARIZE`. This is an experimental policy-training track until new results
-  are produced.
+  `SUMMARIZE`. This is a separate policy-training track; the current run shows
+  hidden-time policy control with weak held-out-family transfer.
 
 See `docs/TRAINING_TRACKS.md` for the track map and output layout.
 
@@ -91,6 +91,7 @@ Use `reports/current/manifest.json` before citing a result. It records:
 - current v15 cross-seed reports;
 - probe and CLOCK-heldout reports;
 - TPS negative policy-transfer reports;
+- Track B policy-trained TPS reports;
 - TPDR v2 seed-pair-dependent response-shape reports;
 - external `tau_sessions` reports;
 - ablations and causal controls;
@@ -101,6 +102,8 @@ Use `reports/current/manifest.json` before citing a result. It records:
 - Prompt-injected elapsed time beats CI on the current `tau_sessions`
   composite and adaptive length correlation.
 - TPS is negative for CI v15s zero-shot policy transfer.
+- Track B policy training is positive for hidden-time action control but weak on
+  held-out-family transfer, so broad TPS generalization is not claimed.
 - TPDR v2 confirms only the headline seed pair and is not stable across all
   seed pairs.
 - The repo does not claim subjective time perception or autonomous tracking

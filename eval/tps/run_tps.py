@@ -19,6 +19,7 @@ import os
 import re
 import time
 from typing import Iterable
+from pathlib import Path
 
 import torch
 
@@ -75,7 +76,13 @@ def score_letters_logprob(adapter, prompt: str, tau_seconds: float) -> tuple[str
     return best, scores
 
 
-def build_adapter(name: str, checkpoint: str | None, base_model: str, max_new_tokens: int):
+def build_adapter(
+    name: str,
+    checkpoint: str | None,
+    base_model: str,
+    max_new_tokens: int,
+    chunk_length: int,
+):
     from eval.external.adapters.vanilla_adapter import VanillaAdapter
     from eval.external.adapters.prompt_adapter import PromptAdapter
     from eval.external.adapters.ci_adapter import CIAdapter
@@ -87,7 +94,12 @@ def build_adapter(name: str, checkpoint: str | None, base_model: str, max_new_to
     if name == "ci":
         if not checkpoint:
             raise SystemExit("--adapter ci requires --checkpoint")
-        return CIAdapter(base_model=base_model, max_new_tokens=max_new_tokens, checkpoint=checkpoint)
+        return CIAdapter(
+            base_model=base_model,
+            max_new_tokens=max_new_tokens,
+            checkpoint=checkpoint,
+            chunk_length=chunk_length,
+        )
     raise SystemExit(f"unknown adapter {name!r}")
 
 
@@ -100,6 +112,20 @@ def iter_items_from_path(path: str) -> Iterable[dict]:
             yield json.loads(line)
 
 
+def portable_path(path: str | None) -> str | None:
+    """Return a report-safe path without machine-local absolute prefixes."""
+    if path is None:
+        return None
+    p = Path(path)
+    if not p.is_absolute():
+        return p.as_posix()
+    root = Path(__file__).resolve().parents[2]
+    try:
+        return p.resolve().relative_to(root).as_posix()
+    except ValueError:
+        return p.name
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--adapter", required=True, choices=["vanilla", "prompt", "ci"])
@@ -108,6 +134,8 @@ def main() -> int:
     ap.add_argument("--out", required=True)
     ap.add_argument("--base-model", default="Qwen/Qwen2.5-3B-Instruct")
     ap.add_argument("--max-new-tokens", type=int, default=4)
+    ap.add_argument("--chunk-length", type=int, default=512,
+                    help="QwenTime chunk length for CI checkpoint compatibility.")
     ap.add_argument("--scoring", choices=["generate", "logprob"], default="generate")
     ap.add_argument("--limit", type=int, default=0, help="0 = no limit")
     ap.add_argument("--memory-fraction", type=float, default=0.0,
@@ -125,7 +153,13 @@ def main() -> int:
     sweep_id = f"{args.adapter}|{os.path.basename(args.checkpoint or 'base')}"
     print(f"== TPS sweep: {sweep_id} ==", flush=True)
 
-    adapter = build_adapter(args.adapter, args.checkpoint, args.base_model, args.max_new_tokens)
+    adapter = build_adapter(
+        args.adapter,
+        args.checkpoint,
+        args.base_model,
+        args.max_new_tokens,
+        args.chunk_length,
+    )
     t0 = time.time()
     adapter.load()
     print(f"loaded in {time.time() - t0:.1f}s", flush=True)
@@ -180,7 +214,7 @@ def main() -> int:
     out_payload = {
         "sweep_id": sweep_id,
         "adapter": args.adapter,
-        "checkpoint": args.checkpoint,
+        "checkpoint": portable_path(args.checkpoint),
         "base_model": args.base_model,
         "scoring": args.scoring,
         "n_items": len(results),

@@ -53,6 +53,7 @@ class CIAdapter(TauAdapter):
         injection_type: str = "film",
         inject_layers: tuple[int, ...] = (),
         lora_rank: int = 8,
+        chunk_length: int = 512,
         **kwargs,
     ) -> None:
         super().__init__(
@@ -72,6 +73,7 @@ class CIAdapter(TauAdapter):
         self.injection_type = injection_type
         self.inject_layers = tuple(int(x) for x in inject_layers)
         self.lora_rank = int(lora_rank)
+        self.chunk_length = int(chunk_length)
         self._qwen_time: QwenTime | None = None
 
     def load(self) -> None:
@@ -83,6 +85,7 @@ class CIAdapter(TauAdapter):
             inject_layers=self.inject_layers,
             lora_rank=self.lora_rank,
             injection_type=self.injection_type,
+            chunk_length=self.chunk_length,
         )
         qt = build_qwen_time(cfg)
         qt.to(self.device)

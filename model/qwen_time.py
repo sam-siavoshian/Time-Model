@@ -167,8 +167,14 @@ class _LoRALinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         base_out = self.base(x)
-        x_l = x.to(self.lora_A.dtype)
-        adapter = F.linear(F.linear(x_l, self.lora_A), self.lora_B) * self.scaling
+        # Keep the sequence activation in the model dtype. The trainable LoRA
+        # tensors are stored in fp32, but casting the small weights is cheaper
+        # than upcasting every token activation during backward.
+        x_l = x
+        adapter = F.linear(
+            F.linear(x_l, self.lora_A.to(dtype=x_l.dtype)),
+            self.lora_B.to(dtype=x_l.dtype),
+        ) * self.scaling
         return base_out + adapter.to(base_out.dtype)
 
 
@@ -239,19 +245,19 @@ class _ChronoInjector(nn.Module):
             nn.init.constant_(self.to_beta.bias, additive_beta_init)
 
     def forward(self, h: torch.Tensor, chi_t: torch.Tensor) -> torch.Tensor:
-        chi_f = chi_t.float()
-        gamma = self.to_gamma(chi_f)
-        beta = self.to_beta(chi_f)
-        h_f = h.float()
+        chi_f = chi_t.to(device=h.device, dtype=self.to_gamma.weight.dtype)
+        gamma = self.to_gamma(chi_f).to(dtype=h.dtype)
+        beta = self.to_beta(chi_f).to(dtype=h.dtype)
+        alpha = self.alpha.to(device=h.device, dtype=h.dtype)
         if self.injection_type == "additive":
             # Pure additive residual ablation: ignore h-dependent scaling.
             # out = h + alpha * beta(chi). Comparable to GazeQwen-style.
-            out = h_f + self.alpha[None, None, :] * beta[None, None, :]
+            out = h + alpha[None, None, :] * beta[None, None, :]
         else:
             # FiLM (default v15): scale + shift h, gated by alpha.
-            modulated = gamma[None, None, :] * h_f + beta[None, None, :]
-            out = h_f + self.alpha[None, None, :] * modulated
-        return out.to(h.dtype)
+            modulated = gamma[None, None, :] * h + beta[None, None, :]
+            out = h + alpha[None, None, :] * modulated
+        return out
 
 
 class QwenTime(nn.Module):
@@ -265,6 +271,7 @@ class QwenTime(nn.Module):
         self.base = AutoModelForCausalLM.from_pretrained(
             cfg.base_model_name, torch_dtype=torch.bfloat16, trust_remote_code=True
         )
+        self.base.config.use_cache = False
         if not cfg.unfreeze_base:
             for p in self.base.parameters():
                 p.requires_grad_(False)
@@ -399,7 +406,7 @@ class QwenTime(nn.Module):
         chi_t = chi.squeeze(0) if chi.dim() > 1 else chi
         self._chi_stack.append(chi_t)
         try:
-            out = self.base(input_ids=input_ids, return_dict=True)
+            out = self.base(input_ids=input_ids, return_dict=True, use_cache=False)
         finally:
             self._chi_stack.pop()
 

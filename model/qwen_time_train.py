@@ -39,6 +39,110 @@ from model.qwen_time import (
 )
 
 
+def load_initial_trainable_state(model: QwenTime, ckpt_path: str) -> int:
+    state = torch.load(ckpt_path, map_location="cpu", weights_only=False)
+    trainable_state = state.get("trainable_state")
+    if not isinstance(trainable_state, dict):
+        raise ValueError(f"initial checkpoint {ckpt_path} is missing trainable_state")
+    current = dict(model.named_parameters())
+    unexpected = sorted(name for name in trainable_state if name not in current)
+    shape_mismatches = [
+        f"{name}: checkpoint={tuple(tensor.shape)} current={tuple(current[name].shape)}"
+        for name, tensor in trainable_state.items()
+        if name in current and tuple(tensor.shape) != tuple(current[name].shape)
+    ]
+    if unexpected or shape_mismatches:
+        parts = []
+        if unexpected:
+            parts.append(f"unexpected tensors={unexpected[:8]}")
+        if shape_mismatches:
+            parts.append(f"shape mismatches={shape_mismatches[:8]}")
+        raise ValueError(f"initial checkpoint mismatch for {ckpt_path}: " + "; ".join(parts))
+    for name, tensor in trainable_state.items():
+        current[name].data.copy_(tensor.to(current[name].device, dtype=current[name].dtype))
+    return len(trainable_state)
+
+
+def checkpoint_train_step(ckpt_path: str) -> int:
+    state = torch.load(ckpt_path, map_location="cpu", weights_only=False)
+    return int(state.get("train_step", 0))
+
+
+def trainable_state_dict(model: QwenTime) -> dict[str, torch.Tensor]:
+    return {n: p.detach().cpu() for n, p in model.named_parameters() if p.requires_grad}
+
+
+def save_trainable_checkpoint(
+    model: QwenTime,
+    cfg: QwenTimeConfig,
+    args: argparse.Namespace,
+    step: int,
+    out_path: str | Path,
+) -> None:
+    trainable_state = trainable_state_dict(model)
+    config_metadata = qwen_time_checkpoint_metadata(cfg, tuple(model._inject_layers))
+    config_metadata["trainable_names"] = sorted(trainable_state)
+    save = {
+        "trainable_state": trainable_state,
+        "cfg": qwen_time_config_dict(cfg),
+        "config_metadata": config_metadata,
+        "train_args": vars(args),
+        "train_step": int(step),
+    }
+    path = Path(out_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + f".tmp.{os.getpid()}")
+    torch.save(save, str(tmp))
+    os.replace(str(tmp), path)
+
+
+def periodic_checkpoint_path(out_path: str | Path, step: int) -> Path:
+    path = Path(out_path)
+    return path.with_name(f"{path.stem}.step{step}{path.suffix}")
+
+
+def _proc_status_kib(field: str) -> int | None:
+    try:
+        with open("/proc/self/status") as fh:
+            for line in fh:
+                if line.startswith(f"{field}:"):
+                    return int(line.split()[1])
+    except OSError:
+        return None
+    return None
+
+
+def _mem_available_kib() -> int | None:
+    try:
+        with open("/proc/meminfo") as fh:
+            for line in fh:
+                if line.startswith("MemAvailable:"):
+                    return int(line.split()[1])
+    except OSError:
+        return None
+    return None
+
+
+def memory_telemetry(device: str) -> dict[str, int | None]:
+    telemetry: dict[str, int | None] = {
+        "mem_available_kib": _mem_available_kib(),
+        "proc_rss_kib": _proc_status_kib("VmRSS"),
+        "proc_hwm_kib": _proc_status_kib("VmHWM"),
+    }
+    if str(device).startswith("cuda") and torch.cuda.is_available():
+        try:
+            telemetry["cuda_allocated_bytes"] = int(torch.cuda.memory_allocated())
+            telemetry["cuda_reserved_bytes"] = int(torch.cuda.memory_reserved())
+            telemetry["cuda_max_allocated_bytes"] = int(torch.cuda.max_memory_allocated())
+            telemetry["cuda_max_reserved_bytes"] = int(torch.cuda.max_memory_reserved())
+        except Exception:
+            telemetry["cuda_allocated_bytes"] = None
+            telemetry["cuda_reserved_bytes"] = None
+            telemetry["cuda_max_allocated_bytes"] = None
+            telemetry["cuda_max_reserved_bytes"] = None
+    return telemetry
+
+
 def stream_records(path: str, shuffle: bool = True, seed: int = 0, repeat: bool = True):
     with open(path) as f:
         lines = f.readlines()
@@ -103,6 +207,21 @@ def main():
     p.add_argument("--log-path", type=str, default=None)
     p.add_argument("--log-every", type=int, default=50)
     p.add_argument("--out", type=str, default=None)
+    p.add_argument("--init-checkpoint", type=str, default=None,
+                   help="Optional trainable-state checkpoint to load before training. "
+                        "Used for explicit fine-tuning experiments; output checkpoint "
+                        "is still written to --out.")
+    p.add_argument("--resume-checkpoint", type=str, default=None,
+                   help="Resume model weights from a trainable-state checkpoint and "
+                        "continue step numbering from its train_step metadata. Optimizer "
+                        "state is intentionally not restored.")
+    p.add_argument("--save-every", type=int, default=0,
+                   help="If >0, write periodic checkpoints every N completed steps as "
+                        "<out>.stepN before the final checkpoint.")
+    p.add_argument("--empty-cache-every", type=int, default=0,
+                   help="If >0 on CUDA, call torch.cuda.empty_cache() every N "
+                        "completed steps. Useful on unified-memory systems where "
+                        "reserved CUDA cache can starve system RAM.")
     p.add_argument("--run-id", type=str, default=None,
                    help="Write checkpoint/logs under runs/<run-id>/ when --out is omitted.")
     p.add_argument("--chunk-length", type=int, default=512)
@@ -147,6 +266,8 @@ def main():
                         "PEFT instead of LoRA. Wraps k_proj, v_proj, and FFN up_proj "
                         "with per-output-feature learnable scales initialized to one.")
     args = p.parse_args()
+    if args.init_checkpoint and args.resume_checkpoint:
+        raise SystemExit("pass only one of --init-checkpoint or --resume-checkpoint")
 
     if args.out is None:
         if args.run_id is None:
@@ -195,6 +316,18 @@ def main():
     print(f"  chrono injectors: {len(model.chrono_injectors)}")
     print(f"  LoRA modules: {model._n_lora_modules}")
 
+    start_step = 0
+    if args.resume_checkpoint:
+        n_loaded = load_initial_trainable_state(model, args.resume_checkpoint)
+        start_step = checkpoint_train_step(args.resume_checkpoint)
+        print(
+            f"  resumed trainable state from {args.resume_checkpoint} "
+            f"({n_loaded} tensors, start_step={start_step})"
+        )
+    elif args.init_checkpoint:
+        n_loaded = load_initial_trainable_state(model, args.init_checkpoint)
+        print(f"  loaded initial trainable state from {args.init_checkpoint} ({n_loaded} tensors)")
+
     if args.freeze_alpha:
         # LoRA-only ablation: lock all per-layer alpha gates at 0 and
         # remove them from the optimizer. Chrono encoder + projectors
@@ -238,10 +371,12 @@ def main():
         trainable = [p for p in model.parameters() if p.requires_grad]
         opt = torch.optim.AdamW(trainable, lr=args.lr, weight_decay=0.01)
 
-    log_f = open(args.log_path, "w", buffering=1)
-    print(f"Training {args.steps} steps. Log -> {args.log_path}")
-    step = 0
+    log_f = open(args.log_path, "a" if args.resume_checkpoint else "w", buffering=1)
+    print(f"Training from step {start_step} to {args.steps}. Log -> {args.log_path}")
+    step = start_step
     iterator = stream_records(args.data, seed=args.seed)
+    for _ in range(start_step):
+        next(iterator)
     t_train = time.time()
     for rec in iterator:
         if step >= args.steps:
@@ -251,32 +386,44 @@ def main():
         except Exception as e:
             continue
         out = train_step(model, opt, ids, mask, rec.get("tau_t", 0.0), args.device)
-        out.update({"step": step, "mode": rec.get("mode", "?"), "tau_t": rec.get("tau_t", 0.0), "time": time.time()})
+        out.update({
+            "step": step,
+            "mode": rec.get("mode", "?"),
+            "tau_t": rec.get("tau_t", 0.0),
+            "time": time.time(),
+            "memory": memory_telemetry(args.device),
+        })
         log_f.write(json.dumps(out) + "\n")
         if step % args.log_every == 0:
+            mem = out["memory"]
+            mem_gib = (
+                f"{mem['mem_available_kib'] / (1024 ** 2):.1f}GiB"
+                if mem.get("mem_available_kib") is not None
+                else "n/a"
+            )
             print(
                 f"step={step:6d} | loss={out['loss']:7.4f} ppl={out.get('ppl', 0):8.1f} "
-                f"grad={out['grad_norm']:6.3f} mode={out['mode']:10s} tau={out['tau_t']:.1f} tgt={out.get('n_target', 0):3d}"
+                f"grad={out['grad_norm']:6.3f} mode={out['mode']:10s} tau={out['tau_t']:.1f} "
+                f"tgt={out.get('n_target', 0):3d} mem_avail={mem_gib}"
             )
         step += 1
+        if (
+            args.empty_cache_every > 0
+            and step % args.empty_cache_every == 0
+            and str(args.device).startswith("cuda")
+            and torch.cuda.is_available()
+        ):
+            torch.cuda.empty_cache()
+        if args.save_every > 0 and step % args.save_every == 0:
+            ckpt_path = periodic_checkpoint_path(args.out, step)
+            save_trainable_checkpoint(model, cfg, args, step, ckpt_path)
+            print(f"Saved periodic checkpoint to {ckpt_path}")
     log_f.write(json.dumps({"event": "training_complete", "step": step,
                             "max_steps": args.steps, "reason": "max_steps",
                             "time": time.time()}) + "\n")
     log_f.close()
 
-    trainable_state = {n: p.detach().cpu() for n, p in model.named_parameters() if p.requires_grad}
-    config_metadata = qwen_time_checkpoint_metadata(cfg, tuple(model._inject_layers))
-    config_metadata["trainable_names"] = sorted(trainable_state)
-    save = {
-        "trainable_state": trainable_state,
-        "cfg": qwen_time_config_dict(cfg),
-        "config_metadata": config_metadata,
-        "train_args": vars(args),
-        "train_step": step,
-    }
-    tmp = Path(args.out).with_name(Path(args.out).name + f".tmp.{os.getpid()}")
-    torch.save(save, str(tmp))
-    os.replace(str(tmp), args.out)
+    save_trainable_checkpoint(model, cfg, args, step, args.out)
     print(f"Saved checkpoint to {args.out}")
     print(f"Total wall time: {time.time() - t_train:.1f}s")
 

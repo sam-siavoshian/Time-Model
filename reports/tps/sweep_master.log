@@ -52,7 +52,7 @@ wrote 2592 results to reports/tps/prompt.json (total 529.1s)
 
 ============================================================
   TPS RUN: ci_v15s_s0
-  args: --adapter ci --checkpoint /home/omarramadan/ipcn/release_ckpts/qwen_time_v15s_20260523_141410_seed0.pt
+  args: --adapter ci --checkpoint release_ckpts/qwen_time_v15s_20260523_141410_seed0.pt
   out:  reports/tps/ci_v15s_s0.json
 ============================================================
 Uninstalled 1 package in 0.85ms
@@ -79,7 +79,7 @@ wrote 2592 results to reports/tps/ci_v15s_s0.json (total 635.3s)
 
 ============================================================
   TPS RUN: chrono_only_s0
-  args: --adapter ci --checkpoint /home/omarramadan/ipcn/checkpoints/chrono_only_s0.pt
+  args: --adapter ci --checkpoint checkpoints/chrono_only_s0.pt
   out:  reports/tps/chrono_only_s0.json
 ============================================================
 Uninstalled 1 package in 0.78ms
@@ -106,7 +106,7 @@ wrote 2592 results to reports/tps/chrono_only_s0.json (total 648.7s)
 
 ============================================================
   TPS RUN: ci_v15s_s1
-  args: --adapter ci --checkpoint /home/omarramadan/ipcn/release_ckpts/qwen_time_v15s_20260523_141410_seed1.pt
+  args: --adapter ci --checkpoint release_ckpts/qwen_time_v15s_20260523_141410_seed1.pt
   out:  reports/tps/ci_v15s_s1.json
 ============================================================
 Uninstalled 1 package in 1ms
@@ -133,7 +133,7 @@ wrote 2592 results to reports/tps/ci_v15s_s1.json (total 814.5s)
 
 ============================================================
   TPS RUN: ci_v15s_s2
-  args: --adapter ci --checkpoint /home/omarramadan/ipcn/release_ckpts/qwen_time_v15s_20260523_141410_seed2.pt
+  args: --adapter ci --checkpoint release_ckpts/qwen_time_v15s_20260523_141410_seed2.pt
   out:  reports/tps/ci_v15s_s2.json
 ============================================================
 Uninstalled 1 package in 0.54ms

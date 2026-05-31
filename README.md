@@ -60,7 +60,7 @@ uv run python scripts/aggregate_seeds.py \
   --out runs/ci_track_a_v15s/reports/track_a/ci_track_a_v15s_aggregate.json
 ```
 
-Track B policy CI, the experimental TPS policy-training track:
+Track B policy CI, the TPS policy-training track:
 
 ```bash
 bash scripts/run_track_b_policy.sh --run-id ci_track_b_policy
@@ -119,6 +119,7 @@ External/behavioral benchmarks:
 - `reports/ext_bench_vanilla.json`
 - `reports/tpdr_v2_headline.json`
 - `reports/tps/headline.json`
+- `reports/track_b_policy_headline.json`
 
 Legacy IPCN and memory-routing reports are preserved under `reports/archive/`
 for provenance, but they are not current CI evidence.
@@ -128,9 +129,10 @@ for provenance, but they are not current CI evidence.
 - Track A: `CLOCK`, `SILENT-GAP`, and `PHASE`; supports the current paper's
   mechanistic residual-stream elapsed-time channel claim.
 - Track B: TPS forced-choice policy labels `REUSE`, `REFRESH`, `ASK`, and
-  `SUMMARIZE`; experimental until policy-trained results are produced.
+  `SUMMARIZE`; current with caveat. The completed policy-trained run shows
+  hidden-time action control, while held-out-family transfer remains weak.
 - Track C: combined Track A+B training is deliberately absent for now. It should
-  only be added after Track B works independently.
+  only be added after Track B has stronger leave-one-family-out validation.
 
 ## Checkpoints
 
@@ -151,6 +153,8 @@ the frozen Qwen base.
   timestamps into the prompt.
 - It does not show zero-shot policy transfer on Temporal Policy Switching; TPS
   is negative for CI v15s in the current paper.
+- It does not show broad TPS domain generalization; policy-trained Track B still
+  has weak held-out-family transfer.
 - It does not depend on the abandoned IPCN-era memory-routing claim.
 
 ## Citation

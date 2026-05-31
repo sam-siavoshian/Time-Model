@@ -103,7 +103,7 @@
     "chrono_only_s0": {
       "sweep_id": "ci|chrono_only_s0.pt",
       "adapter": "ci",
-      "checkpoint": "/home/omarramadan/ipcn/checkpoints/chrono_only_s0.pt",
+      "checkpoint": "checkpoints/chrono_only_s0.pt",
       "n_items": 2592,
       "elapsed_sec": 648.6425490379333,
       "metrics": {
@@ -196,7 +196,7 @@
     "ci_v15s_s0": {
       "sweep_id": "ci|qwen_time_v15s_20260523_141410_seed0.pt",
       "adapter": "ci",
-      "checkpoint": "/home/omarramadan/ipcn/release_ckpts/qwen_time_v15s_20260523_141410_seed0.pt",
+      "checkpoint": "release_ckpts/qwen_time_v15s_20260523_141410_seed0.pt",
       "n_items": 2592,
       "elapsed_sec": 635.313493013382,
       "metrics": {
@@ -289,7 +289,7 @@
     "ci_v15s_s1": {
       "sweep_id": "ci|qwen_time_v15s_20260523_141410_seed1.pt",
       "adapter": "ci",
-      "checkpoint": "/home/omarramadan/ipcn/release_ckpts/qwen_time_v15s_20260523_141410_seed1.pt",
+      "checkpoint": "release_ckpts/qwen_time_v15s_20260523_141410_seed1.pt",
       "n_items": 2592,
       "elapsed_sec": 814.5046029090881,
       "metrics": {
@@ -382,7 +382,7 @@
     "ci_v15s_s2": {
       "sweep_id": "ci|qwen_time_v15s_20260523_141410_seed2.pt",
       "adapter": "ci",
-      "checkpoint": "/home/omarramadan/ipcn/release_ckpts/qwen_time_v15s_20260523_141410_seed2.pt",
+      "checkpoint": "release_ckpts/qwen_time_v15s_20260523_141410_seed2.pt",
       "n_items": 2592,
       "elapsed_sec": 712.6564905643463,
       "metrics": {

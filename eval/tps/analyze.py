@@ -34,6 +34,20 @@ def load_run(path: str) -> dict:
         return json.load(fh)
 
 
+def portable_path(value: str | None) -> str | None:
+    """Keep consolidated TPS metadata independent of the machine that ran it."""
+    if value is None:
+        return None
+    path = Path(value)
+    if not path.is_absolute():
+        return path.as_posix()
+    root = Path(__file__).resolve().parents[2]
+    try:
+        return path.resolve().relative_to(root).as_posix()
+    except ValueError:
+        return path.name
+
+
 def policy_acc(rows: Iterable[dict], gold_key: str = "gold_scalar") -> tuple[float, int]:
     rows = list(rows)
     if not rows:
@@ -190,7 +204,7 @@ def analyze_run(path: str) -> dict[str, Any]:
     return {
         "sweep_id": run["sweep_id"],
         "adapter": run["adapter"],
-        "checkpoint": run.get("checkpoint"),
+        "checkpoint": portable_path(run.get("checkpoint")),
         "n_items": run["n_items"],
         "elapsed_sec": run["elapsed_sec"],
         "metrics": split_metrics(rows),

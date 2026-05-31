@@ -17,6 +17,14 @@ def test_shell_scripts_do_not_use_old_machine_paths():
         assert "$HOME/ipcn" not in text
 
 
+def test_current_tps_artifacts_do_not_use_old_machine_paths():
+    for path in (ROOT / "reports" / "tps").glob("*"):
+        if path.suffix not in {".json", ".log", ".txt"}:
+            continue
+        text = path.read_text()
+        assert "/home/omarramadan/ipcn" not in text, path
+
+
 def test_supported_shell_runners_use_run_context_and_no_root_outputs():
     root_output = re.compile(r'^\s*(OUT|REC|REPORT|LOG|STDOUT|SENT|DATA|LOG_PATH|CKPT_PATH|REPORT_PATH)=["\']?(reports|logs|checkpoints|data)/', re.M)
     for path in (ROOT / "scripts").glob("*.sh"):

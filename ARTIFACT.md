@@ -17,6 +17,7 @@ with `python3 scripts/generate_current_manifest.py --check`.
 | `tau_sessions` | current negative | `paper/main.tex` Results VI-E | `reports/ext_bench_vanilla.json`; `reports/ext_bench_prompt.json`; `reports/ext_bench_ci.json` | `scripts/run_external_bench.sh` | Prompt beats CI on composite and adaptive length correlation in current reports. |
 | `tpdr_v2` | current with caveat | `paper/main.tex` Results VI-F | `reports/tpdr_v2_headline.json`; `reports/tpdr_crossseed/` | `eval/tpdr/analyze_v2.py`; `scripts/build_tpdr_paper_update.py` | Headline seed pair confirms; cross-seed behavior is unstable. |
 | `tps` | current negative | `paper/_6g_tps.tex`; `paper/main.tex` | `reports/tps/headline.json`; `reports/tps/baselines.json` | `eval/tps/run_tps.py`; `eval/tps/analyze.py`; `scripts/build_tps_paper_update.py` | CI v15s does not beat vanilla hidden-only and monotonicity is negative. |
+| `track_b_policy` | current with caveat | `paper/_6g_tps.tex`; `paper/main.tex` | `reports/track_b_policy_headline.json` | `scripts/run_track_b_policy.sh` | Separate policy-trained Track B checkpoints show hidden-time action control, but held-out `market_data` transfer remains weak. |
 
 ## Archive Boundaries
 
