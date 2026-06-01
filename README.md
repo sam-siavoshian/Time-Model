@@ -120,6 +120,7 @@ External/behavioral benchmarks:
 - `reports/tpdr_v2_headline.json`
 - `reports/tps/headline.json`
 - `reports/track_b_policy_headline.json`
+- `reports/track_b_policy_full_safe_20260531/`
 
 Legacy IPCN and memory-routing reports are preserved under `reports/archive/`
 for provenance, but they are not current CI evidence.
@@ -139,6 +140,8 @@ for provenance, but they are not current CI evidence.
 Final trainable adapter checkpoints are stored with Git LFS under
 `release_ckpts/`. They contain adapter/chrono weights only and must be loaded on
 top of the frozen Qwen base. Full checksums are in `release_ckpts/SHA256SUMS`.
+The full Track B provenance bundle, excluding checkpoint history, is in
+`reports/track_b_policy_full_safe_20260531/`.
 
 Track A mechanistic CI:
 

@@ -1,0 +1,37 @@
+{
+  "run_id": "ci_track_b_policy_full_safe_20260531",
+  "run_root": "runs/ci_track_b_policy_full_safe_20260531",
+  "track": "B_policy",
+  "model_family": "track_b_policy_adapters",
+  "reports": [
+    "runs/ci_track_b_policy_full_safe_20260531/reports/track_b/vanilla_policy.json",
+    "runs/ci_track_b_policy_full_safe_20260531/reports/track_b/ci_policy_s0.json",
+    "runs/ci_track_b_policy_full_safe_20260531/reports/track_b/ci_policy_s1.json",
+    "runs/ci_track_b_policy_full_safe_20260531/reports/track_b/ci_policy_s2.json",
+    "runs/ci_track_b_policy_full_safe_20260531/reports/track_b/lora_only_policy_s0.json",
+    "runs/ci_track_b_policy_full_safe_20260531/reports/track_b/chrono_only_policy_s0.json"
+  ],
+  "data_dir": "runs/ci_track_b_policy_full_safe_20260531/data/track_b",
+  "log_dir": "runs/ci_track_b_policy_full_safe_20260531/logs/track_b",
+  "checkpoint_dir": "runs/ci_track_b_policy_full_safe_20260531/checkpoints/track_b",
+  "report_dir": "runs/ci_track_b_policy_full_safe_20260531/reports/track_b",
+  "steps": 8000,
+  "lr": 0.0001,
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "scoring": "logprob",
+  "safe": false,
+  "chunk_length": 512,
+  "save_every": 500,
+  "empty_cache_every": 10,
+  "eval_limit": 0,
+  "skip_vanilla_eval": false,
+  "run_lora_only": true,
+  "init_from_track_a": false,
+  "track_a_checkpoint_dir": "release_ckpts",
+  "track_a_checkpoint_prefix": "qwen_time_v15s_20260523_141410_seed",
+  "created_from": "scripts/run_track_b_policy.sh"
+}

@@ -23,6 +23,12 @@ Final Track B adapters are released with Git LFS under
 the run-local checkpoint directory; periodic `step*.pt` checkpoints are not
 released. SHA256 hashes are listed in `release_ckpts/SHA256SUMS`.
 
+The pushed provenance bundle is
+`reports/track_b_policy_full_safe_20260531/`. It includes raw eval reports,
+train/eval JSONL, structured training logs with memory telemetry, the run
+manifest, done marker, and watchdog log. It intentionally excludes periodic
+checkpoint history.
+
 ## Result Summary
 
 | Model | Overall | Hidden-only | H/O template | H/O family | Scalar-follow | Monotonicity |
