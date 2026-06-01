@@ -40,6 +40,7 @@ def test_supported_runner_requires_run_id_before_work():
         "run_external_bench.sh",
         "run_track_a_mechanistic.sh",
         "run_track_b_policy.sh",
+        "run_track_c.sh",
     ]:
         proc = subprocess.run(
             ["bash", str(ROOT / "scripts" / script)],
@@ -157,6 +158,14 @@ def test_direct_python_writers_require_output_scope():
         ),
         (
             [sys.executable, "-m", "eval.tps.training_data"],
+            "output scope required",
+        ),
+        (
+            [sys.executable, "-m", "eval.track_c.generate", "--seed", "0"],
+            "output scope required",
+        ),
+        (
+            [sys.executable, "-m", "eval.track_c.baselines", "--train", "missing.jsonl", "--eval", "missing.jsonl"],
             "output scope required",
         ),
         (

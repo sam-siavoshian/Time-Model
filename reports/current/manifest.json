@@ -112,6 +112,14 @@
       "claim": "Separate Track B policy-trained TPS run: hidden elapsed-time scalar controls forced-choice action selection after direct policy supervision, but held-out-family transfer remains weak.",
       "canonical_report": "reports/track_b_policy_headline.json",
       "generator": "scripts/run_track_b_policy.sh",
+      "supporting_reports": [
+        "reports/track_b_policy_full_safe_20260531/data/*.jsonl",
+        "reports/track_b_policy_full_safe_20260531/logs/*.jsonl",
+        "reports/track_b_policy_full_safe_20260531/reports/*.json",
+        "reports/track_b_policy_full_safe_20260531/manifest.json",
+        "reports/track_b_policy_full_safe_20260531/TRACK_B_DONE.txt",
+        "reports/track_b_policy_full_safe_20260531/watchdog.log"
+      ],
       "paper_locations": [
         "paper/_6g_tps.tex",
         "paper/main.tex"

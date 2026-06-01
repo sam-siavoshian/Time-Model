@@ -66,6 +66,13 @@ Track B policy CI, the TPS policy-training track:
 bash scripts/run_track_b_policy.sh --run-id ci_track_b_policy
 ```
 
+Track C compositional temporal-state reasoning, the supervised state+time
+composition track:
+
+```bash
+SAFE=1 bash scripts/run_track_c.sh --run-id ci_track_c_safe_smoke
+```
+
 Run a released/checkpointed CI model through the core evaluator:
 
 ```bash
@@ -134,6 +141,8 @@ for provenance, but they are not current CI evidence.
   hidden-time action control, while held-out-family transfer remains weak.
 - Track C: combined Track A+B training is deliberately absent for now. It should
   only be added after Track B has stronger leave-one-family-out validation.
+- Track C compositional temporal-state reasoning is implemented separately from
+  Track B under `eval/track_c` and writes to `runs/<run_id>/*/track_c/`.
 
 ## Checkpoints
 

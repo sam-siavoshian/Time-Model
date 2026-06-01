@@ -174,6 +174,23 @@ def make_chunk(tokenizer, rec, max_len: int):
     return ids, mask
 
 
+def make_forced_choice_chunk(tokenizer, rec, max_len: int):
+    ids = tokenizer.encode(rec["prefix_text"], return_tensors="pt").squeeze(0)
+    if ids.shape[0] > max_len:
+        ids = ids[-max_len:]
+    return ids
+
+
+def forced_choice_token_ids(tokenizer) -> list[int]:
+    token_ids: list[int] = []
+    for letter in ("A", "B", "C", "D"):
+        ids = tokenizer.encode(letter, add_special_tokens=False)
+        if not ids:
+            raise ValueError(f"could not tokenize forced-choice letter {letter!r}")
+        token_ids.append(int(ids[0]))
+    return token_ids
+
+
 def train_step(model, opt, ids, mask, tau_t, device):
     ids = ids.to(device)
     mask = mask.to(device)
@@ -195,6 +212,31 @@ def train_step(model, opt, ids, mask, tau_t, device):
         "grad_norm": float(grad_norm.item()),
         "ppl": math.exp(min(float(loss.item()), 20)),
         "n_target": int((targets >= 0).sum().item()),
+    }
+
+
+def train_step_forced_choice(model, opt, ids, answer, tau_t, device, choice_token_ids):
+    ids = ids.to(device)
+    target_idx = {"A": 0, "B": 1, "C": 2, "D": 3}.get(str(answer))
+    if target_idx is None:
+        return {"loss": float("nan"), "grad_norm": 0.0, "ppl": float("nan"), "n_target": 0}
+    out = model(ids, tau_t=float(tau_t))
+    logits = out["logits"]
+    choice_ids = torch.tensor(choice_token_ids, device=logits.device, dtype=torch.long)
+    scores = logits[-1].index_select(0, choice_ids).unsqueeze(0)
+    target = torch.tensor([target_idx], device=logits.device, dtype=torch.long)
+    loss = F.cross_entropy(scores.float(), target)
+    opt.zero_grad(set_to_none=True)
+    loss.backward()
+    grad_norm = torch.nn.utils.clip_grad_norm_(
+        [p for p in model.parameters() if p.requires_grad], max_norm=1.0
+    )
+    opt.step()
+    return {
+        "loss": float(loss.item()),
+        "grad_norm": float(grad_norm.item()),
+        "ppl": math.exp(min(float(loss.item()), 20)),
+        "n_target": 1,
     }
 
 
@@ -225,6 +267,9 @@ def main():
     p.add_argument("--run-id", type=str, default=None,
                    help="Write checkpoint/logs under runs/<run-id>/ when --out is omitted.")
     p.add_argument("--chunk-length", type=int, default=512)
+    p.add_argument("--loss-mode", choices=("assistant_ce", "forced_choice"), default="assistant_ce",
+                   help="assistant_ce trains on masked assistant tokens. forced_choice "
+                        "uses a four-way softmax over next-token A/B/C/D letters.")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--base", type=str, default=V15_BASE_MODEL_NAME)
     p.add_argument("--unfreeze-base", action="store_true")
@@ -375,6 +420,7 @@ def main():
     print(f"Training from step {start_step} to {args.steps}. Log -> {args.log_path}")
     step = start_step
     iterator = stream_records(args.data, seed=args.seed)
+    choice_token_ids = forced_choice_token_ids(model.tokenizer) if args.loss_mode == "forced_choice" else None
     for _ in range(start_step):
         next(iterator)
     t_train = time.time()
@@ -382,13 +428,29 @@ def main():
         if step >= args.steps:
             break
         try:
-            ids, mask = make_chunk(model.tokenizer, rec, args.chunk_length)
+            if args.loss_mode == "forced_choice":
+                ids = make_forced_choice_chunk(model.tokenizer, rec, args.chunk_length)
+                mask = None
+            else:
+                ids, mask = make_chunk(model.tokenizer, rec, args.chunk_length)
         except Exception as e:
             continue
-        out = train_step(model, opt, ids, mask, rec.get("tau_t", 0.0), args.device)
+        if args.loss_mode == "forced_choice":
+            out = train_step_forced_choice(
+                model,
+                opt,
+                ids,
+                rec.get("answer"),
+                rec.get("tau_t", 0.0),
+                args.device,
+                choice_token_ids,
+            )
+        else:
+            out = train_step(model, opt, ids, mask, rec.get("tau_t", 0.0), args.device)
         out.update({
             "step": step,
             "mode": rec.get("mode", "?"),
+            "loss_mode": args.loss_mode,
             "tau_t": rec.get("tau_t", 0.0),
             "time": time.time(),
             "memory": memory_telemetry(args.device),

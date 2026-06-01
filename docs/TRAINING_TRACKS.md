@@ -110,6 +110,21 @@ There is intentionally no default combined Track A+B runner. Combining CLOCK /
 SILENT-GAP / PHASE with TPS policy labels is a later Track C experiment after
 Track B has stronger validation.
 
+## Track C: Compositional Temporal State
+
+Track C tests whether hidden elapsed time composes with symbolic task state. It
+is implemented separately from Track B:
+
+```bash
+SAFE=1 bash scripts/run_track_c.sh --run-id ci_track_c_safe_smoke
+```
+
+Track C writes under `runs/<run_id>/{data,logs,checkpoints,reports}/track_c/`.
+The generator lives in `eval/track_c/generate.py`, trainer conversion in
+`eval/track_c/training_data.py`, forced-choice evaluation in
+`eval/track_c/run_track_c.py`, and analysis/table/plot builders in
+`eval/track_c/`.
+
 ## Track B v2 Contract
 
 The next Track B experiment should improve cohesion rather than only repeat the

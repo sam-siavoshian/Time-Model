@@ -72,6 +72,12 @@ Track B TPS policy-training run:
 bash scripts/run_track_b_policy.sh --run-id ci_track_b_policy
 ```
 
+Track C safe smoke run:
+
+```bash
+SAFE=1 bash scripts/run_track_c.sh --run-id ci_track_c_safe_smoke
+```
+
 TPS sweep, isolated under `runs/<RUN_ID>/`:
 
 ```bash
