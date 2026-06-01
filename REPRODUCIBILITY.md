@@ -92,6 +92,8 @@ Use `reports/current/manifest.json` before citing a result. It records:
 - probe and CLOCK-heldout reports;
 - TPS negative policy-transfer reports;
 - Track B policy-trained TPS reports;
+- Track A and Track B final adapter checkpoints under `release_ckpts/`
+  with SHA256 hashes in `release_ckpts/SHA256SUMS`;
 - TPDR v2 seed-pair-dependent response-shape reports;
 - external `tau_sessions` reports;
 - ablations and causal controls;

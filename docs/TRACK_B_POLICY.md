@@ -18,6 +18,11 @@ Track B checkpoints are policy adapters trained on TPS forced-choice labels.
 They are not Track A v15s mechanistic checkpoints and should not be used as
 evidence for zero-shot TPS transfer.
 
+Final Track B adapters are released with Git LFS under
+`release_ckpts/track_b_policy/`. They are copies of the final checkpoints from
+the run-local checkpoint directory; periodic `step*.pt` checkpoints are not
+released. SHA256 hashes are listed in `release_ckpts/SHA256SUMS`.
+
 ## Result Summary
 
 | Model | Overall | Hidden-only | H/O template | H/O family | Scalar-follow | Monotonicity |

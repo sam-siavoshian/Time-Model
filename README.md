@@ -136,15 +136,27 @@ for provenance, but they are not current CI evidence.
 
 ## Checkpoints
 
-The v15 cross-seed trainable checkpoints are released under GitHub Releases
-`v15.0`. They contain adapter/chrono weights only and must be loaded on top of
-the frozen Qwen base.
+Final trainable adapter checkpoints are stored with Git LFS under
+`release_ckpts/`. They contain adapter/chrono weights only and must be loaded on
+top of the frozen Qwen base. Full checksums are in `release_ckpts/SHA256SUMS`.
+
+Track A mechanistic CI:
 
 | Seed | File | SHA256 |
 |---|---|---|
-| 0 | `qwen_time_v15s_20260523_141410_seed0.pt` | `2ab64f3f837f58ca726297bad61e1c606fac03d7567884775bc6601cc429ecef` |
-| 1 | `qwen_time_v15s_20260523_141410_seed1.pt` | `51bc2425cd406ed0ec433405bfef745f7e13a7ca1ae4e154eddc5b997980ef58` |
-| 2 | `qwen_time_v15s_20260523_141410_seed2.pt` | `d718baf88b509d76c371602f27fec8d703b5a556888a9ceea613ffdfe41ce7c0` |
+| 0 | `release_ckpts/qwen_time_v15s_20260523_141410_seed0.pt` | `2ab64f3f837f58ca726297bad61e1c606fac03d7567884775bc6601cc429ecef` |
+| 1 | `release_ckpts/qwen_time_v15s_20260523_141410_seed1.pt` | `51bc2425cd406ed0ec433405bfef745f7e13a7ca1ae4e154eddc5b997980ef58` |
+| 2 | `release_ckpts/qwen_time_v15s_20260523_141410_seed2.pt` | `d718baf88b509d76c371602f27fec8d703b5a556888a9ceea613ffdfe41ce7c0` |
+
+Track B policy adapters:
+
+| Adapter | File | SHA256 |
+|---|---|---|
+| CI policy s0 | `release_ckpts/track_b_policy/ci_policy_s0.pt` | `ce1d0ddf76ac6b268786c5287cc255a8e2e9d87289445626f0a452bd27dbec93` |
+| CI policy s1 | `release_ckpts/track_b_policy/ci_policy_s1.pt` | `9f384a76542671c181e1d24614edcbbee51d664442d3d5ba3a9b6234fef21554` |
+| CI policy s2 | `release_ckpts/track_b_policy/ci_policy_s2.pt` | `a10997d52843ed70e649afbd0a13ed9a9f3058e0491bcb02d88a5e07909fa236` |
+| LoRA-only policy s0 | `release_ckpts/track_b_policy/lora_only_policy_s0.pt` | `ceab1e8f9c59af42f510f8e0e11f365eeb7471e5af409ff9eaff2d0b13697ed6` |
+| chrono-only policy s0 | `release_ckpts/track_b_policy/chrono_only_policy_s0.pt` | `77a40a96d700e9acd3b4c156e97572e9840899b7fd89fe6c4e57cc16ccd15ec6` |
 
 ## What This Does Not Claim
 
