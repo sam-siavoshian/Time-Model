@@ -1,0 +1,175 @@
+{
+  "track": "C",
+  "train": "runs/track_c_full_20260601_014051/data/track_c/track_c_seed1_train.jsonl",
+  "eval": [
+    "runs/track_c_full_20260601_014051/data/track_c/track_c_seed1_standard_test.jsonl",
+    "runs/track_c_full_20260601_014051/data/track_c/track_c_seed1_heldout_template.jsonl",
+    "runs/track_c_full_20260601_014051/data/track_c/track_c_seed1_heldout_duration.jsonl",
+    "runs/track_c_full_20260601_014051/data/track_c/track_c_seed1_heldout_composition.jsonl",
+    "runs/track_c_full_20260601_014051/data/track_c/track_c_seed1_heldout_family.jsonl"
+  ],
+  "n_train": 12000,
+  "n_eval": 12000,
+  "baselines": {
+    "chi_tau_only": {
+      "overall": {
+        "acc": 0.3353333333333333,
+        "balanced_acc": 0.3533205475660268,
+        "state_acc": 0.3353333333333333,
+        "n": 12000
+      },
+      "by_split": {
+        "standard_test": {
+          "acc": 0.3085,
+          "balanced_acc": 0.35893696624358445,
+          "state_acc": 0.3085,
+          "n": 4000
+        },
+        "heldout_template": {
+          "acc": 0.3205,
+          "balanced_acc": 0.36091662759625276,
+          "state_acc": 0.3205,
+          "n": 2000
+        },
+        "heldout_duration": {
+          "acc": 0.218,
+          "balanced_acc": 0.2396997315029312,
+          "state_acc": 0.218,
+          "n": 2000
+        },
+        "heldout_composition": {
+          "acc": 0.469,
+          "balanced_acc": 0.459478503783883,
+          "state_acc": 0.469,
+          "n": 2000
+        },
+        "heldout_family": {
+          "acc": 0.3875,
+          "balanced_acc": 0.45534665099882493,
+          "state_acc": 0.3875,
+          "n": 2000
+        }
+      }
+    },
+    "state_only": {
+      "overall": {
+        "acc": 0.4595,
+        "balanced_acc": 0.561881173827741,
+        "state_acc": 0.4595,
+        "n": 12000
+      },
+      "by_split": {
+        "standard_test": {
+          "acc": 0.52375,
+          "balanced_acc": 0.6310421764271661,
+          "state_acc": 0.52375,
+          "n": 4000
+        },
+        "heldout_template": {
+          "acc": 0.519,
+          "balanced_acc": 0.6339540474975794,
+          "state_acc": 0.519,
+          "n": 2000
+        },
+        "heldout_duration": {
+          "acc": 0.5485,
+          "balanced_acc": 0.6406335693992663,
+          "state_acc": 0.5485,
+          "n": 2000
+        },
+        "heldout_composition": {
+          "acc": 0.467,
+          "balanced_acc": 0.34179311587173483,
+          "state_acc": 0.467,
+          "n": 2000
+        },
+        "heldout_family": {
+          "acc": 0.175,
+          "balanced_acc": 0.2056404230317274,
+          "state_acc": 0.175,
+          "n": 2000
+        }
+      }
+    },
+    "chi_tau_plus_state": {
+      "overall": {
+        "acc": 0.8470833333333333,
+        "balanced_acc": 0.8919540446563887,
+        "state_acc": 0.8470833333333333,
+        "n": 12000
+      },
+      "by_split": {
+        "standard_test": {
+          "acc": 0.92675,
+          "balanced_acc": 0.950641310783668,
+          "state_acc": 0.92675,
+          "n": 4000
+        },
+        "heldout_template": {
+          "acc": 0.918,
+          "balanced_acc": 0.9457498610328476,
+          "state_acc": 0.918,
+          "n": 2000
+        },
+        "heldout_duration": {
+          "acc": 0.818,
+          "balanced_acc": 0.7897447135672254,
+          "state_acc": 0.818,
+          "n": 2000
+        },
+        "heldout_composition": {
+          "acc": 0.812,
+          "balanced_acc": 0.7393656870337353,
+          "state_acc": 0.812,
+          "n": 2000
+        },
+        "heldout_family": {
+          "acc": 0.681,
+          "balanced_acc": 0.72236727589208,
+          "state_acc": 0.681,
+          "n": 2000
+        }
+      }
+    },
+    "rule_oracle": {
+      "overall": {
+        "acc": 1.0,
+        "balanced_acc": 1.0,
+        "state_acc": 1.0,
+        "n": 12000
+      },
+      "by_split": {
+        "standard_test": {
+          "acc": 1.0,
+          "balanced_acc": 1.0,
+          "state_acc": 1.0,
+          "n": 4000
+        },
+        "heldout_template": {
+          "acc": 1.0,
+          "balanced_acc": 1.0,
+          "state_acc": 1.0,
+          "n": 2000
+        },
+        "heldout_duration": {
+          "acc": 1.0,
+          "balanced_acc": 1.0,
+          "state_acc": 1.0,
+          "n": 2000
+        },
+        "heldout_composition": {
+          "acc": 1.0,
+          "balanced_acc": 1.0,
+          "state_acc": 1.0,
+          "n": 2000
+        },
+        "heldout_family": {
+          "acc": 1.0,
+          "balanced_acc": 1.0,
+          "state_acc": 1.0,
+          "n": 2000
+        }
+      }
+    }
+  }
+}

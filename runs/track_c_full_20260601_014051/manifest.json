@@ -1,0 +1,29 @@
+{
+  "run_id": "track_c_full_20260601_014051",
+  "run_root": "runs/track_c_full_20260601_014051",
+  "track": "C_compositional_temporal_state",
+  "model_family": "track_c_policy_adapters",
+  "data_dir": "runs/track_c_full_20260601_014051/data/track_c",
+  "log_dir": "runs/track_c_full_20260601_014051/logs/track_c",
+  "checkpoint_dir": "runs/track_c_full_20260601_014051/checkpoints/track_c",
+  "report_dir": "runs/track_c_full_20260601_014051/reports/track_c",
+  "steps": 8000,
+  "lr": 0.0001,
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "scoring": "logprob",
+  "safe": false,
+  "data_profile": "full",
+  "chunk_length": 512,
+  "save_every": 500,
+  "select_by_val": true,
+  "val_limit": 0,
+  "empty_cache_every": 10,
+  "eval_limit": 0,
+  "run_prompt_lora": true,
+  "run_lora_only": true,
+  "created_from": "scripts/run_track_c.sh"
+}

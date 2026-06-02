@@ -1,0 +1,187 @@
+{
+  "track": "C",
+  "selection_metric": "balanced_acc",
+  "selected_checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s2.step7000.pt",
+  "selected": {
+    "path": "runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s2/ci_track_c_s2.step7000_val.json",
+    "checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s2.step7000.pt",
+    "metric": "balanced_acc",
+    "score": 0.9369445805434224,
+    "acc": 0.9205,
+    "balanced_acc": 0.9369445805434224,
+    "state_acc": 0.9205,
+    "n": 2000
+  },
+  "candidates": [
+    {
+      "path": "runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s2/ci_track_c_s2.step7000_val.json",
+      "checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s2.step7000.pt",
+      "metric": "balanced_acc",
+      "score": 0.9369445805434224,
+      "acc": 0.9205,
+      "balanced_acc": 0.9369445805434224,
+      "state_acc": 0.9205,
+      "n": 2000
+    },
+    {
+      "path": "runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s2/ci_track_c_s2.step8000_val.json",
+      "checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s2.step8000.pt",
+      "metric": "balanced_acc",
+      "score": 0.9311243616222838,
+      "acc": 0.9315,
+      "balanced_acc": 0.9311243616222838,
+      "state_acc": 0.9315,
+      "n": 2000
+    },
+    {
+      "path": "runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s2/ci_track_c_s2_val.json",
+      "checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s2.pt",
+      "metric": "balanced_acc",
+      "score": 0.9311243616222838,
+      "acc": 0.9315,
+      "balanced_acc": 0.9311243616222838,
+      "state_acc": 0.9315,
+      "n": 2000
+    },
+    {
+      "path": "runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s2/ci_track_c_s2.step5000_val.json",
+      "checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s2.step5000.pt",
+      "metric": "balanced_acc",
+      "score": 0.9246423564806374,
+      "acc": 0.9105,
+      "balanced_acc": 0.9246423564806374,
+      "state_acc": 0.9105,
+      "n": 2000
+    },
+    {
+      "path": "runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s2/ci_track_c_s2.step6000_val.json",
+      "checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s2.step6000.pt",
+      "metric": "balanced_acc",
+      "score": 0.9242747409560822,
+      "acc": 0.933,
+      "balanced_acc": 0.9242747409560822,
+      "state_acc": 0.933,
+      "n": 2000
+    },
+    {
+      "path": "runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s2/ci_track_c_s2.step7500_val.json",
+      "checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s2.step7500.pt",
+      "metric": "balanced_acc",
+      "score": 0.9126833694689706,
+      "acc": 0.919,
+      "balanced_acc": 0.9126833694689706,
+      "state_acc": 0.919,
+      "n": 2000
+    },
+    {
+      "path": "runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s2/ci_track_c_s2.step6500_val.json",
+      "checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s2.step6500.pt",
+      "metric": "balanced_acc",
+      "score": 0.9119210236223331,
+      "acc": 0.9065,
+      "balanced_acc": 0.9119210236223331,
+      "state_acc": 0.9065,
+      "n": 2000
+    },
+    {
+      "path": "runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s2/ci_track_c_s2.step4500_val.json",
+      "checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s2.step4500.pt",
+      "metric": "balanced_acc",
+      "score": 0.9104370996426274,
+      "acc": 0.901,
+      "balanced_acc": 0.9104370996426274,
+      "state_acc": 0.901,
+      "n": 2000
+    },
+    {
+      "path": "runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s2/ci_track_c_s2.step3500_val.json",
+      "checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s2.step3500.pt",
+      "metric": "balanced_acc",
+      "score": 0.8835237492562359,
+      "acc": 0.8915,
+      "balanced_acc": 0.8835237492562359,
+      "state_acc": 0.8915,
+      "n": 2000
+    },
+    {
+      "path": "runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s2/ci_track_c_s2.step4000_val.json",
+      "checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s2.step4000.pt",
+      "metric": "balanced_acc",
+      "score": 0.8740814295230795,
+      "acc": 0.89,
+      "balanced_acc": 0.8740814295230795,
+      "state_acc": 0.89,
+      "n": 2000
+    },
+    {
+      "path": "runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s2/ci_track_c_s2.step3000_val.json",
+      "checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s2.step3000.pt",
+      "metric": "balanced_acc",
+      "score": 0.8681950959787154,
+      "acc": 0.884,
+      "balanced_acc": 0.8681950959787154,
+      "state_acc": 0.884,
+      "n": 2000
+    },
+    {
+      "path": "runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s2/ci_track_c_s2.step2500_val.json",
+      "checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s2.step2500.pt",
+      "metric": "balanced_acc",
+      "score": 0.8655139983205309,
+      "acc": 0.8515,
+      "balanced_acc": 0.8655139983205309,
+      "state_acc": 0.8515,
+      "n": 2000
+    },
+    {
+      "path": "runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s2/ci_track_c_s2.step5500_val.json",
+      "checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s2.step5500.pt",
+      "metric": "balanced_acc",
+      "score": 0.846087507981961,
+      "acc": 0.882,
+      "balanced_acc": 0.846087507981961,
+      "state_acc": 0.882,
+      "n": 2000
+    },
+    {
+      "path": "runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s2/ci_track_c_s2.step2000_val.json",
+      "checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s2.step2000.pt",
+      "metric": "balanced_acc",
+      "score": 0.8370884341255739,
+      "acc": 0.826,
+      "balanced_acc": 0.8370884341255739,
+      "state_acc": 0.826,
+      "n": 2000
+    },
+    {
+      "path": "runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s2/ci_track_c_s2.step1500_val.json",
+      "checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s2.step1500.pt",
+      "metric": "balanced_acc",
+      "score": 0.7724786020559223,
+      "acc": 0.809,
+      "balanced_acc": 0.7724786020559223,
+      "state_acc": 0.809,
+      "n": 2000
+    },
+    {
+      "path": "runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s2/ci_track_c_s2.step1000_val.json",
+      "checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s2.step1000.pt",
+      "metric": "balanced_acc",
+      "score": 0.634612913476191,
+      "acc": 0.653,
+      "balanced_acc": 0.634612913476191,
+      "state_acc": 0.653,
+      "n": 2000
+    },
+    {
+      "path": "runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s2/ci_track_c_s2.step500_val.json",
+      "checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s2.step500.pt",
+      "metric": "balanced_acc",
+      "score": 0.545604235485812,
+      "acc": 0.491,
+      "balanced_acc": 0.545604235485812,
+      "state_acc": 0.491,
+      "n": 2000
+    }
+  ]
+}

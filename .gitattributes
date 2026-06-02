@@ -1,2 +1,7 @@
 release_ckpts/*.pt filter=lfs diff=lfs merge=lfs -text
 release_ckpts/track_b_policy/*.pt filter=lfs diff=lfs merge=lfs -text
+runs/track_c_full_*/data/track_c/*.jsonl filter=lfs diff=lfs merge=lfs -text
+runs/track_c_full_*/reports/track_c/predictions/*.json filter=lfs diff=lfs merge=lfs -text
+runs/track_c_full_*/reports/track_c/validation/*.json filter=lfs diff=lfs merge=lfs -text
+runs/track_c_full_*/reports/track_c/figures/*.pdf filter=lfs diff=lfs merge=lfs -text
+runs/track_c_full_*/checkpoints/track_c/*.pt filter=lfs diff=lfs merge=lfs -text

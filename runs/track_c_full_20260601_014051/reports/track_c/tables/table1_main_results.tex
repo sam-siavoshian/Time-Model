@@ -1,0 +1,23 @@
+\begin{table}[t]
+\centering
+\caption{Main Track C results.}
+\label{tab:track-c-main}
+\footnotesize
+\begin{tabular}{lccccccc}
+\toprule
+model & condition & acc_mean & acc_std & bacc_mean & bacc_std & state_acc_mean & state_acc_std \\
+\midrule
+ci_track_c & both_agree & 0.931 & 0.007 & 0.940 & 0.004 & 0.931 & 0.007 \\
+ci_track_c & ci_hidden_time & 0.930 & 0.013 & 0.941 & 0.010 & 0.930 & 0.013 \\
+ci_track_c & conflict_scalar_follow & 0.906 & 0.013 & nan & nan & nan & nan \\
+ci_track_c & conflict_prompt_follow & 0.332 & 0.007 & nan & nan & nan & nan \\
+ci_track_c & no_time_control & 0.551 & 0.004 & 0.524 & 0.012 & 0.551 & 0.004 \\
+ci_track_c & prompt_timestamp & 0.543 & 0.013 & 0.512 & 0.023 & 0.543 & 0.013 \\
+ci_track_c & shuffled_time_control & 0.332 & 0.010 & 0.356 & 0.019 & 0.332 & 0.010 \\
+lora_only_track_c & ci_hidden_time & 0.551 & 0.009 & 0.558 & 0.043 & 0.551 & 0.009 \\
+prompt_lora_track_c & prompt_timestamp & 0.989 & 0.005 & 0.992 & 0.004 & 0.989 & 0.005 \\
+vanilla & no_time_control & 0.373 & 0.004 & 0.376 & 0.008 & 0.373 & 0.004 \\
+vanilla & prompt_timestamp & 0.374 & 0.003 & 0.372 & 0.012 & 0.374 & 0.003 \\
+\bottomrule
+\end{tabular}
+\end{table}

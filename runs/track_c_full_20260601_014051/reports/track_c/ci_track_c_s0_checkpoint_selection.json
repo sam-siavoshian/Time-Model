@@ -1,0 +1,187 @@
+{
+  "track": "C",
+  "selection_metric": "balanced_acc",
+  "selected_checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s0.step6000.pt",
+  "selected": {
+    "path": "runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s0/ci_track_c_s0.step6000_val.json",
+    "checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s0.step6000.pt",
+    "metric": "balanced_acc",
+    "score": 0.9482023564572931,
+    "acc": 0.941,
+    "balanced_acc": 0.9482023564572931,
+    "state_acc": 0.941,
+    "n": 2000
+  },
+  "candidates": [
+    {
+      "path": "runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s0/ci_track_c_s0.step6000_val.json",
+      "checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s0.step6000.pt",
+      "metric": "balanced_acc",
+      "score": 0.9482023564572931,
+      "acc": 0.941,
+      "balanced_acc": 0.9482023564572931,
+      "state_acc": 0.941,
+      "n": 2000
+    },
+    {
+      "path": "runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s0/ci_track_c_s0.step8000_val.json",
+      "checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s0.step8000.pt",
+      "metric": "balanced_acc",
+      "score": 0.9471988835611337,
+      "acc": 0.932,
+      "balanced_acc": 0.9471988835611337,
+      "state_acc": 0.932,
+      "n": 2000
+    },
+    {
+      "path": "runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s0/ci_track_c_s0_val.json",
+      "checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s0.pt",
+      "metric": "balanced_acc",
+      "score": 0.9471988835611337,
+      "acc": 0.932,
+      "balanced_acc": 0.9471988835611337,
+      "state_acc": 0.932,
+      "n": 2000
+    },
+    {
+      "path": "runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s0/ci_track_c_s0.step6500_val.json",
+      "checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s0.step6500.pt",
+      "metric": "balanced_acc",
+      "score": 0.9418302982504632,
+      "acc": 0.9355,
+      "balanced_acc": 0.9418302982504632,
+      "state_acc": 0.9355,
+      "n": 2000
+    },
+    {
+      "path": "runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s0/ci_track_c_s0.step7500_val.json",
+      "checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s0.step7500.pt",
+      "metric": "balanced_acc",
+      "score": 0.92728360529893,
+      "acc": 0.93,
+      "balanced_acc": 0.92728360529893,
+      "state_acc": 0.93,
+      "n": 2000
+    },
+    {
+      "path": "runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s0/ci_track_c_s0.step7000_val.json",
+      "checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s0.step7000.pt",
+      "metric": "balanced_acc",
+      "score": 0.9104739948249206,
+      "acc": 0.918,
+      "balanced_acc": 0.9104739948249206,
+      "state_acc": 0.918,
+      "n": 2000
+    },
+    {
+      "path": "runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s0/ci_track_c_s0.step5000_val.json",
+      "checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s0.step5000.pt",
+      "metric": "balanced_acc",
+      "score": 0.9009386486951632,
+      "acc": 0.916,
+      "balanced_acc": 0.9009386486951632,
+      "state_acc": 0.916,
+      "n": 2000
+    },
+    {
+      "path": "runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s0/ci_track_c_s0.step3500_val.json",
+      "checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s0.step3500.pt",
+      "metric": "balanced_acc",
+      "score": 0.8935954706132037,
+      "acc": 0.898,
+      "balanced_acc": 0.8935954706132037,
+      "state_acc": 0.898,
+      "n": 2000
+    },
+    {
+      "path": "runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s0/ci_track_c_s0.step5500_val.json",
+      "checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s0.step5500.pt",
+      "metric": "balanced_acc",
+      "score": 0.8879075726101248,
+      "acc": 0.893,
+      "balanced_acc": 0.8879075726101248,
+      "state_acc": 0.893,
+      "n": 2000
+    },
+    {
+      "path": "runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s0/ci_track_c_s0.step4500_val.json",
+      "checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s0.step4500.pt",
+      "metric": "balanced_acc",
+      "score": 0.8821051924961114,
+      "acc": 0.887,
+      "balanced_acc": 0.8821051924961114,
+      "state_acc": 0.887,
+      "n": 2000
+    },
+    {
+      "path": "runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s0/ci_track_c_s0.step2000_val.json",
+      "checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s0.step2000.pt",
+      "metric": "balanced_acc",
+      "score": 0.8553135776952063,
+      "acc": 0.8485,
+      "balanced_acc": 0.8553135776952063,
+      "state_acc": 0.8485,
+      "n": 2000
+    },
+    {
+      "path": "runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s0/ci_track_c_s0.step3000_val.json",
+      "checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s0.step3000.pt",
+      "metric": "balanced_acc",
+      "score": 0.8386402027717617,
+      "acc": 0.8615,
+      "balanced_acc": 0.8386402027717617,
+      "state_acc": 0.8615,
+      "n": 2000
+    },
+    {
+      "path": "runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s0/ci_track_c_s0.step4000_val.json",
+      "checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s0.step4000.pt",
+      "metric": "balanced_acc",
+      "score": 0.7924057714933795,
+      "acc": 0.872,
+      "balanced_acc": 0.7924057714933795,
+      "state_acc": 0.872,
+      "n": 2000
+    },
+    {
+      "path": "runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s0/ci_track_c_s0.step2500_val.json",
+      "checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s0.step2500.pt",
+      "metric": "balanced_acc",
+      "score": 0.7875981460255339,
+      "acc": 0.8715,
+      "balanced_acc": 0.7875981460255339,
+      "state_acc": 0.8715,
+      "n": 2000
+    },
+    {
+      "path": "runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s0/ci_track_c_s0.step1500_val.json",
+      "checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s0.step1500.pt",
+      "metric": "balanced_acc",
+      "score": 0.7489324718639792,
+      "acc": 0.773,
+      "balanced_acc": 0.7489324718639792,
+      "state_acc": 0.773,
+      "n": 2000
+    },
+    {
+      "path": "runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s0/ci_track_c_s0.step1000_val.json",
+      "checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s0.step1000.pt",
+      "metric": "balanced_acc",
+      "score": 0.6011008929011662,
+      "acc": 0.603,
+      "balanced_acc": 0.6011008929011662,
+      "state_acc": 0.603,
+      "n": 2000
+    },
+    {
+      "path": "runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s0/ci_track_c_s0.step500_val.json",
+      "checkpoint": "runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s0.step500.pt",
+      "metric": "balanced_acc",
+      "score": 0.4700281799553799,
+      "acc": 0.5015,
+      "balanced_acc": 0.4700281799553799,
+      "state_acc": 0.5015,
+      "n": 2000
+    }
+  ]
+}

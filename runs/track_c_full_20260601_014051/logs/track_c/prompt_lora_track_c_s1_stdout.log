@@ -1,0 +1,71 @@
+Uninstalled 1 package in 0.49ms
+Installed 1 package in 1ms
+  Override timescales: (2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 4096, 16384, 65536, 86400, 604800)
+Loading QwenTime (Qwen/Qwen2.5-3B-Instruct)...
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 9153.22it/s]
+  loaded in 21.4s
+  trainable: 9,577,472 / 3,095,516,160 (0.309%)
+  chrono injectors: 35
+  LoRA modules: 145
+  FROZE all 35 chrono alpha gates at 0 (LoRA-only ablation)
+Training from step 0 to 8000. Log -> runs/track_c_full_20260601_014051/logs/track_c/prompt_lora_track_c_s1.jsonl
+step=     0 | loss= 4.5111 ppl=    91.0 grad=300.641 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=62.4GiB
+step=   200 | loss= 4.7591 ppl=   116.6 grad=30.969 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=62.5GiB
+step=   400 | loss= 0.0449 ppl=     1.0 grad= 0.759 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=62.5GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/prompt_lora_track_c_s1.step500.pt
+step=   600 | loss= 2.1285 ppl=     8.4 grad=115.494 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=62.6GiB
+step=   800 | loss= 0.0009 ppl=     1.0 grad= 0.028 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=62.9GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/prompt_lora_track_c_s1.step1000.pt
+step=  1000 | loss= 0.0001 ppl=     1.0 grad= 0.004 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=62.9GiB
+step=  1200 | loss= 0.0000 ppl=     1.0 grad= 0.002 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=62.8GiB
+step=  1400 | loss= 0.0004 ppl=     1.0 grad= 0.011 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=62.6GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/prompt_lora_track_c_s1.step1500.pt
+step=  1600 | loss= 0.0001 ppl=     1.0 grad= 0.003 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=63.0GiB
+step=  1800 | loss= 0.0007 ppl=     1.0 grad= 0.176 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=62.6GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/prompt_lora_track_c_s1.step2000.pt
+step=  2000 | loss= 0.0008 ppl=     1.0 grad= 0.021 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=62.6GiB
+step=  2200 | loss= 0.0003 ppl=     1.0 grad= 0.006 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=62.9GiB
+step=  2400 | loss= 0.0022 ppl=     1.0 grad= 0.044 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=63.0GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/prompt_lora_track_c_s1.step2500.pt
+step=  2600 | loss= 0.0024 ppl=     1.0 grad= 0.253 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=62.6GiB
+step=  2800 | loss= 0.0002 ppl=     1.0 grad= 0.010 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=63.0GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/prompt_lora_track_c_s1.step3000.pt
+step=  3000 | loss= 0.0002 ppl=     1.0 grad= 0.005 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=62.8GiB
+step=  3200 | loss= 0.0001 ppl=     1.0 grad= 0.002 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=62.5GiB
+step=  3400 | loss= 0.0000 ppl=     1.0 grad= 0.001 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=62.6GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/prompt_lora_track_c_s1.step3500.pt
+step=  3600 | loss= 0.0001 ppl=     1.0 grad= 0.002 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=62.9GiB
+step=  3800 | loss= 0.0006 ppl=     1.0 grad= 0.013 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=62.6GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/prompt_lora_track_c_s1.step4000.pt
+step=  4000 | loss= 0.0001 ppl=     1.0 grad= 0.002 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=62.9GiB
+step=  4200 | loss= 0.0003 ppl=     1.0 grad= 0.007 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=62.6GiB
+step=  4400 | loss= 0.0000 ppl=     1.0 grad= 0.001 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=62.5GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/prompt_lora_track_c_s1.step4500.pt
+step=  4600 | loss= 0.0001 ppl=     1.0 grad= 0.002 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=62.5GiB
+step=  4800 | loss= 0.0000 ppl=     1.0 grad= 0.002 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=62.9GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/prompt_lora_track_c_s1.step5000.pt
+step=  5000 | loss= 0.0000 ppl=     1.0 grad= 0.001 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=62.8GiB
+step=  5200 | loss= 0.0015 ppl=     1.0 grad= 0.040 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=62.6GiB
+step=  5400 | loss= 0.0001 ppl=     1.0 grad= 0.002 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=62.8GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/prompt_lora_track_c_s1.step5500.pt
+step=  5600 | loss= 0.0000 ppl=     1.0 grad= 0.001 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=62.9GiB
+step=  5800 | loss= 0.0000 ppl=     1.0 grad= 0.000 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=62.6GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/prompt_lora_track_c_s1.step6000.pt
+step=  6000 | loss= 0.0000 ppl=     1.0 grad= 0.000 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=62.8GiB
+step=  6200 | loss= 0.0000 ppl=     1.0 grad= 0.000 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=62.9GiB
+step=  6400 | loss= 0.0000 ppl=     1.0 grad= 0.000 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=62.6GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/prompt_lora_track_c_s1.step6500.pt
+step=  6600 | loss= 0.0001 ppl=     1.0 grad= 0.004 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=62.8GiB
+step=  6800 | loss= 0.0025 ppl=     1.0 grad= 0.262 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=62.7GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/prompt_lora_track_c_s1.step7000.pt
+step=  7000 | loss= 6.6270 ppl=   755.2 grad=165.575 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=62.6GiB
+step=  7200 | loss= 0.0007 ppl=     1.0 grad= 0.012 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=63.0GiB
+step=  7400 | loss= 0.0022 ppl=     1.0 grad= 0.448 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=62.6GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/prompt_lora_track_c_s1.step7500.pt
+step=  7600 | loss= 0.0000 ppl=     1.0 grad= 0.001 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=62.9GiB
+step=  7800 | loss= 0.0004 ppl=     1.0 grad= 0.009 mode=track_c_prompt_timestamp tau=0.0 tgt=  1 mem_avail=62.2GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/prompt_lora_track_c_s1.step8000.pt
+Saved checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/prompt_lora_track_c_s1.pt
+Total wall time: 1453.1s

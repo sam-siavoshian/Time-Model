@@ -1,0 +1,1460 @@
+Uninstalled 1 package in 0.60ms
+Installed 1 package in 1ms
+  Override timescales: (2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 4096, 16384, 65536, 86400, 604800)
+Loading QwenTime (Qwen/Qwen2.5-3B-Instruct)...
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 6793.36it/s]
+  loaded in 21.2s
+  trainable: 9,577,472 / 3,095,516,160 (0.309%)
+  chrono injectors: 35
+  LoRA modules: 145
+Training from step 0 to 8000. Log -> runs/track_c_full_20260601_014051/logs/track_c/ci_track_c_s2.jsonl
+step=     0 | loss= 1.3182 ppl=     3.7 grad=111.671 mode=track_c_hidden_only tau=1800.0 tgt=  1 mem_avail=88.7GiB
+step=   200 | loss= 3.0160 ppl=    20.4 grad=16.629 mode=track_c_hidden_only tau=604800.0 tgt=  1 mem_avail=88.9GiB
+step=   400 | loss= 2.0745 ppl=     8.0 grad=10.516 mode=track_c_hidden_only tau=10.0 tgt=  1 mem_avail=88.9GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s2.step500.pt
+step=   600 | loss= 1.0496 ppl=     2.9 grad=23.992 mode=track_c_hidden_only tau=300.0 tgt=  1 mem_avail=88.9GiB
+step=   800 | loss= 0.0037 ppl=     1.0 grad= 0.058 mode=track_c_hidden_only tau=1800.0 tgt=  1 mem_avail=89.4GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s2.step1000.pt
+step=  1000 | loss= 0.0371 ppl=     1.0 grad= 0.972 mode=track_c_hidden_only tau=43200.0 tgt=  1 mem_avail=88.9GiB
+step=  1200 | loss= 0.0636 ppl=     1.1 grad= 6.195 mode=track_c_hidden_only tau=300.0 tgt=  1 mem_avail=89.3GiB
+step=  1400 | loss= 0.0895 ppl=     1.1 grad= 8.906 mode=track_c_hidden_only tau=1800.0 tgt=  1 mem_avail=89.3GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s2.step1500.pt
+step=  1600 | loss= 0.0018 ppl=     1.0 grad= 0.042 mode=track_c_hidden_only tau=43200.0 tgt=  1 mem_avail=89.3GiB
+step=  1800 | loss= 0.0058 ppl=     1.0 grad= 0.117 mode=track_c_hidden_only tau=30.0 tgt=  1 mem_avail=89.3GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s2.step2000.pt
+step=  2000 | loss= 0.0054 ppl=     1.0 grad= 0.085 mode=track_c_hidden_only tau=7200.0 tgt=  1 mem_avail=88.9GiB
+step=  2200 | loss= 0.0020 ppl=     1.0 grad= 0.145 mode=track_c_hidden_only tau=43200.0 tgt=  1 mem_avail=89.3GiB
+step=  2400 | loss= 0.0111 ppl=     1.0 grad= 0.550 mode=track_c_hidden_only tau=300.0 tgt=  1 mem_avail=88.7GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s2.step2500.pt
+step=  2600 | loss= 0.0002 ppl=     1.0 grad= 0.005 mode=track_c_hidden_only tau=10.0 tgt=  1 mem_avail=89.3GiB
+step=  2800 | loss= 0.0007 ppl=     1.0 grad= 0.015 mode=track_c_hidden_only tau=10.0 tgt=  1 mem_avail=89.2GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s2.step3000.pt
+step=  3000 | loss= 0.0008 ppl=     1.0 grad= 0.017 mode=track_c_hidden_only tau=300.0 tgt=  1 mem_avail=88.9GiB
+step=  3200 | loss= 0.0004 ppl=     1.0 grad= 0.012 mode=track_c_hidden_only tau=30.0 tgt=  1 mem_avail=89.4GiB
+step=  3400 | loss= 0.0187 ppl=     1.0 grad= 2.389 mode=track_c_hidden_only tau=1800.0 tgt=  1 mem_avail=89.0GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s2.step3500.pt
+step=  3600 | loss= 0.6348 ppl=     1.9 grad=56.928 mode=track_c_hidden_only tau=43200.0 tgt=  1 mem_avail=89.3GiB
+step=  3800 | loss= 0.0016 ppl=     1.0 grad= 0.034 mode=track_c_hidden_only tau=300.0 tgt=  1 mem_avail=88.9GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s2.step4000.pt
+step=  4000 | loss= 0.0175 ppl=     1.0 grad= 1.148 mode=track_c_hidden_only tau=1800.0 tgt=  1 mem_avail=88.9GiB
+step=  4200 | loss= 0.0004 ppl=     1.0 grad= 0.008 mode=track_c_hidden_only tau=30.0 tgt=  1 mem_avail=89.3GiB
+step=  4400 | loss= 0.0018 ppl=     1.0 grad= 0.052 mode=track_c_hidden_only tau=43200.0 tgt=  1 mem_avail=89.3GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s2.step4500.pt
+step=  4600 | loss= 0.0003 ppl=     1.0 grad= 0.008 mode=track_c_hidden_only tau=300.0 tgt=  1 mem_avail=89.3GiB
+step=  4800 | loss= 0.0003 ppl=     1.0 grad= 0.008 mode=track_c_hidden_only tau=1800.0 tgt=  1 mem_avail=89.3GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s2.step5000.pt
+step=  5000 | loss= 0.0002 ppl=     1.0 grad= 0.004 mode=track_c_hidden_only tau=30.0 tgt=  1 mem_avail=88.9GiB
+step=  5200 | loss= 0.0013 ppl=     1.0 grad= 0.025 mode=track_c_hidden_only tau=43200.0 tgt=  1 mem_avail=89.3GiB
+step=  5400 | loss= 0.0018 ppl=     1.0 grad= 0.029 mode=track_c_hidden_only tau=30.0 tgt=  1 mem_avail=89.0GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s2.step5500.pt
+step=  5600 | loss= 0.0017 ppl=     1.0 grad= 0.039 mode=track_c_hidden_only tau=300.0 tgt=  1 mem_avail=89.3GiB
+step=  5800 | loss= 0.0003 ppl=     1.0 grad= 0.008 mode=track_c_hidden_only tau=1800.0 tgt=  1 mem_avail=89.3GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s2.step6000.pt
+step=  6000 | loss= 0.0004 ppl=     1.0 grad= 0.009 mode=track_c_hidden_only tau=86400.0 tgt=  1 mem_avail=89.3GiB
+step=  6200 | loss= 0.0111 ppl=     1.0 grad= 0.250 mode=track_c_hidden_only tau=7200.0 tgt=  1 mem_avail=89.0GiB
+step=  6400 | loss= 0.0003 ppl=     1.0 grad= 0.006 mode=track_c_hidden_only tau=30.0 tgt=  1 mem_avail=89.3GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s2.step6500.pt
+step=  6600 | loss= 0.0001 ppl=     1.0 grad= 0.003 mode=track_c_hidden_only tau=30.0 tgt=  1 mem_avail=89.0GiB
+step=  6800 | loss= 0.0000 ppl=     1.0 grad= 0.001 mode=track_c_hidden_only tau=604800.0 tgt=  1 mem_avail=89.0GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s2.step7000.pt
+step=  7000 | loss= 0.0031 ppl=     1.0 grad= 0.055 mode=track_c_hidden_only tau=1800.0 tgt=  1 mem_avail=89.0GiB
+step=  7200 | loss= 0.0003 ppl=     1.0 grad= 0.006 mode=track_c_hidden_only tau=43200.0 tgt=  1 mem_avail=89.0GiB
+step=  7400 | loss= 0.0003 ppl=     1.0 grad= 0.011 mode=track_c_hidden_only tau=86400.0 tgt=  1 mem_avail=89.0GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s2.step7500.pt
+step=  7600 | loss= 0.0012 ppl=     1.0 grad= 0.025 mode=track_c_hidden_only tau=7200.0 tgt=  1 mem_avail=89.0GiB
+step=  7800 | loss= 0.0034 ppl=     1.0 grad= 0.040 mode=track_c_hidden_only tau=1800.0 tgt=  1 mem_avail=89.0GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s2.step8000.pt
+Saved checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s2.pt
+Total wall time: 1351.4s
+Uninstalled 1 package in 0.60ms
+Installed 1 package in 1ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 13436.63it/s]
+  loaded 465 trainable tensors
+  [100/2000] ci_hidden_time
+  [200/2000] ci_hidden_time
+  [300/2000] ci_hidden_time
+  [400/2000] ci_hidden_time
+  [500/2000] ci_hidden_time
+  [600/2000] ci_hidden_time
+  [700/2000] ci_hidden_time
+  [800/2000] ci_hidden_time
+  [900/2000] ci_hidden_time
+  [1000/2000] ci_hidden_time
+  [1100/2000] ci_hidden_time
+  [1200/2000] ci_hidden_time
+  [1300/2000] ci_hidden_time
+  [1400/2000] ci_hidden_time
+  [1500/2000] ci_hidden_time
+  [1600/2000] ci_hidden_time
+  [1700/2000] ci_hidden_time
+  [1800/2000] ci_hidden_time
+  [1900/2000] ci_hidden_time
+  [2000/2000] ci_hidden_time
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s2/ci_track_c_s2.step1000_val.json
+Uninstalled 1 package in 0.29ms
+Installed 1 package in 2ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 12933.24it/s]
+  loaded 465 trainable tensors
+  [100/2000] ci_hidden_time
+  [200/2000] ci_hidden_time
+  [300/2000] ci_hidden_time
+  [400/2000] ci_hidden_time
+  [500/2000] ci_hidden_time
+  [600/2000] ci_hidden_time
+  [700/2000] ci_hidden_time
+  [800/2000] ci_hidden_time
+  [900/2000] ci_hidden_time
+  [1000/2000] ci_hidden_time
+  [1100/2000] ci_hidden_time
+  [1200/2000] ci_hidden_time
+  [1300/2000] ci_hidden_time
+  [1400/2000] ci_hidden_time
+  [1500/2000] ci_hidden_time
+  [1600/2000] ci_hidden_time
+  [1700/2000] ci_hidden_time
+  [1800/2000] ci_hidden_time
+  [1900/2000] ci_hidden_time
+  [2000/2000] ci_hidden_time
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s2/ci_track_c_s2.step1500_val.json
+Uninstalled 1 package in 0.51ms
+Installed 1 package in 2ms
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 8720.76it/s]
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+  loaded 465 trainable tensors
+  [100/2000] ci_hidden_time
+  [200/2000] ci_hidden_time
+  [300/2000] ci_hidden_time
+  [400/2000] ci_hidden_time
+  [500/2000] ci_hidden_time
+  [600/2000] ci_hidden_time
+  [700/2000] ci_hidden_time
+  [800/2000] ci_hidden_time
+  [900/2000] ci_hidden_time
+  [1000/2000] ci_hidden_time
+  [1100/2000] ci_hidden_time
+  [1200/2000] ci_hidden_time
+  [1300/2000] ci_hidden_time
+  [1400/2000] ci_hidden_time
+  [1500/2000] ci_hidden_time
+  [1600/2000] ci_hidden_time
+  [1700/2000] ci_hidden_time
+  [1800/2000] ci_hidden_time
+  [1900/2000] ci_hidden_time
+  [2000/2000] ci_hidden_time
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s2/ci_track_c_s2.step2000_val.json
+Uninstalled 1 package in 0.67ms
+Installed 1 package in 2ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 8094.16it/s]
+  loaded 465 trainable tensors
+  [100/2000] ci_hidden_time
+  [200/2000] ci_hidden_time
+  [300/2000] ci_hidden_time
+  [400/2000] ci_hidden_time
+  [500/2000] ci_hidden_time
+  [600/2000] ci_hidden_time
+  [700/2000] ci_hidden_time
+  [800/2000] ci_hidden_time
+  [900/2000] ci_hidden_time
+  [1000/2000] ci_hidden_time
+  [1100/2000] ci_hidden_time
+  [1200/2000] ci_hidden_time
+  [1300/2000] ci_hidden_time
+  [1400/2000] ci_hidden_time
+  [1500/2000] ci_hidden_time
+  [1600/2000] ci_hidden_time
+  [1700/2000] ci_hidden_time
+  [1800/2000] ci_hidden_time
+  [1900/2000] ci_hidden_time
+  [2000/2000] ci_hidden_time
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s2/ci_track_c_s2.step2500_val.json
+Uninstalled 1 package in 0.51ms
+Installed 1 package in 1ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 10627.36it/s]
+  loaded 465 trainable tensors
+  [100/2000] ci_hidden_time
+  [200/2000] ci_hidden_time
+  [300/2000] ci_hidden_time
+  [400/2000] ci_hidden_time
+  [500/2000] ci_hidden_time
+  [600/2000] ci_hidden_time
+  [700/2000] ci_hidden_time
+  [800/2000] ci_hidden_time
+  [900/2000] ci_hidden_time
+  [1000/2000] ci_hidden_time
+  [1100/2000] ci_hidden_time
+  [1200/2000] ci_hidden_time
+  [1300/2000] ci_hidden_time
+  [1400/2000] ci_hidden_time
+  [1500/2000] ci_hidden_time
+  [1600/2000] ci_hidden_time
+  [1700/2000] ci_hidden_time
+  [1800/2000] ci_hidden_time
+  [1900/2000] ci_hidden_time
+  [2000/2000] ci_hidden_time
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s2/ci_track_c_s2.step3000_val.json
+Uninstalled 1 package in 0.44ms
+Installed 1 package in 2ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 13553.28it/s]
+  loaded 465 trainable tensors
+  [100/2000] ci_hidden_time
+  [200/2000] ci_hidden_time
+  [300/2000] ci_hidden_time
+  [400/2000] ci_hidden_time
+  [500/2000] ci_hidden_time
+  [600/2000] ci_hidden_time
+  [700/2000] ci_hidden_time
+  [800/2000] ci_hidden_time
+  [900/2000] ci_hidden_time
+  [1000/2000] ci_hidden_time
+  [1100/2000] ci_hidden_time
+  [1200/2000] ci_hidden_time
+  [1300/2000] ci_hidden_time
+  [1400/2000] ci_hidden_time
+  [1500/2000] ci_hidden_time
+  [1600/2000] ci_hidden_time
+  [1700/2000] ci_hidden_time
+  [1800/2000] ci_hidden_time
+  [1900/2000] ci_hidden_time
+  [2000/2000] ci_hidden_time
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s2/ci_track_c_s2.step3500_val.json
+Uninstalled 1 package in 0.79ms
+Installed 1 package in 3ms
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 10168.01it/s]
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+  loaded 465 trainable tensors
+  [100/2000] ci_hidden_time
+  [200/2000] ci_hidden_time
+  [300/2000] ci_hidden_time
+  [400/2000] ci_hidden_time
+  [500/2000] ci_hidden_time
+  [600/2000] ci_hidden_time
+  [700/2000] ci_hidden_time
+  [800/2000] ci_hidden_time
+  [900/2000] ci_hidden_time
+  [1000/2000] ci_hidden_time
+  [1100/2000] ci_hidden_time
+  [1200/2000] ci_hidden_time
+  [1300/2000] ci_hidden_time
+  [1400/2000] ci_hidden_time
+  [1500/2000] ci_hidden_time
+  [1600/2000] ci_hidden_time
+  [1700/2000] ci_hidden_time
+  [1800/2000] ci_hidden_time
+  [1900/2000] ci_hidden_time
+  [2000/2000] ci_hidden_time
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s2/ci_track_c_s2.step4000_val.json
+Uninstalled 1 package in 0.52ms
+Installed 1 package in 1ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 7499.33it/s]
+  loaded 465 trainable tensors
+  [100/2000] ci_hidden_time
+  [200/2000] ci_hidden_time
+  [300/2000] ci_hidden_time
+  [400/2000] ci_hidden_time
+  [500/2000] ci_hidden_time
+  [600/2000] ci_hidden_time
+  [700/2000] ci_hidden_time
+  [800/2000] ci_hidden_time
+  [900/2000] ci_hidden_time
+  [1000/2000] ci_hidden_time
+  [1100/2000] ci_hidden_time
+  [1200/2000] ci_hidden_time
+  [1300/2000] ci_hidden_time
+  [1400/2000] ci_hidden_time
+  [1500/2000] ci_hidden_time
+  [1600/2000] ci_hidden_time
+  [1700/2000] ci_hidden_time
+  [1800/2000] ci_hidden_time
+  [1900/2000] ci_hidden_time
+  [2000/2000] ci_hidden_time
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s2/ci_track_c_s2.step4500_val.json
+Uninstalled 1 package in 0.51ms
+Installed 1 package in 2ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 13015.82it/s]
+  loaded 465 trainable tensors
+  [100/2000] ci_hidden_time
+  [200/2000] ci_hidden_time
+  [300/2000] ci_hidden_time
+  [400/2000] ci_hidden_time
+  [500/2000] ci_hidden_time
+  [600/2000] ci_hidden_time
+  [700/2000] ci_hidden_time
+  [800/2000] ci_hidden_time
+  [900/2000] ci_hidden_time
+  [1000/2000] ci_hidden_time
+  [1100/2000] ci_hidden_time
+  [1200/2000] ci_hidden_time
+  [1300/2000] ci_hidden_time
+  [1400/2000] ci_hidden_time
+  [1500/2000] ci_hidden_time
+  [1600/2000] ci_hidden_time
+  [1700/2000] ci_hidden_time
+  [1800/2000] ci_hidden_time
+  [1900/2000] ci_hidden_time
+  [2000/2000] ci_hidden_time
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s2/ci_track_c_s2.step500_val.json
+Uninstalled 1 package in 0.40ms
+Installed 1 package in 4ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 12243.34it/s]
+  loaded 465 trainable tensors
+  [100/2000] ci_hidden_time
+  [200/2000] ci_hidden_time
+  [300/2000] ci_hidden_time
+  [400/2000] ci_hidden_time
+  [500/2000] ci_hidden_time
+  [600/2000] ci_hidden_time
+  [700/2000] ci_hidden_time
+  [800/2000] ci_hidden_time
+  [900/2000] ci_hidden_time
+  [1000/2000] ci_hidden_time
+  [1100/2000] ci_hidden_time
+  [1200/2000] ci_hidden_time
+  [1300/2000] ci_hidden_time
+  [1400/2000] ci_hidden_time
+  [1500/2000] ci_hidden_time
+  [1600/2000] ci_hidden_time
+  [1700/2000] ci_hidden_time
+  [1800/2000] ci_hidden_time
+  [1900/2000] ci_hidden_time
+  [2000/2000] ci_hidden_time
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s2/ci_track_c_s2.step5000_val.json
+Uninstalled 1 package in 0.55ms
+Installed 1 package in 4ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 14976.82it/s]
+  loaded 465 trainable tensors
+  [100/2000] ci_hidden_time
+  [200/2000] ci_hidden_time
+  [300/2000] ci_hidden_time
+  [400/2000] ci_hidden_time
+  [500/2000] ci_hidden_time
+  [600/2000] ci_hidden_time
+  [700/2000] ci_hidden_time
+  [800/2000] ci_hidden_time
+  [900/2000] ci_hidden_time
+  [1000/2000] ci_hidden_time
+  [1100/2000] ci_hidden_time
+  [1200/2000] ci_hidden_time
+  [1300/2000] ci_hidden_time
+  [1400/2000] ci_hidden_time
+  [1500/2000] ci_hidden_time
+  [1600/2000] ci_hidden_time
+  [1700/2000] ci_hidden_time
+  [1800/2000] ci_hidden_time
+  [1900/2000] ci_hidden_time
+  [2000/2000] ci_hidden_time
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s2/ci_track_c_s2.step5500_val.json
+Uninstalled 1 package in 0.55ms
+Installed 1 package in 1ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 11567.11it/s]
+  loaded 465 trainable tensors
+  [100/2000] ci_hidden_time
+  [200/2000] ci_hidden_time
+  [300/2000] ci_hidden_time
+  [400/2000] ci_hidden_time
+  [500/2000] ci_hidden_time
+  [600/2000] ci_hidden_time
+  [700/2000] ci_hidden_time
+  [800/2000] ci_hidden_time
+  [900/2000] ci_hidden_time
+  [1000/2000] ci_hidden_time
+  [1100/2000] ci_hidden_time
+  [1200/2000] ci_hidden_time
+  [1300/2000] ci_hidden_time
+  [1400/2000] ci_hidden_time
+  [1500/2000] ci_hidden_time
+  [1600/2000] ci_hidden_time
+  [1700/2000] ci_hidden_time
+  [1800/2000] ci_hidden_time
+  [1900/2000] ci_hidden_time
+  [2000/2000] ci_hidden_time
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s2/ci_track_c_s2.step6000_val.json
+Uninstalled 1 package in 0.29ms
+Installed 1 package in 2ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 9533.81it/s]
+  loaded 465 trainable tensors
+  [100/2000] ci_hidden_time
+  [200/2000] ci_hidden_time
+  [300/2000] ci_hidden_time
+  [400/2000] ci_hidden_time
+  [500/2000] ci_hidden_time
+  [600/2000] ci_hidden_time
+  [700/2000] ci_hidden_time
+  [800/2000] ci_hidden_time
+  [900/2000] ci_hidden_time
+  [1000/2000] ci_hidden_time
+  [1100/2000] ci_hidden_time
+  [1200/2000] ci_hidden_time
+  [1300/2000] ci_hidden_time
+  [1400/2000] ci_hidden_time
+  [1500/2000] ci_hidden_time
+  [1600/2000] ci_hidden_time
+  [1700/2000] ci_hidden_time
+  [1800/2000] ci_hidden_time
+  [1900/2000] ci_hidden_time
+  [2000/2000] ci_hidden_time
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s2/ci_track_c_s2.step6500_val.json
+Uninstalled 1 package in 0.69ms
+Installed 1 package in 6ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 8604.03it/s]
+  loaded 465 trainable tensors
+  [100/2000] ci_hidden_time
+  [200/2000] ci_hidden_time
+  [300/2000] ci_hidden_time
+  [400/2000] ci_hidden_time
+  [500/2000] ci_hidden_time
+  [600/2000] ci_hidden_time
+  [700/2000] ci_hidden_time
+  [800/2000] ci_hidden_time
+  [900/2000] ci_hidden_time
+  [1000/2000] ci_hidden_time
+  [1100/2000] ci_hidden_time
+  [1200/2000] ci_hidden_time
+  [1300/2000] ci_hidden_time
+  [1400/2000] ci_hidden_time
+  [1500/2000] ci_hidden_time
+  [1600/2000] ci_hidden_time
+  [1700/2000] ci_hidden_time
+  [1800/2000] ci_hidden_time
+  [1900/2000] ci_hidden_time
+  [2000/2000] ci_hidden_time
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s2/ci_track_c_s2.step7000_val.json
+Uninstalled 1 package in 0.34ms
+Installed 1 package in 1ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 8448.25it/s]
+  loaded 465 trainable tensors
+  [100/2000] ci_hidden_time
+  [200/2000] ci_hidden_time
+  [300/2000] ci_hidden_time
+  [400/2000] ci_hidden_time
+  [500/2000] ci_hidden_time
+  [600/2000] ci_hidden_time
+  [700/2000] ci_hidden_time
+  [800/2000] ci_hidden_time
+  [900/2000] ci_hidden_time
+  [1000/2000] ci_hidden_time
+  [1100/2000] ci_hidden_time
+  [1200/2000] ci_hidden_time
+  [1300/2000] ci_hidden_time
+  [1400/2000] ci_hidden_time
+  [1500/2000] ci_hidden_time
+  [1600/2000] ci_hidden_time
+  [1700/2000] ci_hidden_time
+  [1800/2000] ci_hidden_time
+  [1900/2000] ci_hidden_time
+  [2000/2000] ci_hidden_time
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s2/ci_track_c_s2.step7500_val.json
+Uninstalled 1 package in 0.51ms
+Installed 1 package in 2ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 13119.01it/s]
+  loaded 465 trainable tensors
+  [100/2000] ci_hidden_time
+  [200/2000] ci_hidden_time
+  [300/2000] ci_hidden_time
+  [400/2000] ci_hidden_time
+  [500/2000] ci_hidden_time
+  [600/2000] ci_hidden_time
+  [700/2000] ci_hidden_time
+  [800/2000] ci_hidden_time
+  [900/2000] ci_hidden_time
+  [1000/2000] ci_hidden_time
+  [1100/2000] ci_hidden_time
+  [1200/2000] ci_hidden_time
+  [1300/2000] ci_hidden_time
+  [1400/2000] ci_hidden_time
+  [1500/2000] ci_hidden_time
+  [1600/2000] ci_hidden_time
+  [1700/2000] ci_hidden_time
+  [1800/2000] ci_hidden_time
+  [1900/2000] ci_hidden_time
+  [2000/2000] ci_hidden_time
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s2/ci_track_c_s2.step8000_val.json
+Uninstalled 1 package in 0.31ms
+Installed 1 package in 2ms
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 6018.85it/s]
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+  loaded 465 trainable tensors
+  [100/2000] ci_hidden_time
+  [200/2000] ci_hidden_time
+  [300/2000] ci_hidden_time
+  [400/2000] ci_hidden_time
+  [500/2000] ci_hidden_time
+  [600/2000] ci_hidden_time
+  [700/2000] ci_hidden_time
+  [800/2000] ci_hidden_time
+  [900/2000] ci_hidden_time
+  [1000/2000] ci_hidden_time
+  [1100/2000] ci_hidden_time
+  [1200/2000] ci_hidden_time
+  [1300/2000] ci_hidden_time
+  [1400/2000] ci_hidden_time
+  [1500/2000] ci_hidden_time
+  [1600/2000] ci_hidden_time
+  [1700/2000] ci_hidden_time
+  [1800/2000] ci_hidden_time
+  [1900/2000] ci_hidden_time
+  [2000/2000] ci_hidden_time
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/validation/ci_track_c_s2/ci_track_c_s2_val.json
+Selected validation checkpoint for ci_track_c_s2: /home/omarramadan/Desktop/Time-Model-repo/runs/track_c_full_20260601_014051/checkpoints/track_c/ci_track_c_s2.step7000.pt
+Uninstalled 1 package in 0.48ms
+Installed 1 package in 1ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 10077.61it/s]
+  loaded 465 trainable tensors
+  [100/4000] ci_hidden_time
+  [200/4000] ci_hidden_time
+  [300/4000] ci_hidden_time
+  [400/4000] ci_hidden_time
+  [500/4000] ci_hidden_time
+  [600/4000] ci_hidden_time
+  [700/4000] ci_hidden_time
+  [800/4000] ci_hidden_time
+  [900/4000] ci_hidden_time
+  [1000/4000] ci_hidden_time
+  [1100/4000] ci_hidden_time
+  [1200/4000] ci_hidden_time
+  [1300/4000] ci_hidden_time
+  [1400/4000] ci_hidden_time
+  [1500/4000] ci_hidden_time
+  [1600/4000] ci_hidden_time
+  [1700/4000] ci_hidden_time
+  [1800/4000] ci_hidden_time
+  [1900/4000] ci_hidden_time
+  [2000/4000] ci_hidden_time
+  [2100/4000] ci_hidden_time
+  [2200/4000] ci_hidden_time
+  [2300/4000] ci_hidden_time
+  [2400/4000] ci_hidden_time
+  [2500/4000] ci_hidden_time
+  [2600/4000] ci_hidden_time
+  [2700/4000] ci_hidden_time
+  [2800/4000] ci_hidden_time
+  [2900/4000] ci_hidden_time
+  [3000/4000] ci_hidden_time
+  [3100/4000] ci_hidden_time
+  [3200/4000] ci_hidden_time
+  [3300/4000] ci_hidden_time
+  [3400/4000] ci_hidden_time
+  [3500/4000] ci_hidden_time
+  [3600/4000] ci_hidden_time
+  [3700/4000] ci_hidden_time
+  [3800/4000] ci_hidden_time
+  [3900/4000] ci_hidden_time
+  [4000/4000] ci_hidden_time
+wrote 4000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/predictions/ci_track_c_s2_ci_hidden_time_standard_test.json
+Uninstalled 1 package in 0.76ms
+Installed 1 package in 4ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 6011.71it/s]
+  loaded 465 trainable tensors
+  [100/4000] no_time_control
+  [200/4000] no_time_control
+  [300/4000] no_time_control
+  [400/4000] no_time_control
+  [500/4000] no_time_control
+  [600/4000] no_time_control
+  [700/4000] no_time_control
+  [800/4000] no_time_control
+  [900/4000] no_time_control
+  [1000/4000] no_time_control
+  [1100/4000] no_time_control
+  [1200/4000] no_time_control
+  [1300/4000] no_time_control
+  [1400/4000] no_time_control
+  [1500/4000] no_time_control
+  [1600/4000] no_time_control
+  [1700/4000] no_time_control
+  [1800/4000] no_time_control
+  [1900/4000] no_time_control
+  [2000/4000] no_time_control
+  [2100/4000] no_time_control
+  [2200/4000] no_time_control
+  [2300/4000] no_time_control
+  [2400/4000] no_time_control
+  [2500/4000] no_time_control
+  [2600/4000] no_time_control
+  [2700/4000] no_time_control
+  [2800/4000] no_time_control
+  [2900/4000] no_time_control
+  [3000/4000] no_time_control
+  [3100/4000] no_time_control
+  [3200/4000] no_time_control
+  [3300/4000] no_time_control
+  [3400/4000] no_time_control
+  [3500/4000] no_time_control
+  [3600/4000] no_time_control
+  [3700/4000] no_time_control
+  [3800/4000] no_time_control
+  [3900/4000] no_time_control
+  [4000/4000] no_time_control
+wrote 4000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/predictions/ci_track_c_s2_no_time_control_standard_test.json
+Uninstalled 1 package in 0.29ms
+Installed 1 package in 1ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 8990.29it/s]
+  loaded 465 trainable tensors
+  [100/4000] shuffled_time_control
+  [200/4000] shuffled_time_control
+  [300/4000] shuffled_time_control
+  [400/4000] shuffled_time_control
+  [500/4000] shuffled_time_control
+  [600/4000] shuffled_time_control
+  [700/4000] shuffled_time_control
+  [800/4000] shuffled_time_control
+  [900/4000] shuffled_time_control
+  [1000/4000] shuffled_time_control
+  [1100/4000] shuffled_time_control
+  [1200/4000] shuffled_time_control
+  [1300/4000] shuffled_time_control
+  [1400/4000] shuffled_time_control
+  [1500/4000] shuffled_time_control
+  [1600/4000] shuffled_time_control
+  [1700/4000] shuffled_time_control
+  [1800/4000] shuffled_time_control
+  [1900/4000] shuffled_time_control
+  [2000/4000] shuffled_time_control
+  [2100/4000] shuffled_time_control
+  [2200/4000] shuffled_time_control
+  [2300/4000] shuffled_time_control
+  [2400/4000] shuffled_time_control
+  [2500/4000] shuffled_time_control
+  [2600/4000] shuffled_time_control
+  [2700/4000] shuffled_time_control
+  [2800/4000] shuffled_time_control
+  [2900/4000] shuffled_time_control
+  [3000/4000] shuffled_time_control
+  [3100/4000] shuffled_time_control
+  [3200/4000] shuffled_time_control
+  [3300/4000] shuffled_time_control
+  [3400/4000] shuffled_time_control
+  [3500/4000] shuffled_time_control
+  [3600/4000] shuffled_time_control
+  [3700/4000] shuffled_time_control
+  [3800/4000] shuffled_time_control
+  [3900/4000] shuffled_time_control
+  [4000/4000] shuffled_time_control
+wrote 4000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/predictions/ci_track_c_s2_shuffled_time_control_standard_test.json
+Uninstalled 1 package in 9ms
+Installed 1 package in 1ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 10325.99it/s]
+  loaded 465 trainable tensors
+  [100/4000] prompt_timestamp
+  [200/4000] prompt_timestamp
+  [300/4000] prompt_timestamp
+  [400/4000] prompt_timestamp
+  [500/4000] prompt_timestamp
+  [600/4000] prompt_timestamp
+  [700/4000] prompt_timestamp
+  [800/4000] prompt_timestamp
+  [900/4000] prompt_timestamp
+  [1000/4000] prompt_timestamp
+  [1100/4000] prompt_timestamp
+  [1200/4000] prompt_timestamp
+  [1300/4000] prompt_timestamp
+  [1400/4000] prompt_timestamp
+  [1500/4000] prompt_timestamp
+  [1600/4000] prompt_timestamp
+  [1700/4000] prompt_timestamp
+  [1800/4000] prompt_timestamp
+  [1900/4000] prompt_timestamp
+  [2000/4000] prompt_timestamp
+  [2100/4000] prompt_timestamp
+  [2200/4000] prompt_timestamp
+  [2300/4000] prompt_timestamp
+  [2400/4000] prompt_timestamp
+  [2500/4000] prompt_timestamp
+  [2600/4000] prompt_timestamp
+  [2700/4000] prompt_timestamp
+  [2800/4000] prompt_timestamp
+  [2900/4000] prompt_timestamp
+  [3000/4000] prompt_timestamp
+  [3100/4000] prompt_timestamp
+  [3200/4000] prompt_timestamp
+  [3300/4000] prompt_timestamp
+  [3400/4000] prompt_timestamp
+  [3500/4000] prompt_timestamp
+  [3600/4000] prompt_timestamp
+  [3700/4000] prompt_timestamp
+  [3800/4000] prompt_timestamp
+  [3900/4000] prompt_timestamp
+  [4000/4000] prompt_timestamp
+wrote 4000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/predictions/ci_track_c_s2_prompt_timestamp_standard_test.json
+Uninstalled 1 package in 9ms
+Installed 1 package in 1ms
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 10708.38it/s]
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+  loaded 465 trainable tensors
+  [100/4000] both_agree
+  [200/4000] both_agree
+  [300/4000] both_agree
+  [400/4000] both_agree
+  [500/4000] both_agree
+  [600/4000] both_agree
+  [700/4000] both_agree
+  [800/4000] both_agree
+  [900/4000] both_agree
+  [1000/4000] both_agree
+  [1100/4000] both_agree
+  [1200/4000] both_agree
+  [1300/4000] both_agree
+  [1400/4000] both_agree
+  [1500/4000] both_agree
+  [1600/4000] both_agree
+  [1700/4000] both_agree
+  [1800/4000] both_agree
+  [1900/4000] both_agree
+  [2000/4000] both_agree
+  [2100/4000] both_agree
+  [2200/4000] both_agree
+  [2300/4000] both_agree
+  [2400/4000] both_agree
+  [2500/4000] both_agree
+  [2600/4000] both_agree
+  [2700/4000] both_agree
+  [2800/4000] both_agree
+  [2900/4000] both_agree
+  [3000/4000] both_agree
+  [3100/4000] both_agree
+  [3200/4000] both_agree
+  [3300/4000] both_agree
+  [3400/4000] both_agree
+  [3500/4000] both_agree
+  [3600/4000] both_agree
+  [3700/4000] both_agree
+  [3800/4000] both_agree
+  [3900/4000] both_agree
+  [4000/4000] both_agree
+wrote 4000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/predictions/ci_track_c_s2_both_agree_standard_test.json
+Uninstalled 1 package in 0.35ms
+Installed 1 package in 1ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 14248.25it/s]
+  loaded 465 trainable tensors
+  [100/4000] conflict
+  [200/4000] conflict
+  [300/4000] conflict
+  [400/4000] conflict
+  [500/4000] conflict
+  [600/4000] conflict
+  [700/4000] conflict
+  [800/4000] conflict
+  [900/4000] conflict
+  [1000/4000] conflict
+  [1100/4000] conflict
+  [1200/4000] conflict
+  [1300/4000] conflict
+  [1400/4000] conflict
+  [1500/4000] conflict
+  [1600/4000] conflict
+  [1700/4000] conflict
+  [1800/4000] conflict
+  [1900/4000] conflict
+  [2000/4000] conflict
+  [2100/4000] conflict
+  [2200/4000] conflict
+  [2300/4000] conflict
+  [2400/4000] conflict
+  [2500/4000] conflict
+  [2600/4000] conflict
+  [2700/4000] conflict
+  [2800/4000] conflict
+  [2900/4000] conflict
+  [3000/4000] conflict
+  [3100/4000] conflict
+  [3200/4000] conflict
+  [3300/4000] conflict
+  [3400/4000] conflict
+  [3500/4000] conflict
+  [3600/4000] conflict
+  [3700/4000] conflict
+  [3800/4000] conflict
+  [3900/4000] conflict
+  [4000/4000] conflict
+wrote 4000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/predictions/ci_track_c_s2_conflict_standard_test.json
+Uninstalled 1 package in 0.59ms
+Installed 1 package in 2ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 11360.65it/s]
+  loaded 465 trainable tensors
+  [100/2000] ci_hidden_time
+  [200/2000] ci_hidden_time
+  [300/2000] ci_hidden_time
+  [400/2000] ci_hidden_time
+  [500/2000] ci_hidden_time
+  [600/2000] ci_hidden_time
+  [700/2000] ci_hidden_time
+  [800/2000] ci_hidden_time
+  [900/2000] ci_hidden_time
+  [1000/2000] ci_hidden_time
+  [1100/2000] ci_hidden_time
+  [1200/2000] ci_hidden_time
+  [1300/2000] ci_hidden_time
+  [1400/2000] ci_hidden_time
+  [1500/2000] ci_hidden_time
+  [1600/2000] ci_hidden_time
+  [1700/2000] ci_hidden_time
+  [1800/2000] ci_hidden_time
+  [1900/2000] ci_hidden_time
+  [2000/2000] ci_hidden_time
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/predictions/ci_track_c_s2_ci_hidden_time_heldout_template.json
+Uninstalled 1 package in 0.48ms
+Installed 1 package in 1ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 14066.14it/s]
+  loaded 465 trainable tensors
+  [100/2000] no_time_control
+  [200/2000] no_time_control
+  [300/2000] no_time_control
+  [400/2000] no_time_control
+  [500/2000] no_time_control
+  [600/2000] no_time_control
+  [700/2000] no_time_control
+  [800/2000] no_time_control
+  [900/2000] no_time_control
+  [1000/2000] no_time_control
+  [1100/2000] no_time_control
+  [1200/2000] no_time_control
+  [1300/2000] no_time_control
+  [1400/2000] no_time_control
+  [1500/2000] no_time_control
+  [1600/2000] no_time_control
+  [1700/2000] no_time_control
+  [1800/2000] no_time_control
+  [1900/2000] no_time_control
+  [2000/2000] no_time_control
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/predictions/ci_track_c_s2_no_time_control_heldout_template.json
+Uninstalled 1 package in 10ms
+Installed 1 package in 2ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 11379.82it/s]
+  loaded 465 trainable tensors
+  [100/2000] shuffled_time_control
+  [200/2000] shuffled_time_control
+  [300/2000] shuffled_time_control
+  [400/2000] shuffled_time_control
+  [500/2000] shuffled_time_control
+  [600/2000] shuffled_time_control
+  [700/2000] shuffled_time_control
+  [800/2000] shuffled_time_control
+  [900/2000] shuffled_time_control
+  [1000/2000] shuffled_time_control
+  [1100/2000] shuffled_time_control
+  [1200/2000] shuffled_time_control
+  [1300/2000] shuffled_time_control
+  [1400/2000] shuffled_time_control
+  [1500/2000] shuffled_time_control
+  [1600/2000] shuffled_time_control
+  [1700/2000] shuffled_time_control
+  [1800/2000] shuffled_time_control
+  [1900/2000] shuffled_time_control
+  [2000/2000] shuffled_time_control
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/predictions/ci_track_c_s2_shuffled_time_control_heldout_template.json
+Uninstalled 1 package in 0.34ms
+Installed 1 package in 3ms
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 10798.20it/s]
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+  loaded 465 trainable tensors
+  [100/2000] prompt_timestamp
+  [200/2000] prompt_timestamp
+  [300/2000] prompt_timestamp
+  [400/2000] prompt_timestamp
+  [500/2000] prompt_timestamp
+  [600/2000] prompt_timestamp
+  [700/2000] prompt_timestamp
+  [800/2000] prompt_timestamp
+  [900/2000] prompt_timestamp
+  [1000/2000] prompt_timestamp
+  [1100/2000] prompt_timestamp
+  [1200/2000] prompt_timestamp
+  [1300/2000] prompt_timestamp
+  [1400/2000] prompt_timestamp
+  [1500/2000] prompt_timestamp
+  [1600/2000] prompt_timestamp
+  [1700/2000] prompt_timestamp
+  [1800/2000] prompt_timestamp
+  [1900/2000] prompt_timestamp
+  [2000/2000] prompt_timestamp
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/predictions/ci_track_c_s2_prompt_timestamp_heldout_template.json
+Uninstalled 1 package in 9ms
+Installed 1 package in 2ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 12164.63it/s]
+  loaded 465 trainable tensors
+  [100/2000] both_agree
+  [200/2000] both_agree
+  [300/2000] both_agree
+  [400/2000] both_agree
+  [500/2000] both_agree
+  [600/2000] both_agree
+  [700/2000] both_agree
+  [800/2000] both_agree
+  [900/2000] both_agree
+  [1000/2000] both_agree
+  [1100/2000] both_agree
+  [1200/2000] both_agree
+  [1300/2000] both_agree
+  [1400/2000] both_agree
+  [1500/2000] both_agree
+  [1600/2000] both_agree
+  [1700/2000] both_agree
+  [1800/2000] both_agree
+  [1900/2000] both_agree
+  [2000/2000] both_agree
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/predictions/ci_track_c_s2_both_agree_heldout_template.json
+Uninstalled 1 package in 0.46ms
+Installed 1 package in 2ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 13467.25it/s]
+  loaded 465 trainable tensors
+  [100/2000] conflict
+  [200/2000] conflict
+  [300/2000] conflict
+  [400/2000] conflict
+  [500/2000] conflict
+  [600/2000] conflict
+  [700/2000] conflict
+  [800/2000] conflict
+  [900/2000] conflict
+  [1000/2000] conflict
+  [1100/2000] conflict
+  [1200/2000] conflict
+  [1300/2000] conflict
+  [1400/2000] conflict
+  [1500/2000] conflict
+  [1600/2000] conflict
+  [1700/2000] conflict
+  [1800/2000] conflict
+  [1900/2000] conflict
+  [2000/2000] conflict
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/predictions/ci_track_c_s2_conflict_heldout_template.json
+Uninstalled 1 package in 0.53ms
+Installed 1 package in 2ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 11053.19it/s]
+  loaded 465 trainable tensors
+  [100/2000] ci_hidden_time
+  [200/2000] ci_hidden_time
+  [300/2000] ci_hidden_time
+  [400/2000] ci_hidden_time
+  [500/2000] ci_hidden_time
+  [600/2000] ci_hidden_time
+  [700/2000] ci_hidden_time
+  [800/2000] ci_hidden_time
+  [900/2000] ci_hidden_time
+  [1000/2000] ci_hidden_time
+  [1100/2000] ci_hidden_time
+  [1200/2000] ci_hidden_time
+  [1300/2000] ci_hidden_time
+  [1400/2000] ci_hidden_time
+  [1500/2000] ci_hidden_time
+  [1600/2000] ci_hidden_time
+  [1700/2000] ci_hidden_time
+  [1800/2000] ci_hidden_time
+  [1900/2000] ci_hidden_time
+  [2000/2000] ci_hidden_time
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/predictions/ci_track_c_s2_ci_hidden_time_heldout_duration.json
+Uninstalled 1 package in 0.72ms
+Installed 1 package in 2ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 11346.91it/s]
+  loaded 465 trainable tensors
+  [100/2000] no_time_control
+  [200/2000] no_time_control
+  [300/2000] no_time_control
+  [400/2000] no_time_control
+  [500/2000] no_time_control
+  [600/2000] no_time_control
+  [700/2000] no_time_control
+  [800/2000] no_time_control
+  [900/2000] no_time_control
+  [1000/2000] no_time_control
+  [1100/2000] no_time_control
+  [1200/2000] no_time_control
+  [1300/2000] no_time_control
+  [1400/2000] no_time_control
+  [1500/2000] no_time_control
+  [1600/2000] no_time_control
+  [1700/2000] no_time_control
+  [1800/2000] no_time_control
+  [1900/2000] no_time_control
+  [2000/2000] no_time_control
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/predictions/ci_track_c_s2_no_time_control_heldout_duration.json
+Uninstalled 1 package in 0.30ms
+Installed 1 package in 2ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 11275.71it/s]
+  loaded 465 trainable tensors
+  [100/2000] shuffled_time_control
+  [200/2000] shuffled_time_control
+  [300/2000] shuffled_time_control
+  [400/2000] shuffled_time_control
+  [500/2000] shuffled_time_control
+  [600/2000] shuffled_time_control
+  [700/2000] shuffled_time_control
+  [800/2000] shuffled_time_control
+  [900/2000] shuffled_time_control
+  [1000/2000] shuffled_time_control
+  [1100/2000] shuffled_time_control
+  [1200/2000] shuffled_time_control
+  [1300/2000] shuffled_time_control
+  [1400/2000] shuffled_time_control
+  [1500/2000] shuffled_time_control
+  [1600/2000] shuffled_time_control
+  [1700/2000] shuffled_time_control
+  [1800/2000] shuffled_time_control
+  [1900/2000] shuffled_time_control
+  [2000/2000] shuffled_time_control
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/predictions/ci_track_c_s2_shuffled_time_control_heldout_duration.json
+Uninstalled 1 package in 0.33ms
+Installed 1 package in 3ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 12631.17it/s]
+  loaded 465 trainable tensors
+  [100/2000] prompt_timestamp
+  [200/2000] prompt_timestamp
+  [300/2000] prompt_timestamp
+  [400/2000] prompt_timestamp
+  [500/2000] prompt_timestamp
+  [600/2000] prompt_timestamp
+  [700/2000] prompt_timestamp
+  [800/2000] prompt_timestamp
+  [900/2000] prompt_timestamp
+  [1000/2000] prompt_timestamp
+  [1100/2000] prompt_timestamp
+  [1200/2000] prompt_timestamp
+  [1300/2000] prompt_timestamp
+  [1400/2000] prompt_timestamp
+  [1500/2000] prompt_timestamp
+  [1600/2000] prompt_timestamp
+  [1700/2000] prompt_timestamp
+  [1800/2000] prompt_timestamp
+  [1900/2000] prompt_timestamp
+  [2000/2000] prompt_timestamp
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/predictions/ci_track_c_s2_prompt_timestamp_heldout_duration.json
+Uninstalled 1 package in 0.32ms
+Installed 1 package in 2ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 12115.33it/s]
+  loaded 465 trainable tensors
+  [100/2000] both_agree
+  [200/2000] both_agree
+  [300/2000] both_agree
+  [400/2000] both_agree
+  [500/2000] both_agree
+  [600/2000] both_agree
+  [700/2000] both_agree
+  [800/2000] both_agree
+  [900/2000] both_agree
+  [1000/2000] both_agree
+  [1100/2000] both_agree
+  [1200/2000] both_agree
+  [1300/2000] both_agree
+  [1400/2000] both_agree
+  [1500/2000] both_agree
+  [1600/2000] both_agree
+  [1700/2000] both_agree
+  [1800/2000] both_agree
+  [1900/2000] both_agree
+  [2000/2000] both_agree
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/predictions/ci_track_c_s2_both_agree_heldout_duration.json
+Uninstalled 1 package in 0.29ms
+Installed 1 package in 1ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 10575.49it/s]
+  loaded 465 trainable tensors
+  [100/2000] conflict
+  [200/2000] conflict
+  [300/2000] conflict
+  [400/2000] conflict
+  [500/2000] conflict
+  [600/2000] conflict
+  [700/2000] conflict
+  [800/2000] conflict
+  [900/2000] conflict
+  [1000/2000] conflict
+  [1100/2000] conflict
+  [1200/2000] conflict
+  [1300/2000] conflict
+  [1400/2000] conflict
+  [1500/2000] conflict
+  [1600/2000] conflict
+  [1700/2000] conflict
+  [1800/2000] conflict
+  [1900/2000] conflict
+  [2000/2000] conflict
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/predictions/ci_track_c_s2_conflict_heldout_duration.json
+Uninstalled 1 package in 0.58ms
+Installed 1 package in 5ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 8511.73it/s]
+  loaded 465 trainable tensors
+  [100/2000] ci_hidden_time
+  [200/2000] ci_hidden_time
+  [300/2000] ci_hidden_time
+  [400/2000] ci_hidden_time
+  [500/2000] ci_hidden_time
+  [600/2000] ci_hidden_time
+  [700/2000] ci_hidden_time
+  [800/2000] ci_hidden_time
+  [900/2000] ci_hidden_time
+  [1000/2000] ci_hidden_time
+  [1100/2000] ci_hidden_time
+  [1200/2000] ci_hidden_time
+  [1300/2000] ci_hidden_time
+  [1400/2000] ci_hidden_time
+  [1500/2000] ci_hidden_time
+  [1600/2000] ci_hidden_time
+  [1700/2000] ci_hidden_time
+  [1800/2000] ci_hidden_time
+  [1900/2000] ci_hidden_time
+  [2000/2000] ci_hidden_time
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/predictions/ci_track_c_s2_ci_hidden_time_heldout_composition.json
+Uninstalled 1 package in 0.51ms
+Installed 1 package in 1ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 11353.21it/s]
+  loaded 465 trainable tensors
+  [100/2000] no_time_control
+  [200/2000] no_time_control
+  [300/2000] no_time_control
+  [400/2000] no_time_control
+  [500/2000] no_time_control
+  [600/2000] no_time_control
+  [700/2000] no_time_control
+  [800/2000] no_time_control
+  [900/2000] no_time_control
+  [1000/2000] no_time_control
+  [1100/2000] no_time_control
+  [1200/2000] no_time_control
+  [1300/2000] no_time_control
+  [1400/2000] no_time_control
+  [1500/2000] no_time_control
+  [1600/2000] no_time_control
+  [1700/2000] no_time_control
+  [1800/2000] no_time_control
+  [1900/2000] no_time_control
+  [2000/2000] no_time_control
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/predictions/ci_track_c_s2_no_time_control_heldout_composition.json
+Uninstalled 1 package in 0.52ms
+Installed 1 package in 2ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 12907.56it/s]
+  loaded 465 trainable tensors
+  [100/2000] shuffled_time_control
+  [200/2000] shuffled_time_control
+  [300/2000] shuffled_time_control
+  [400/2000] shuffled_time_control
+  [500/2000] shuffled_time_control
+  [600/2000] shuffled_time_control
+  [700/2000] shuffled_time_control
+  [800/2000] shuffled_time_control
+  [900/2000] shuffled_time_control
+  [1000/2000] shuffled_time_control
+  [1100/2000] shuffled_time_control
+  [1200/2000] shuffled_time_control
+  [1300/2000] shuffled_time_control
+  [1400/2000] shuffled_time_control
+  [1500/2000] shuffled_time_control
+  [1600/2000] shuffled_time_control
+  [1700/2000] shuffled_time_control
+  [1800/2000] shuffled_time_control
+  [1900/2000] shuffled_time_control
+  [2000/2000] shuffled_time_control
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/predictions/ci_track_c_s2_shuffled_time_control_heldout_composition.json
+Uninstalled 1 package in 0.56ms
+Installed 1 package in 2ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 14325.96it/s]
+  loaded 465 trainable tensors
+  [100/2000] prompt_timestamp
+  [200/2000] prompt_timestamp
+  [300/2000] prompt_timestamp
+  [400/2000] prompt_timestamp
+  [500/2000] prompt_timestamp
+  [600/2000] prompt_timestamp
+  [700/2000] prompt_timestamp
+  [800/2000] prompt_timestamp
+  [900/2000] prompt_timestamp
+  [1000/2000] prompt_timestamp
+  [1100/2000] prompt_timestamp
+  [1200/2000] prompt_timestamp
+  [1300/2000] prompt_timestamp
+  [1400/2000] prompt_timestamp
+  [1500/2000] prompt_timestamp
+  [1600/2000] prompt_timestamp
+  [1700/2000] prompt_timestamp
+  [1800/2000] prompt_timestamp
+  [1900/2000] prompt_timestamp
+  [2000/2000] prompt_timestamp
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/predictions/ci_track_c_s2_prompt_timestamp_heldout_composition.json
+Uninstalled 1 package in 0.50ms
+Installed 1 package in 2ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 12816.23it/s]
+  loaded 465 trainable tensors
+  [100/2000] both_agree
+  [200/2000] both_agree
+  [300/2000] both_agree
+  [400/2000] both_agree
+  [500/2000] both_agree
+  [600/2000] both_agree
+  [700/2000] both_agree
+  [800/2000] both_agree
+  [900/2000] both_agree
+  [1000/2000] both_agree
+  [1100/2000] both_agree
+  [1200/2000] both_agree
+  [1300/2000] both_agree
+  [1400/2000] both_agree
+  [1500/2000] both_agree
+  [1600/2000] both_agree
+  [1700/2000] both_agree
+  [1800/2000] both_agree
+  [1900/2000] both_agree
+  [2000/2000] both_agree
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/predictions/ci_track_c_s2_both_agree_heldout_composition.json
+Uninstalled 1 package in 0.54ms
+Installed 1 package in 1ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 13097.20it/s]
+  loaded 465 trainable tensors
+  [100/2000] conflict
+  [200/2000] conflict
+  [300/2000] conflict
+  [400/2000] conflict
+  [500/2000] conflict
+  [600/2000] conflict
+  [700/2000] conflict
+  [800/2000] conflict
+  [900/2000] conflict
+  [1000/2000] conflict
+  [1100/2000] conflict
+  [1200/2000] conflict
+  [1300/2000] conflict
+  [1400/2000] conflict
+  [1500/2000] conflict
+  [1600/2000] conflict
+  [1700/2000] conflict
+  [1800/2000] conflict
+  [1900/2000] conflict
+  [2000/2000] conflict
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/predictions/ci_track_c_s2_conflict_heldout_composition.json
+Uninstalled 1 package in 0.29ms
+Installed 1 package in 2ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 9293.74it/s]
+  loaded 465 trainable tensors
+  [100/2000] ci_hidden_time
+  [200/2000] ci_hidden_time
+  [300/2000] ci_hidden_time
+  [400/2000] ci_hidden_time
+  [500/2000] ci_hidden_time
+  [600/2000] ci_hidden_time
+  [700/2000] ci_hidden_time
+  [800/2000] ci_hidden_time
+  [900/2000] ci_hidden_time
+  [1000/2000] ci_hidden_time
+  [1100/2000] ci_hidden_time
+  [1200/2000] ci_hidden_time
+  [1300/2000] ci_hidden_time
+  [1400/2000] ci_hidden_time
+  [1500/2000] ci_hidden_time
+  [1600/2000] ci_hidden_time
+  [1700/2000] ci_hidden_time
+  [1800/2000] ci_hidden_time
+  [1900/2000] ci_hidden_time
+  [2000/2000] ci_hidden_time
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/predictions/ci_track_c_s2_ci_hidden_time_heldout_family.json
+Uninstalled 1 package in 0.53ms
+Installed 1 package in 2ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 7144.31it/s]
+  loaded 465 trainable tensors
+  [100/2000] no_time_control
+  [200/2000] no_time_control
+  [300/2000] no_time_control
+  [400/2000] no_time_control
+  [500/2000] no_time_control
+  [600/2000] no_time_control
+  [700/2000] no_time_control
+  [800/2000] no_time_control
+  [900/2000] no_time_control
+  [1000/2000] no_time_control
+  [1100/2000] no_time_control
+  [1200/2000] no_time_control
+  [1300/2000] no_time_control
+  [1400/2000] no_time_control
+  [1500/2000] no_time_control
+  [1600/2000] no_time_control
+  [1700/2000] no_time_control
+  [1800/2000] no_time_control
+  [1900/2000] no_time_control
+  [2000/2000] no_time_control
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/predictions/ci_track_c_s2_no_time_control_heldout_family.json
+Uninstalled 1 package in 0.30ms
+Installed 1 package in 2ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 15325.98it/s]
+  loaded 465 trainable tensors
+  [100/2000] shuffled_time_control
+  [200/2000] shuffled_time_control
+  [300/2000] shuffled_time_control
+  [400/2000] shuffled_time_control
+  [500/2000] shuffled_time_control
+  [600/2000] shuffled_time_control
+  [700/2000] shuffled_time_control
+  [800/2000] shuffled_time_control
+  [900/2000] shuffled_time_control
+  [1000/2000] shuffled_time_control
+  [1100/2000] shuffled_time_control
+  [1200/2000] shuffled_time_control
+  [1300/2000] shuffled_time_control
+  [1400/2000] shuffled_time_control
+  [1500/2000] shuffled_time_control
+  [1600/2000] shuffled_time_control
+  [1700/2000] shuffled_time_control
+  [1800/2000] shuffled_time_control
+  [1900/2000] shuffled_time_control
+  [2000/2000] shuffled_time_control
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/predictions/ci_track_c_s2_shuffled_time_control_heldout_family.json
+Uninstalled 1 package in 0.37ms
+Installed 1 package in 2ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 8641.44it/s]
+  loaded 465 trainable tensors
+  [100/2000] prompt_timestamp
+  [200/2000] prompt_timestamp
+  [300/2000] prompt_timestamp
+  [400/2000] prompt_timestamp
+  [500/2000] prompt_timestamp
+  [600/2000] prompt_timestamp
+  [700/2000] prompt_timestamp
+  [800/2000] prompt_timestamp
+  [900/2000] prompt_timestamp
+  [1000/2000] prompt_timestamp
+  [1100/2000] prompt_timestamp
+  [1200/2000] prompt_timestamp
+  [1300/2000] prompt_timestamp
+  [1400/2000] prompt_timestamp
+  [1500/2000] prompt_timestamp
+  [1600/2000] prompt_timestamp
+  [1700/2000] prompt_timestamp
+  [1800/2000] prompt_timestamp
+  [1900/2000] prompt_timestamp
+  [2000/2000] prompt_timestamp
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/predictions/ci_track_c_s2_prompt_timestamp_heldout_family.json
+Uninstalled 1 package in 0.70ms
+Installed 1 package in 2ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 13660.90it/s]
+  loaded 465 trainable tensors
+  [100/2000] both_agree
+  [200/2000] both_agree
+  [300/2000] both_agree
+  [400/2000] both_agree
+  [500/2000] both_agree
+  [600/2000] both_agree
+  [700/2000] both_agree
+  [800/2000] both_agree
+  [900/2000] both_agree
+  [1000/2000] both_agree
+  [1100/2000] both_agree
+  [1200/2000] both_agree
+  [1300/2000] both_agree
+  [1400/2000] both_agree
+  [1500/2000] both_agree
+  [1600/2000] both_agree
+  [1700/2000] both_agree
+  [1800/2000] both_agree
+  [1900/2000] both_agree
+  [2000/2000] both_agree
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/predictions/ci_track_c_s2_both_agree_heldout_family.json
+Uninstalled 1 package in 0.33ms
+Installed 1 package in 3ms
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 10235.30it/s]
+  loaded 465 trainable tensors
+  [100/2000] conflict
+  [200/2000] conflict
+  [300/2000] conflict
+  [400/2000] conflict
+  [500/2000] conflict
+  [600/2000] conflict
+  [700/2000] conflict
+  [800/2000] conflict
+  [900/2000] conflict
+  [1000/2000] conflict
+  [1100/2000] conflict
+  [1200/2000] conflict
+  [1300/2000] conflict
+  [1400/2000] conflict
+  [1500/2000] conflict
+  [1600/2000] conflict
+  [1700/2000] conflict
+  [1800/2000] conflict
+  [1900/2000] conflict
+  [2000/2000] conflict
+wrote 2000 Track C predictions to runs/track_c_full_20260601_014051/reports/track_c/predictions/ci_track_c_s2_conflict_heldout_family.json

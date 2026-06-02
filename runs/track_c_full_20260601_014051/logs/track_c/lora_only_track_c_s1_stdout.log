@@ -1,0 +1,71 @@
+Uninstalled 1 package in 0.30ms
+Installed 1 package in 2ms
+  Override timescales: (2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 4096, 16384, 65536, 86400, 604800)
+Loading QwenTime (Qwen/Qwen2.5-3B-Instruct)...
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/434 [00:00<?, ?it/s]Loading weights: 100%|██████████| 434/434 [00:00<00:00, 7323.82it/s]
+  loaded in 20.8s
+  trainable: 9,577,472 / 3,095,516,160 (0.309%)
+  chrono injectors: 35
+  LoRA modules: 145
+  FROZE all 35 chrono alpha gates at 0 (LoRA-only ablation)
+Training from step 0 to 8000. Log -> runs/track_c_full_20260601_014051/logs/track_c/lora_only_track_c_s1.jsonl
+step=     0 | loss=10.5000 ppl= 36316.5 grad=241.892 mode=track_c_hidden_only tau=86400.0 tgt=  1 mem_avail=68.1GiB
+step=   200 | loss= 5.6758 ppl=   291.7 grad=27.224 mode=track_c_hidden_only tau=7200.0 tgt=  1 mem_avail=68.1GiB
+step=   400 | loss= 0.0979 ppl=     1.1 grad= 2.153 mode=track_c_hidden_only tau=604800.0 tgt=  1 mem_avail=68.1GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/lora_only_track_c_s1.step500.pt
+step=   600 | loss= 0.1899 ppl=     1.2 grad= 2.966 mode=track_c_hidden_only tau=1800.0 tgt=  1 mem_avail=64.4GiB
+step=   800 | loss= 4.5184 ppl=    91.7 grad=13.440 mode=track_c_hidden_only tau=86400.0 tgt=  1 mem_avail=64.9GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/lora_only_track_c_s1.step1000.pt
+step=  1000 | loss= 4.6396 ppl=   103.5 grad=14.209 mode=track_c_hidden_only tau=86400.0 tgt=  1 mem_avail=64.8GiB
+step=  1200 | loss= 0.1673 ppl=     1.2 grad= 3.531 mode=track_c_hidden_only tau=604800.0 tgt=  1 mem_avail=64.6GiB
+step=  1400 | loss= 0.1589 ppl=     1.2 grad= 1.488 mode=track_c_hidden_only tau=10.0 tgt=  1 mem_avail=64.4GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/lora_only_track_c_s1.step1500.pt
+step=  1600 | loss= 5.2811 ppl=   196.6 grad=19.409 mode=track_c_hidden_only tau=43200.0 tgt=  1 mem_avail=64.8GiB
+step=  1800 | loss= 4.0241 ppl=    55.9 grad=16.240 mode=track_c_hidden_only tau=1800.0 tgt=  1 mem_avail=64.4GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/lora_only_track_c_s1.step2000.pt
+step=  2000 | loss= 1.5908 ppl=     4.9 grad=15.850 mode=track_c_hidden_only tau=10.0 tgt=  1 mem_avail=64.3GiB
+step=  2200 | loss= 2.2165 ppl=     9.2 grad=15.440 mode=track_c_hidden_only tau=30.0 tgt=  1 mem_avail=64.6GiB
+step=  2400 | loss= 4.2778 ppl=    72.1 grad=16.523 mode=track_c_hidden_only tau=604800.0 tgt=  1 mem_avail=64.7GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/lora_only_track_c_s1.step2500.pt
+step=  2600 | loss= 0.1926 ppl=     1.2 grad= 5.716 mode=track_c_hidden_only tau=604800.0 tgt=  1 mem_avail=64.4GiB
+step=  2800 | loss= 0.4497 ppl=     1.6 grad= 6.307 mode=track_c_hidden_only tau=604800.0 tgt=  1 mem_avail=64.7GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/lora_only_track_c_s1.step3000.pt
+step=  3000 | loss= 0.1350 ppl=     1.1 grad= 2.815 mode=track_c_hidden_only tau=30.0 tgt=  1 mem_avail=64.6GiB
+step=  3200 | loss= 0.2509 ppl=     1.3 grad= 3.663 mode=track_c_hidden_only tau=1800.0 tgt=  1 mem_avail=64.2GiB
+step=  3400 | loss= 1.4121 ppl=     4.1 grad=32.234 mode=track_c_hidden_only tau=7200.0 tgt=  1 mem_avail=64.2GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/lora_only_track_c_s1.step3500.pt
+step=  3600 | loss= 2.4661 ppl=    11.8 grad=25.992 mode=track_c_hidden_only tau=86400.0 tgt=  1 mem_avail=64.5GiB
+step=  3800 | loss= 4.2780 ppl=    72.1 grad=24.168 mode=track_c_hidden_only tau=7200.0 tgt=  1 mem_avail=64.1GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/lora_only_track_c_s1.step4000.pt
+step=  4000 | loss= 2.4697 ppl=    11.8 grad=14.141 mode=track_c_hidden_only tau=86400.0 tgt=  1 mem_avail=64.4GiB
+step=  4200 | loss= 0.7692 ppl=     2.2 grad=18.013 mode=track_c_hidden_only tau=604800.0 tgt=  1 mem_avail=63.3GiB
+step=  4400 | loss= 1.1428 ppl=     3.1 grad=32.855 mode=track_c_hidden_only tau=300.0 tgt=  1 mem_avail=64.1GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/lora_only_track_c_s1.step4500.pt
+step=  4600 | loss= 0.0250 ppl=     1.0 grad= 1.780 mode=track_c_hidden_only tau=604800.0 tgt=  1 mem_avail=64.1GiB
+step=  4800 | loss= 0.0004 ppl=     1.0 grad= 0.034 mode=track_c_hidden_only tau=30.0 tgt=  1 mem_avail=64.5GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/lora_only_track_c_s1.step5000.pt
+step=  5000 | loss= 0.1004 ppl=     1.1 grad= 4.189 mode=track_c_hidden_only tau=86400.0 tgt=  1 mem_avail=64.4GiB
+step=  5200 | loss= 0.0701 ppl=     1.1 grad= 4.208 mode=track_c_hidden_only tau=7200.0 tgt=  1 mem_avail=64.1GiB
+step=  5400 | loss= 1.7303 ppl=     5.6 grad=56.131 mode=track_c_hidden_only tau=1800.0 tgt=  1 mem_avail=64.4GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/lora_only_track_c_s1.step5500.pt
+step=  5600 | loss= 0.3870 ppl=     1.5 grad=20.440 mode=track_c_hidden_only tau=7200.0 tgt=  1 mem_avail=64.4GiB
+step=  5800 | loss= 0.3488 ppl=     1.4 grad=18.719 mode=track_c_hidden_only tau=43200.0 tgt=  1 mem_avail=64.0GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/lora_only_track_c_s1.step6000.pt
+step=  6000 | loss= 2.5789 ppl=    13.2 grad=64.630 mode=track_c_hidden_only tau=30.0 tgt=  1 mem_avail=64.4GiB
+step=  6200 | loss= 7.8763 ppl=  2634.0 grad=69.884 mode=track_c_hidden_only tau=30.0 tgt=  1 mem_avail=64.5GiB
+step=  6400 | loss= 0.1886 ppl=     1.2 grad= 8.669 mode=track_c_hidden_only tau=7200.0 tgt=  1 mem_avail=64.2GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/lora_only_track_c_s1.step6500.pt
+step=  6600 | loss= 0.2694 ppl=     1.3 grad=12.123 mode=track_c_hidden_only tau=604800.0 tgt=  1 mem_avail=64.5GiB
+step=  6800 | loss= 1.5079 ppl=     4.5 grad=28.246 mode=track_c_hidden_only tau=1800.0 tgt=  1 mem_avail=64.2GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/lora_only_track_c_s1.step7000.pt
+step=  7000 | loss= 0.6326 ppl=     1.9 grad=17.783 mode=track_c_hidden_only tau=7200.0 tgt=  1 mem_avail=64.5GiB
+step=  7200 | loss= 0.4295 ppl=     1.5 grad= 9.000 mode=track_c_hidden_only tau=604800.0 tgt=  1 mem_avail=64.9GiB
+step=  7400 | loss= 2.6124 ppl=    13.6 grad=14.157 mode=track_c_hidden_only tau=1800.0 tgt=  1 mem_avail=64.5GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/lora_only_track_c_s1.step7500.pt
+step=  7600 | loss= 0.3561 ppl=     1.4 grad= 6.641 mode=track_c_hidden_only tau=86400.0 tgt=  1 mem_avail=64.8GiB
+step=  7800 | loss= 0.0000 ppl=     1.0 grad= 0.002 mode=track_c_hidden_only tau=7200.0 tgt=  1 mem_avail=64.9GiB
+Saved periodic checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/lora_only_track_c_s1.step8000.pt
+Saved checkpoint to runs/track_c_full_20260601_014051/checkpoints/track_c/lora_only_track_c_s1.pt
+Total wall time: 1407.1s

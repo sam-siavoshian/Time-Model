@@ -1,0 +1,22 @@
+\begin{table}[t]
+\centering
+\caption{Track C split generalization.}
+\label{tab:track-c-splits}
+\footnotesize
+\begin{tabular}{lccccccc}
+\toprule
+model & split & acc_mean & acc_std & bacc_mean & bacc_std & state_acc_mean & state_acc_std \\
+\midrule
+ci_track_c & heldout_composition & 0.865 & 0.044 & 0.801 & 0.031 & 0.865 & 0.044 \\
+ci_track_c & heldout_duration & 0.838 & 0.006 & 0.858 & 0.006 & 0.838 & 0.006 \\
+ci_track_c & heldout_family & 0.507 & 0.056 & 0.570 & 0.050 & 0.507 & 0.056 \\
+ci_track_c & heldout_template & 0.936 & 0.011 & 0.947 & 0.010 & 0.936 & 0.011 \\
+ci_track_c & standard_test & 0.930 & 0.013 & 0.941 & 0.010 & 0.930 & 0.013 \\
+lora_only_track_c & heldout_composition & 0.505 & 0.039 & 0.354 & 0.060 & 0.505 & 0.039 \\
+lora_only_track_c & heldout_duration & 0.565 & 0.005 & 0.562 & 0.037 & 0.565 & 0.005 \\
+lora_only_track_c & heldout_family & 0.424 & 0.043 & 0.487 & 0.056 & 0.424 & 0.043 \\
+lora_only_track_c & heldout_template & 0.547 & 0.006 & 0.556 & 0.047 & 0.547 & 0.006 \\
+lora_only_track_c & standard_test & 0.551 & 0.009 & 0.558 & 0.043 & 0.551 & 0.009 \\
+\bottomrule
+\end{tabular}
+\end{table}
